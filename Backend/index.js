@@ -7,6 +7,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const patientRoutes = require('./src/routes/patientRoutes');
+app.use('/api/patient', patientRoutes);
+
 app.get('/', (req, res) => {
   res.json({ ok: true, message: 'Backend is running' });
 });
