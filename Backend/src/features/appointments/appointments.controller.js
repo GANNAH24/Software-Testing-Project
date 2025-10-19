@@ -4,8 +4,8 @@
  */
 
 const appointmentsService = require('./appointments.service');
-const { successResponse, errorResponse } = require('../../../shared/utils/response.util');
-const { asyncHandler } = require('../../../shared/middleware/error.middleware');
+const { successResponse, errorResponse } = require('../../shared/utils/response.util');
+const { asyncHandler } = require('../../shared/middleware/error.middleware');
 
 // Get all appointments (with filters)
 const getAllAppointments = asyncHandler(async (req, res) => {

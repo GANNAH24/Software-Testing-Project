@@ -4,7 +4,7 @@
  */
 
 const appointmentsRepository = require('./appointments.repository');
-const logger = require('../../../shared/utils/logger.util');
+const logger = require('../../shared/utils/logger.util');
 
 /**
  * Get all appointments with filters

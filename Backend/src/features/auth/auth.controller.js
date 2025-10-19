@@ -4,9 +4,9 @@
  */
 
 const authService = require('./auth.service');
-const { getPasswordRequirements } = require('../../../shared/utils/password.util');
-const { successResponse, errorResponse } = require('../../../shared/utils/response.util');
-const { asyncHandler } = require('../../../shared/middleware/error.middleware');
+const { getPasswordRequirements } = require('../../shared/utils/password.util');
+const { successResponse, errorResponse } = require('../../shared/utils/response.util');
+const { asyncHandler } = require('../../shared/middleware/error.middleware');
 
 /**
  * Register new user

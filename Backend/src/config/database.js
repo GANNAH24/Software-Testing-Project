@@ -29,12 +29,19 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 // Test connection
 const testConnection = async () => {
   try {
+    console.log(`[DEBUG] Testing connection to: ${supabaseUrl}`);
+    console.log(`[DEBUG] Using key starting with: ${supabaseKey.substring(0, 20)}...`);
+    
     const { data, error } = await supabase.from('profiles').select('count').limit(1);
-    if (error) throw error;
+    if (error) {
+      console.error('[DEBUG] Supabase error:', error);
+      throw error;
+    }
     console.log('✅ Database connected successfully');
     return true;
   } catch (error) {
     console.error('❌ Database connection failed:', error.message);
+    console.error('[DEBUG] Full error:', error);
     return false;
   }
 };

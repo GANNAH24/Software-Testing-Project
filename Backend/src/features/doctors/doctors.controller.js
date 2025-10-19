@@ -4,8 +4,8 @@
  */
 
 const doctorsService = require('./doctors.service');
-const { successResponse } = require('../../../shared/utils/response.util');
-const { asyncHandler } = require('../../../shared/middleware/error.middleware');
+const { successResponse } = require('../../shared/utils/response.util');
+const { asyncHandler } = require('../../shared/middleware/error.middleware');
 
 const getAllDoctors = asyncHandler(async (req, res) => {
   const filters = {
@@ -29,12 +29,11 @@ const getDoctorsBySpecialty = asyncHandler(async (req, res) => {
 const createDoctor = asyncHandler(async (req, res) => {
   const doctorData = {
     userId: req.body.user_id,
-    fullName: req.body.full_name,
+    name: req.body.name,
     specialty: req.body.specialty,
-    phoneNumber: req.body.phone_number,
     qualifications: req.body.qualifications,
-    experienceYears: req.body.experience_years,
-    bio: req.body.bio
+    reviews: req.body.reviews || 0,
+    location: req.body.location
   };
   const doctor = await doctorsService.createDoctor(doctorData);
   res.status(201).json(successResponse(doctor, 'Doctor created successfully', 201));
@@ -42,12 +41,11 @@ const createDoctor = asyncHandler(async (req, res) => {
 
 const updateDoctor = asyncHandler(async (req, res) => {
   const updates = {};
-  if (req.body.full_name) updates.full_name = req.body.full_name;
+  if (req.body.name) updates.name = req.body.name;
   if (req.body.specialty) updates.specialty = req.body.specialty;
-  if (req.body.phone_number) updates.phone_number = req.body.phone_number;
   if (req.body.qualifications) updates.qualifications = req.body.qualifications;
-  if (req.body.experience_years !== undefined) updates.experience_years = req.body.experience_years;
-  if (req.body.bio) updates.bio = req.body.bio;
+  if (req.body.reviews !== undefined) updates.reviews = req.body.reviews;
+  if (req.body.location) updates.location = req.body.location;
 
   const doctor = await doctorsService.updateDoctor(req.params.id, updates);
   res.json(successResponse(doctor, 'Doctor updated successfully'));

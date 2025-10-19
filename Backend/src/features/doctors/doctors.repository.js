@@ -3,8 +3,8 @@
  * Data access layer for doctors
  */
 
-const { supabase } = require('../../../config/database');
-const logger = require('../../../shared/utils/logger.util');
+const { supabase } = require('../../config/database');
+const logger = require('../../shared/utils/logger.util');
 
 const findAll = async (filters = {}) => {
   let query = supabase
@@ -17,10 +17,10 @@ const findAll = async (filters = {}) => {
   }
 
   if (filters.search) {
-    query = query.ilike('full_name', `%${filters.search}%`);
+    query = query.ilike('name', `%${filters.search}%`);
   }
 
-  query = query.order('full_name', { ascending: true });
+  query = query.order('name', { ascending: true });
 
   const { data, error } = await query;
   if (error) {
@@ -31,10 +31,10 @@ const findAll = async (filters = {}) => {
 };
 
 const findById = async (doctorId) => {
-  const { data, error } = await supabase
+  const { data, error} = await supabase
     .from('doctors')
     .select('*')
-    .eq('id', doctorId)
+    .eq('doctor_id', doctorId)
     .is('deleted_at', null)
     .single();
 
@@ -69,12 +69,11 @@ const create = async (doctorData) => {
     .from('doctors')
     .insert([{
       user_id: doctorData.userId,
-      full_name: doctorData.fullName,
+      name: doctorData.name,
       specialty: doctorData.specialty,
-      phone_number: doctorData.phoneNumber,
       qualifications: doctorData.qualifications,
-      experience_years: doctorData.experienceYears,
-      bio: doctorData.bio,
+      reviews: doctorData.reviews || 0,
+      location: doctorData.location,
       created_at: new Date().toISOString()
     }])
     .select()
@@ -91,7 +90,7 @@ const update = async (doctorId, updates) => {
   const { data, error } = await supabase
     .from('doctors')
     .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('id', doctorId)
+    .eq('doctor_id', doctorId)
     .is('deleted_at', null)
     .select()
     .single();
@@ -107,7 +106,7 @@ const softDelete = async (doctorId) => {
   const { data, error } = await supabase
     .from('doctors')
     .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-    .eq('id', doctorId)
+    .eq('doctor_id', doctorId)
     .is('deleted_at', null)
     .select()
     .single();

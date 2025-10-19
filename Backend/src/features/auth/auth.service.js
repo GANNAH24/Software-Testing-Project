@@ -3,10 +3,10 @@
  * Business logic for authentication
  */
 
-const { supabase } = require('../../../config/database');
-const { validatePassword } = require('../../../shared/utils/password.util');
+const { supabase } = require('../../config/database');
+const { validatePassword } = require('../../shared/utils/password.util');
 const authRepository = require('./auth.repository');
-const logger = require('../../../shared/utils/logger.util');
+const logger = require('../../shared/utils/logger.util');
 
 /**
  * Register new user
@@ -75,10 +75,15 @@ const register = async (email, password, role, additionalData = {}) => {
 
     // Create role-specific record
     if (role === 'patient') {
+      // Validate required patient fields
+      if (!additionalData.dateOfBirth || !additionalData.gender || !additionalData.phone) {
+        throw new Error('Patients must provide date of birth, gender, and phone number');
+      }
       await authRepository.createPatient(userId, additionalData);
     } else if (role === 'doctor') {
-      if (!additionalData.specialty || !additionalData.phoneNumber) {
-        throw new Error('Doctors must provide specialty and phone number');
+      // Validate required doctor fields
+      if (!additionalData.specialty || !additionalData.location) {
+        throw new Error('Doctors must provide specialty and location');
       }
       await authRepository.createDoctor(userId, additionalData);
     }

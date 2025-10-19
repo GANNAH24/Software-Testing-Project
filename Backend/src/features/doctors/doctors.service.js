@@ -4,7 +4,7 @@
  */
 
 const doctorsRepository = require('./doctors.repository');
-const logger = require('../../../shared/utils/logger.util');
+const logger = require('../../shared/utils/logger.util');
 
 const getAllDoctors = async (filters) => {
   return await doctorsRepository.findAll(filters);

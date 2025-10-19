@@ -3,8 +3,8 @@
  * Data access layer for appointments
  */
 
-const { supabase } = require('../../../config/database');
-const logger = require('../../../shared/utils/logger.util');
+const { supabase } = require('../../config/database');
+const logger = require('../../shared/utils/logger.util');
 
 /**
  * Get all appointments (with filters)
@@ -13,17 +13,7 @@ const findAll = async (filters = {}) => {
   let query = supabase
     .from('appointments')
     .select(`
-      *,
-      patient:patients!appointments_patient_id_fkey(
-        user_id,
-        profiles:profiles(full_name, email)
-      ),
-      doctor:doctors!appointments_doctor_id_fkey(
-        user_id,
-        full_name,
-        specialty,
-        phone_number
-      )
+      *
     `)
     .is('deleted_at', null); // Exclude soft-deleted
 
@@ -40,14 +30,14 @@ const findAll = async (filters = {}) => {
   }
 
   if (filters.startDate) {
-    query = query.gte('appointment_date', filters.startDate);
+    query = query.gte('date', filters.startDate);
   }
 
   if (filters.endDate) {
-    query = query.lte('appointment_date', filters.endDate);
+    query = query.lte('date', filters.endDate);
   }
 
-  query = query.order('appointment_date', { ascending: true });
+  query = query.order('date', { ascending: true }).order('time_slot', { ascending: true });
 
   const { data, error } = await query;
 
@@ -65,20 +55,8 @@ const findAll = async (filters = {}) => {
 const findById = async (appointmentId) => {
   const { data, error } = await supabase
     .from('appointments')
-    .select(`
-      *,
-      patient:patients!appointments_patient_id_fkey(
-        user_id,
-        profiles:profiles(full_name, email)
-      ),
-      doctor:doctors!appointments_doctor_id_fkey(
-        user_id,
-        full_name,
-        specialty,
-        phone_number
-      )
-    `)
-    .eq('id', appointmentId)
+    .select('*')
+    .eq('appointment_id', appointmentId)
     .is('deleted_at', null)
     .single();
 
@@ -150,7 +128,7 @@ const create = async (appointmentData) => {
     .insert([{
       patient_id: appointmentData.patientId,
       doctor_id: appointmentData.doctorId,
-      appointment_date: appointmentData.appointmentDate,
+      date: appointmentData.appointmentDate,
       reason: appointmentData.reason,
       status: appointmentData.status || 'scheduled',
       notes: appointmentData.notes || null,
@@ -177,7 +155,7 @@ const update = async (appointmentId, updates) => {
       ...updates,
       updated_at: new Date().toISOString()
     })
-    .eq('id', appointmentId)
+    .eq('appointment_id', appointmentId)
     .is('deleted_at', null)
     .select()
     .single();
@@ -200,7 +178,7 @@ const softDelete = async (appointmentId) => {
       deleted_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
-    .eq('id', appointmentId)
+    .eq('appointment_id', appointmentId)
     .is('deleted_at', null)
     .select()
     .single();
@@ -233,12 +211,12 @@ const findConflicts = async (doctorId, appointmentDate, excludeAppointmentId = n
 
   let query = supabase
     .from('appointments')
-    .select('id, appointment_date, status')
+    .select('id, date, status')
     .eq('doctor_id', doctorId)
     .eq('status', 'scheduled')
     .is('deleted_at', null)
-    .gte('appointment_date', oneHourBefore)
-    .lte('appointment_date', oneHourAfter);
+    .gte('date', oneHourBefore)
+    .lte('date', oneHourAfter);
 
   if (excludeAppointmentId) {
     query = query.neq('id', excludeAppointmentId);

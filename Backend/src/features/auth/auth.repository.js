@@ -3,8 +3,8 @@
  * Data access layer for authentication
  */
 
-const { supabase } = require('../../../config/database');
-const logger = require('../../../shared/utils/logger.util');
+const { supabase } = require('../../config/database');
+const logger = require('../../shared/utils/logger.util');
 
 /**
  * Find profile by ID
@@ -50,10 +50,10 @@ const createPatient = async (userId, patientData = {}) => {
   const { data, error } = await supabase
     .from('patients')
     .insert([{
-      user_id: userId,
-      medical_history: patientData.medicalHistory || null,
-      allergies: patientData.allergies || null,
-      blood_type: patientData.bloodType || null,
+      patient_id: userId,  // patient_id references profiles(id)
+      date_of_birth: patientData.dateOfBirth,
+      gender: patientData.gender,
+      phone: patientData.phone,
       created_at: new Date().toISOString()
     }])
     .select()
@@ -75,12 +75,11 @@ const createDoctor = async (userId, doctorData) => {
     .from('doctors')
     .insert([{
       user_id: userId,
-      full_name: doctorData.fullName,
+      name: doctorData.fullName || doctorData.name,
       specialty: doctorData.specialty,
-      phone_number: doctorData.phoneNumber,
-      qualifications: doctorData.qualifications || null,
-      experience_years: doctorData.experienceYears || 0,
-      bio: doctorData.bio || null,
+      qualifications: doctorData.qualifications || 'Not specified',
+      reviews: doctorData.reviews || 0,
+      location: doctorData.location || 'Not specified',
       created_at: new Date().toISOString()
     }])
     .select()
