@@ -1,0 +1,247 @@
+/**
+ * Appointments Repository
+ * Data access layer for appointments
+ */
+
+const { supabase } = require('../../config/database');
+const logger = require('../../shared/utils/logger.util');
+
+/**
+ * Get all appointments (with filters)
+ */
+const findAll = async (filters = {}) => {
+  let query = supabase
+    .from('appointments')
+    .select(`
+      *
+    `)
+    .is('deleted_at', null); // Exclude soft-deleted
+
+  if (filters.patientId) {
+    query = query.eq('patient_id', filters.patientId);
+  }
+
+  if (filters.doctorId) {
+    query = query.eq('doctor_id', filters.doctorId);
+  }
+
+  if (filters.status) {
+    query = query.eq('status', filters.status);
+  }
+
+  if (filters.startDate) {
+    query = query.gte('date', filters.startDate);
+  }
+
+  if (filters.endDate) {
+    query = query.lte('date', filters.endDate);
+  }
+
+  query = query.order('date', { ascending: true }).order('time_slot', { ascending: true });
+
+  const { data, error } = await query;
+
+  if (error) {
+    logger.error('Error finding appointments', { filters, error: error.message });
+    throw error;
+  }
+
+  return data;
+};
+
+/**
+ * Find appointment by ID
+ */
+const findById = async (appointmentId) => {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('*')
+    .eq('appointment_id', appointmentId)
+    .is('deleted_at', null)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    logger.error('Error finding appointment by ID', { appointmentId, error: error.message });
+    throw error;
+  }
+
+  return data;
+};
+
+/**
+ * Get patient appointments
+ */
+const findByPatientId = async (patientId) => {
+  return await findAll({ patientId });
+};
+
+/**
+ * Get doctor appointments
+ */
+const findByDoctorId = async (doctorId) => {
+  return await findAll({ doctorId });
+};
+
+/**
+ * Get upcoming appointments
+ */
+const findUpcoming = async (userId, role) => {
+  const now = new Date().toISOString();
+  const filters = {
+    startDate: now,
+    status: 'scheduled'
+  };
+
+  if (role === 'patient') {
+    filters.patientId = userId;
+  } else if (role === 'doctor') {
+    filters.doctorId = userId;
+  }
+
+  return await findAll(filters);
+};
+
+/**
+ * Get past appointments
+ */
+const findPast = async (userId, role) => {
+  const now = new Date().toISOString();
+  const filters = {
+    endDate: now
+  };
+
+  if (role === 'patient') {
+    filters.patientId = userId;
+  } else if (role === 'doctor') {
+    filters.doctorId = userId;
+  }
+
+  return await findAll(filters);
+};
+
+/**
+ * Create appointment
+ */
+const create = async (appointmentData) => {
+  const { data, error } = await supabase
+    .from('appointments')
+    .insert([{
+      patient_id: appointmentData.patientId,
+      doctor_id: appointmentData.doctorId,
+      date: appointmentData.appointmentDate,
+      reason: appointmentData.reason,
+      status: appointmentData.status || 'scheduled',
+      notes: appointmentData.notes || null,
+      created_at: new Date().toISOString()
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    logger.error('Error creating appointment', { appointmentData, error: error.message });
+    throw error;
+  }
+
+  return data;
+};
+
+/**
+ * Update appointment
+ */
+const update = async (appointmentId, updates) => {
+  const { data, error } = await supabase
+    .from('appointments')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString()
+    })
+    .eq('appointment_id', appointmentId)
+    .is('deleted_at', null)
+    .select()
+    .single();
+
+  if (error) {
+    logger.error('Error updating appointment', { appointmentId, updates, error: error.message });
+    throw error;
+  }
+
+  return data;
+};
+
+/**
+ * Soft delete appointment
+ */
+const softDelete = async (appointmentId) => {
+  const { data, error } = await supabase
+    .from('appointments')
+    .update({
+      deleted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq('appointment_id', appointmentId)
+    .is('deleted_at', null)
+    .select()
+    .single();
+
+  if (error) {
+    logger.error('Error soft deleting appointment', { appointmentId, error: error.message });
+    throw error;
+  }
+
+  return data;
+};
+
+/**
+ * Cancel appointment
+ */
+const cancel = async (appointmentId, cancelReason = null) => {
+  return await update(appointmentId, {
+    status: 'cancelled',
+    notes: cancelReason ? `Cancelled: ${cancelReason}` : 'Cancelled'
+  });
+};
+
+/**
+ * Check for conflicting appointments
+ */
+const findConflicts = async (doctorId, appointmentDate, excludeAppointmentId = null) => {
+  const appointmentTime = new Date(appointmentDate);
+  const oneHourBefore = new Date(appointmentTime.getTime() - 60 * 60 * 1000).toISOString();
+  const oneHourAfter = new Date(appointmentTime.getTime() + 60 * 60 * 1000).toISOString();
+
+  let query = supabase
+    .from('appointments')
+    .select('id, date, status')
+    .eq('doctor_id', doctorId)
+    .eq('status', 'scheduled')
+    .is('deleted_at', null)
+    .gte('date', oneHourBefore)
+    .lte('date', oneHourAfter);
+
+  if (excludeAppointmentId) {
+    query = query.neq('id', excludeAppointmentId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    logger.error('Error finding conflicts', { doctorId, appointmentDate, error: error.message });
+    throw error;
+  }
+
+  return data;
+};
+
+module.exports = {
+  findAll,
+  findById,
+  findByPatientId,
+  findByDoctorId,
+  findUpcoming,
+  findPast,
+  create,
+  update,
+  softDelete,
+  cancel,
+  findConflicts
+};
