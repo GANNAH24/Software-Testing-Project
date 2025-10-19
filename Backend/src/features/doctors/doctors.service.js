@@ -30,6 +30,31 @@ const getDoctorsBySpecialty = async (specialty) => {
   return await doctorsRepository.findBySpecialty(specialty);
 };
 
+const getDoctorsByLocation = async (location) => {
+  return await doctorsRepository.findByLocation(location);
+};
+
+const advancedSearchDoctors = async (filters) => {
+  // Validate and sanitize filters
+  const searchFilters = {
+    searchTerm: filters.searchTerm?.trim() || null,
+    specialty: filters.specialty?.trim() || null,
+    location: filters.location?.trim() || null,
+    minReviews: filters.minReviews ? parseInt(filters.minReviews) : null,
+    sortBy: filters.sortBy || 'reviews'
+  };
+
+  return await doctorsRepository.advancedSearch(searchFilters);
+};
+
+const getDetailedDoctorProfile = async (doctorId) => {
+  const doctor = await doctorsRepository.getDetailedProfile(doctorId);
+  if (!doctor) {
+    throw new Error('Doctor not found');
+  }
+  return doctor;
+};
+
 const createDoctor = async (doctorData) => {
   const doctor = await doctorsRepository.create(doctorData);
   logger.info('Doctor created', { doctorId: doctor.id });
@@ -70,6 +95,9 @@ module.exports = {
   getDoctorById,
   getDoctorByUserId,
   getDoctorsBySpecialty,
+  getDoctorsByLocation,
+  advancedSearchDoctors,
+  getDetailedDoctorProfile,
   createDoctor,
   updateDoctor,
   deleteDoctor,

@@ -11,8 +11,11 @@ const { optionalAuth, requireAdmin, requireAnyRole } = require('../../shared/mid
 // Public routes (browsing doctors)
 router.get('/', optionalAuth, doctorsController.getAllDoctors);
 router.get('/search', optionalAuth, doctorsController.searchDoctors);
+router.get('/advanced-search', optionalAuth, doctorsController.advancedSearchDoctors);
 router.get('/specialty/:specialty', optionalAuth, doctorsController.getDoctorsBySpecialty);
+router.get('/location/:location', optionalAuth, doctorsController.getDoctorsByLocation);
 router.get('/:id', optionalAuth, doctorsController.getDoctorById);
+router.get('/:id/profile', optionalAuth, doctorsController.getDetailedDoctorProfile);
 
 // Protected routes (admin only)
 router.post('/', requireAdmin(), doctorsController.createDoctor);

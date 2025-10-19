@@ -511,14 +511,40 @@
                 <div class="info-box">
                     <strong>Note:</strong> Public endpoint (no authentication required)
                 </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Specialty Filter (Optional)</label>
+                        <input type="text" class="form-input" id="all-doctors-specialty" placeholder="e.g., Cardiology">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Location Filter (Optional)</label>
+                        <input type="text" class="form-input" id="all-doctors-location" placeholder="e.g., Cairo">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Search by Name (Optional)</label>
+                        <input type="text" class="form-input" id="all-doctors-search" placeholder="Doctor name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Sort By</label>
+                        <select class="form-select" id="all-doctors-sort">
+                            <option value="name">Name (A-Z)</option>
+                            <option value="reviews">Reviews (High to Low)</option>
+                        </select>
+                    </div>
+                </div>
+
                 <button class="btn" onclick="getAllDoctors()">Get All Doctors</button>
                 <div class="response-section" id="doctors-all-response"></div>
             </div>
 
-            <!-- Search Doctors -->
+            <!-- Search Doctors (Simple) -->
             <div class="endpoint-section">
                 <div class="endpoint-header">
-                    <span class="endpoint-title">Search Doctors</span>
+                    <span class="endpoint-title">Search Doctors (Simple)</span>
                     <span class="method-badge method-get">GET</span>
                 </div>
                 
@@ -537,10 +563,87 @@
                 <div class="response-section" id="doctors-search-response"></div>
             </div>
 
+            <!-- Advanced Search Doctors -->
+            <div class="endpoint-section">
+                <div class="endpoint-header">
+                    <span class="endpoint-title">🔍 Advanced Doctor Search</span>
+                    <span class="method-badge method-get">GET</span>
+                </div>
+                <div class="info-box">
+                    <strong>Endpoint:</strong> /api/v1/doctors/advanced-search<br>
+                    <strong>Features:</strong> Search by name, specialty, location, minimum reviews, and sort options
+                </div>
+                
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Search Term (Name/Specialty/Qualifications)</label>
+                        <input type="text" class="form-input" id="advanced-search-term" placeholder="Search across multiple fields">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Specialty Filter</label>
+                        <input type="text" class="form-input" id="advanced-specialty" placeholder="e.g., Cardiology, Neurology">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Location Filter</label>
+                        <input type="text" class="form-input" id="advanced-location" placeholder="e.g., Cairo, Alexandria">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Minimum Reviews</label>
+                        <input type="number" class="form-input" id="advanced-min-reviews" placeholder="e.g., 10" min="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Sort By</label>
+                    <select class="form-select" id="advanced-sort">
+                        <option value="reviews">Reviews (Highest First)</option>
+                        <option value="name">Name (A-Z)</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="advancedSearchDoctors()">🔍 Advanced Search</button>
+                <div class="response-section" id="doctors-advanced-search-response"></div>
+            </div>
+
+            <!-- Search by Specialty -->
+            <div class="endpoint-section">
+                <div class="endpoint-header">
+                    <span class="endpoint-title">Get Doctors by Specialty</span>
+                    <span class="method-badge method-get">GET</span>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Specialty</label>
+                    <input type="text" class="form-input" id="specialty-filter" placeholder="e.g., Cardiology">
+                </div>
+
+                <button class="btn" onclick="getDoctorsBySpecialty()">Get Doctors by Specialty</button>
+                <div class="response-section" id="doctors-specialty-response"></div>
+            </div>
+
+            <!-- Search by Location -->
+            <div class="endpoint-section">
+                <div class="endpoint-header">
+                    <span class="endpoint-title">Get Doctors by Location</span>
+                    <span class="method-badge method-get">GET</span>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Location</label>
+                    <input type="text" class="form-input" id="location-filter" placeholder="e.g., Cairo, Alexandria">
+                </div>
+
+                <button class="btn" onclick="getDoctorsByLocation()">Get Doctors by Location</button>
+                <div class="response-section" id="doctors-location-response"></div>
+            </div>
+
             <!-- Get Doctor by ID -->
             <div class="endpoint-section">
                 <div class="endpoint-header">
-                    <span class="endpoint-title">Get Doctor by ID</span>
+                    <span class="endpoint-title">Get Doctor by ID (Basic)</span>
                     <span class="method-badge method-get">GET</span>
                 </div>
                 
@@ -551,6 +654,26 @@
 
                 <button class="btn" onclick="getDoctorById()">Get Doctor</button>
                 <div class="response-section" id="doctor-by-id-response"></div>
+            </div>
+
+            <!-- Get Detailed Doctor Profile -->
+            <div class="endpoint-section">
+                <div class="endpoint-header">
+                    <span class="endpoint-title">👨‍⚕️ Get Detailed Doctor Profile</span>
+                    <span class="method-badge method-get">GET</span>
+                </div>
+                <div class="info-box">
+                    <strong>Endpoint:</strong> /api/v1/doctors/:id/profile<br>
+                    <strong>Features:</strong> Extended doctor information including user profile data
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Doctor ID</label>
+                    <input type="text" class="form-input" id="detailed-profile-id" placeholder="UUID">
+                </div>
+
+                <button class="btn" onclick="getDetailedDoctorProfile()">📋 Get Detailed Profile</button>
+                <div class="response-section" id="detailed-profile-response"></div>
             </div>
         </div>
 
@@ -879,8 +1002,20 @@
 
         // ========== DOCTORS ENDPOINTS ==========
         async function getAllDoctors() {
+            let endpoint = '/api/v1/doctors?';
+            
+            const specialty = document.getElementById('all-doctors-specialty').value;
+            const location = document.getElementById('all-doctors-location').value;
+            const search = document.getElementById('all-doctors-search').value;
+            const sortBy = document.getElementById('all-doctors-sort').value;
+            
+            if (specialty) endpoint += `specialty=${encodeURIComponent(specialty)}&`;
+            if (location) endpoint += `location=${encodeURIComponent(location)}&`;
+            if (search) endpoint += `search=${encodeURIComponent(search)}&`;
+            if (sortBy) endpoint += `sortBy=${sortBy}`;
+
             try {
-                const { data, status } = await apiCall('/api/v1/doctors');
+                const { data, status } = await apiCall(endpoint);
                 displayResponse('doctors-all-response', data, status);
             } catch (error) {
                 displayResponse('doctors-all-response', { error: error.message }, 500);
@@ -903,14 +1038,89 @@
             }
         }
 
+        async function advancedSearchDoctors() {
+            const searchTerm = document.getElementById('advanced-search-term').value;
+            const specialty = document.getElementById('advanced-specialty').value;
+            const location = document.getElementById('advanced-location').value;
+            const minReviews = document.getElementById('advanced-min-reviews').value;
+            const sortBy = document.getElementById('advanced-sort').value;
+            
+            let endpoint = '/api/v1/doctors/advanced-search?';
+            if (searchTerm) endpoint += `searchTerm=${encodeURIComponent(searchTerm)}&`;
+            if (specialty) endpoint += `specialty=${encodeURIComponent(specialty)}&`;
+            if (location) endpoint += `location=${encodeURIComponent(location)}&`;
+            if (minReviews) endpoint += `minReviews=${minReviews}&`;
+            if (sortBy) endpoint += `sortBy=${sortBy}`;
+
+            try {
+                const { data, status } = await apiCall(endpoint);
+                displayResponse('doctors-advanced-search-response', data, status);
+            } catch (error) {
+                displayResponse('doctors-advanced-search-response', { error: error.message }, 500);
+            }
+        }
+
+        async function getDoctorsBySpecialty() {
+            const specialty = document.getElementById('specialty-filter').value;
+            
+            if (!specialty) {
+                alert('Please enter a specialty');
+                return;
+            }
+
+            try {
+                const { data, status } = await apiCall(`/api/v1/doctors/specialty/${encodeURIComponent(specialty)}`);
+                displayResponse('doctors-specialty-response', data, status);
+            } catch (error) {
+                displayResponse('doctors-specialty-response', { error: error.message }, 500);
+            }
+        }
+
+        async function getDoctorsByLocation() {
+            const location = document.getElementById('location-filter').value;
+            
+            if (!location) {
+                alert('Please enter a location');
+                return;
+            }
+
+            try {
+                const { data, status } = await apiCall(`/api/v1/doctors/location/${encodeURIComponent(location)}`);
+                displayResponse('doctors-location-response', data, status);
+            } catch (error) {
+                displayResponse('doctors-location-response', { error: error.message }, 500);
+            }
+        }
+
         async function getDoctorById() {
             const doctorId = document.getElementById('doctor-id').value;
             
+            if (!doctorId) {
+                alert('Please enter a doctor ID');
+                return;
+            }
+
             try {
                 const { data, status } = await apiCall(`/api/v1/doctors/${doctorId}`);
                 displayResponse('doctor-by-id-response', data, status);
             } catch (error) {
                 displayResponse('doctor-by-id-response', { error: error.message }, 500);
+            }
+        }
+
+        async function getDetailedDoctorProfile() {
+            const doctorId = document.getElementById('detailed-profile-id').value;
+            
+            if (!doctorId) {
+                alert('Please enter a doctor ID');
+                return;
+            }
+
+            try {
+                const { data, status } = await apiCall(`/api/v1/doctors/${doctorId}/profile`);
+                displayResponse('detailed-profile-response', data, status);
+            } catch (error) {
+                displayResponse('detailed-profile-response', { error: error.message }, 500);
             }
         }
 

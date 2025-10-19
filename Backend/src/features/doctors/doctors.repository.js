@@ -12,15 +12,27 @@ const findAll = async (filters = {}) => {
     .select('*')
     .is('deleted_at', null);
 
+  // Filter by specialty
   if (filters.specialty) {
-    query = query.eq('specialty', filters.specialty);
+    query = query.ilike('specialty', `%${filters.specialty}%`);
   }
 
+  // Filter by location
+  if (filters.location) {
+    query = query.ilike('location', `%${filters.location}%`);
+  }
+
+  // Search by name (more flexible search)
   if (filters.search) {
     query = query.ilike('name', `%${filters.search}%`);
   }
 
-  query = query.order('name', { ascending: true });
+  // Sort by name by default, or by reviews if specified
+  if (filters.sortBy === 'reviews') {
+    query = query.order('reviews', { ascending: false });
+  } else {
+    query = query.order('name', { ascending: true });
+  }
 
   const { data, error } = await query;
   if (error) {
@@ -62,6 +74,96 @@ const findByUserId = async (userId) => {
 
 const findBySpecialty = async (specialty) => {
   return await findAll({ specialty });
+};
+
+const findByLocation = async (location) => {
+  return await findAll({ location });
+};
+
+const advancedSearch = async (filters) => {
+  let query = supabase
+    .from('doctors')
+    .select('*')
+    .is('deleted_at', null);
+
+  // Search by name, specialty, or qualifications
+  if (filters.searchTerm) {
+    query = query.or(
+      `name.ilike.%${filters.searchTerm}%,` +
+      `specialty.ilike.%${filters.searchTerm}%,` +
+      `qualifications.ilike.%${filters.searchTerm}%`
+    );
+  }
+
+  // Filter by specialty (exact or partial match)
+  if (filters.specialty) {
+    query = query.ilike('specialty', `%${filters.specialty}%`);
+  }
+
+  // Filter by location
+  if (filters.location) {
+    query = query.ilike('location', `%${filters.location}%`);
+  }
+
+  // Filter by minimum reviews
+  if (filters.minReviews !== undefined && filters.minReviews !== null) {
+    query = query.gte('reviews', filters.minReviews);
+  }
+
+  // Sorting
+  if (filters.sortBy === 'reviews') {
+    query = query.order('reviews', { ascending: false });
+  } else if (filters.sortBy === 'name') {
+    query = query.order('name', { ascending: true });
+  } else {
+    // Default: sort by reviews desc, then name asc
+    query = query.order('reviews', { ascending: false }).order('name', { ascending: true });
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    logger.error('Error in advanced doctor search', { error: error.message });
+    throw error;
+  }
+  return data;
+};
+
+const getDetailedProfile = async (doctorId) => {
+  // Get doctor basic information
+  const { data: doctor, error } = await supabase
+    .from('doctors')
+    .select('*')
+    .eq('doctor_id', doctorId)
+    .is('deleted_at', null)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    logger.error('Error finding detailed doctor profile', { doctorId, error: error.message });
+    throw error;
+  }
+
+  if (!doctor) {
+    return null;
+  }
+
+  // Get user email from auth (if user_id exists)
+  let userEmail = null;
+  if (doctor.user_id) {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.admin.getUserById(doctor.user_id);
+      if (!authError && user) {
+        userEmail = user.email;
+      }
+    } catch (authErr) {
+      logger.warn('Could not fetch user email', { userId: doctor.user_id, error: authErr.message });
+    }
+  }
+
+  // Return doctor data with email
+  return {
+    ...doctor,
+    email: userEmail
+  };
 };
 
 const create = async (doctorData) => {
@@ -123,6 +225,9 @@ module.exports = {
   findById,
   findByUserId,
   findBySpecialty,
+  findByLocation,
+  advancedSearch,
+  getDetailedProfile,
   create,
   update,
   softDelete
