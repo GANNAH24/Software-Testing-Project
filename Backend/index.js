@@ -1,52 +1,65 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { createClient } = require('@supabase/supabase-js');
+/**
+ * Server Entry Point
+ * Starts the layered monolith application
+ */
 
-// --- Supabase setup ---
-const supabaseUrl = 'https://ttclfbqepumctddoxyyj.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const app = require('./src/app');
+const config = require('./src/config/environment');
+const { testConnection } = require('./src/config/database');
+const logger = require('./src/shared/utils/logger.util');
 
-
-// --- Express setup ---
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-// --- Root route ---
-const patientRoutes = require('./src/routes/patientRoutes');
-app.use('/api/patient', patientRoutes);
-
-app.get('/', (req, res) => {
-  res.json({ ok: true, message: 'Backend is running' });
-});
-
-// --- Supabase health check ---
-app.get('/health/supabase', async (req, res) => {
+// Test database connection before starting server
+const startServer = async () => {
   try {
-    const { data, error } = await supabase
-      .from('pg_catalog.pg_tables')
-      .select('schemaname')
-      .limit(1);
-
-    if (error) {
-      return res.status(200).json({
-        ok: true,
-        supabaseReachable: true,
-        note: 'Supabase client initialized. Create a real table and update this check.',
-        error: error.message,
-      });
+    // Test database connection
+    logger.info('Testing database connection...');
+    const dbConnected = await testConnection();
+    
+    if (!dbConnected) {
+      logger.error('Failed to connect to database. Exiting...');
+      process.exit(1);
     }
 
-    res.json({ ok: true, supabaseReachable: true, sample: data });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
+    // Start Express server
+    const server = app.listen(config.PORT, () => {
+      logger.info('='.repeat(60));
+      logger.info(`🏥 Se7ety Healthcare API - Layered Monolith`);
+      logger.info('='.repeat(60));
+      logger.info(`✅ Server running on http://localhost:${config.PORT}`);
+      logger.info(`📋 Environment: ${config.NODE_ENV}`);
+      logger.info(`🔗 API Base: ${config.API_PREFIX}/${config.API_VERSION}`);
+      logger.info('='.repeat(60));
+      logger.info(`📍 Health Check: http://localhost:${config.PORT}/health`);
+      logger.info(`📍 API Root: http://localhost:${config.PORT}${config.API_PREFIX}/${config.API_VERSION}`);
+      logger.info('='.repeat(60));
+      logger.info(`🔐 Auth: ${config.API_PREFIX}/${config.API_VERSION}/auth`);
+      logger.info(`📅 Appointments: ${config.API_PREFIX}/${config.API_VERSION}/appointments`);
+      logger.info(`👨‍⚕️ Doctors: ${config.API_PREFIX}/${config.API_VERSION}/doctors`);
+      logger.info('='.repeat(60));
+    });
 
-// --- Start server ---
-const port = process.env.PORT || 3001;
-app.listen(port, () => {
-  console.log(`Server listening on http://localhost:${port}`);
-});
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      logger.info('SIGTERM received, shutting down gracefully...');
+      server.close(() => {
+        logger.info('Server closed');
+        process.exit(0);
+      });
+    });
+
+    process.on('SIGINT', () => {
+      logger.info('SIGINT received, shutting down gracefully...');
+      server.close(() => {
+        logger.info('Server closed');
+        process.exit(0);
+      });
+    });
+
+  } catch (error) {
+    logger.error('Failed to start server', { error: error.message });
+    process.exit(1);
+  }
+};
+
+// Start the server
+startServer();
