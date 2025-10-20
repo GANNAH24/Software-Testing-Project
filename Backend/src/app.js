@@ -13,6 +13,7 @@ const { notFoundHandler, errorHandler } = require('./shared/middleware/error.mid
 const authRoutes = require('./features/auth/auth.routes');
 const appointmentsRoutes = require('./features/appointments/appointments.routes');
 const doctorsRoutes = require('./features/doctors/doctors.routes');
+const patientsRoutes = require('./features/patients/patients.routes');
 
 // Create Express app
 const app = express();
@@ -64,6 +65,7 @@ app.get(`${config.API_PREFIX}/${config.API_VERSION}`, (req, res) => {
 app.use(`${config.API_PREFIX}/${config.API_VERSION}/auth`, authRoutes);
 app.use(`${config.API_PREFIX}/${config.API_VERSION}/appointments`, appointmentsRoutes);
 app.use(`${config.API_PREFIX}/${config.API_VERSION}/doctors`, doctorsRoutes);
+app.use(`${config.API_PREFIX}/${config.API_VERSION}/patients`, patientsRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
