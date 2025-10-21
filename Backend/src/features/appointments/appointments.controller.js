@@ -63,6 +63,7 @@ const createAppointment = asyncHandler(async (req, res) => {
     patientId: req.body.patient_id || req.user.id,
     doctorId: req.body.doctor_id,
     appointmentDate: req.body.appointment_date,
+    timeSlot: req.body.time_slot, // ✅ add this
     reason: req.body.reason,
     status: req.body.status,
     notes: req.body.notes

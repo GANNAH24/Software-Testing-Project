@@ -3,46 +3,53 @@
  * Data access layer for appointments
  */
 
-const { supabase } = require('../../config/database');
-const logger = require('../../shared/utils/logger.util');
+const { supabase } = require("../../config/database");
+const logger = require("../../shared/utils/logger.util");
 
 /**
  * Get all appointments (with filters)
  */
 const findAll = async (filters = {}) => {
   let query = supabase
-    .from('appointments')
-    .select(`
+    .from("appointments")
+    .select(
+      `
       *
-    `)
-    .is('deleted_at', null); // Exclude soft-deleted
+    `
+    )
+    .is("deleted_at", null); // Exclude soft-deleted
 
   if (filters.patientId) {
-    query = query.eq('patient_id', filters.patientId);
+    query = query.eq("patient_id", filters.patientId);
   }
 
   if (filters.doctorId) {
-    query = query.eq('doctor_id', filters.doctorId);
+    query = query.eq("doctor_id", filters.doctorId);
   }
 
   if (filters.status) {
-    query = query.eq('status', filters.status);
+    query = query.eq("status", filters.status);
   }
 
   if (filters.startDate) {
-    query = query.gte('date', filters.startDate);
+    query = query.gte("date", filters.startDate);
   }
 
   if (filters.endDate) {
-    query = query.lte('date', filters.endDate);
+    query = query.lte("date", filters.endDate);
   }
 
-  query = query.order('date', { ascending: true }).order('time_slot', { ascending: true });
+  query = query
+    .order("date", { ascending: true })
+    .order("time_slot", { ascending: true });
 
   const { data, error } = await query;
 
   if (error) {
-    logger.error('Error finding appointments', { filters, error: error.message });
+    logger.error("Error finding appointments", {
+      filters,
+      error: error.message,
+    });
     throw error;
   }
 
@@ -54,14 +61,17 @@ const findAll = async (filters = {}) => {
  */
 const findById = async (appointmentId) => {
   const { data, error } = await supabase
-    .from('appointments')
-    .select('*')
-    .eq('appointment_id', appointmentId)
-    .is('deleted_at', null)
+    .from("appointments")
+    .select("*")
+    .eq("appointment_id", appointmentId)
+    .is("deleted_at", null)
     .single();
 
-  if (error && error.code !== 'PGRST116') {
-    logger.error('Error finding appointment by ID', { appointmentId, error: error.message });
+  if (error && error.code !== "PGRST116") {
+    logger.error("Error finding appointment by ID", {
+      appointmentId,
+      error: error.message,
+    });
     throw error;
   }
 
@@ -89,12 +99,12 @@ const findUpcoming = async (userId, role) => {
   const now = new Date().toISOString();
   const filters = {
     startDate: now,
-    status: 'scheduled'
+    status: "scheduled",
   };
 
-  if (role === 'patient') {
+  if (role === "patient") {
     filters.patientId = userId;
-  } else if (role === 'doctor') {
+  } else if (role === "doctor") {
     filters.doctorId = userId;
   }
 
@@ -107,12 +117,12 @@ const findUpcoming = async (userId, role) => {
 const findPast = async (userId, role) => {
   const now = new Date().toISOString();
   const filters = {
-    endDate: now
+    endDate: now,
   };
 
-  if (role === 'patient') {
+  if (role === "patient") {
     filters.patientId = userId;
-  } else if (role === 'doctor') {
+  } else if (role === "doctor") {
     filters.doctorId = userId;
   }
 
@@ -124,21 +134,27 @@ const findPast = async (userId, role) => {
  */
 const create = async (appointmentData) => {
   const { data, error } = await supabase
-    .from('appointments')
-    .insert([{
-      patient_id: appointmentData.patientId,
-      doctor_id: appointmentData.doctorId,
-      date: appointmentData.appointmentDate,
-      reason: appointmentData.reason,
-      status: appointmentData.status || 'scheduled',
-      notes: appointmentData.notes || null,
-      created_at: new Date().toISOString()
-    }])
+    .from("appointments")
+    .insert([
+      {
+        patient_id: appointmentData.patientId,
+        doctor_id: appointmentData.doctorId,
+        date: appointmentData.appointmentDate,
+        time_slot: appointmentData.timeSlot, 
+        reason: appointmentData.reason,
+        status: appointmentData.status || "scheduled",
+        notes: appointmentData.notes || null,
+        created_at: new Date().toISOString(),
+      },
+    ])
     .select()
     .single();
 
   if (error) {
-    logger.error('Error creating appointment', { appointmentData, error: error.message });
+    logger.error("Error creating appointment", {
+      appointmentData,
+      error: error.message,
+    });
     throw error;
   }
 
@@ -150,18 +166,22 @@ const create = async (appointmentData) => {
  */
 const update = async (appointmentId, updates) => {
   const { data, error } = await supabase
-    .from('appointments')
+    .from("appointments")
     .update({
       ...updates,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
-    .eq('appointment_id', appointmentId)
-    .is('deleted_at', null)
+    .eq("appointment_id", appointmentId)
+    .is("deleted_at", null)
     .select()
     .single();
 
   if (error) {
-    logger.error('Error updating appointment', { appointmentId, updates, error: error.message });
+    logger.error("Error updating appointment", {
+      appointmentId,
+      updates,
+      error: error.message,
+    });
     throw error;
   }
 
@@ -173,18 +193,21 @@ const update = async (appointmentId, updates) => {
  */
 const softDelete = async (appointmentId) => {
   const { data, error } = await supabase
-    .from('appointments')
+    .from("appointments")
     .update({
       deleted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
-    .eq('appointment_id', appointmentId)
-    .is('deleted_at', null)
+    .eq("appointment_id", appointmentId)
+    .is("deleted_at", null)
     .select()
     .single();
 
   if (error) {
-    logger.error('Error soft deleting appointment', { appointmentId, error: error.message });
+    logger.error("Error soft deleting appointment", {
+      appointmentId,
+      error: error.message,
+    });
     throw error;
   }
 
@@ -196,36 +219,48 @@ const softDelete = async (appointmentId) => {
  */
 const cancel = async (appointmentId, cancelReason = null) => {
   return await update(appointmentId, {
-    status: 'cancelled',
-    notes: cancelReason ? `Cancelled: ${cancelReason}` : 'Cancelled'
+    status: "cancelled",
+    notes: cancelReason ? `Cancelled: ${cancelReason}` : "Cancelled",
   });
 };
 
 /**
  * Check for conflicting appointments
  */
-const findConflicts = async (doctorId, appointmentDate, excludeAppointmentId = null) => {
+const findConflicts = async (
+  doctorId,
+  appointmentDate,
+  excludeAppointmentId = null
+) => {
   const appointmentTime = new Date(appointmentDate);
-  const oneHourBefore = new Date(appointmentTime.getTime() - 60 * 60 * 1000).toISOString();
-  const oneHourAfter = new Date(appointmentTime.getTime() + 60 * 60 * 1000).toISOString();
+  const oneHourBefore = new Date(
+    appointmentTime.getTime() - 60 * 60 * 1000
+  ).toISOString();
+  const oneHourAfter = new Date(
+    appointmentTime.getTime() + 60 * 60 * 1000
+  ).toISOString();
 
   let query = supabase
-    .from('appointments')
-    .select('id, date, status')
-    .eq('doctor_id', doctorId)
-    .eq('status', 'scheduled')
-    .is('deleted_at', null)
-    .gte('date', oneHourBefore)
-    .lte('date', oneHourAfter);
+    .from("appointments")
+    .select("appointment_id, date, status")
+    .eq("doctor_id", doctorId)
+    .eq("status", "scheduled")
+    .is("deleted_at", null)
+    .gte("date", oneHourBefore)
+    .lte("date", oneHourAfter);
 
   if (excludeAppointmentId) {
-    query = query.neq('id', excludeAppointmentId);
+    query = query.neq("appointment_id", excludeAppointmentId);
   }
 
   const { data, error } = await query;
 
   if (error) {
-    logger.error('Error finding conflicts', { doctorId, appointmentDate, error: error.message });
+    logger.error("Error finding conflicts", {
+      doctorId,
+      appointmentDate,
+      error: error.message,
+    });
     throw error;
   }
 
@@ -243,5 +278,5 @@ module.exports = {
   update,
   softDelete,
   cancel,
-  findConflicts
+  findConflicts,
 };
