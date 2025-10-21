@@ -1,123 +1,70 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const supabase = require('./src/supabase');
-const appointmentRoutes = require('./routes/appointmentRoutes');
+/**
+ * Server Entry Point
+ * Starts the layered monolith application
+ */
 
+const app = require("./src/app");
+const config = require("./src/config/environment");
+const { testConnection } = require("./src/config/database");
+const logger = require("./src/shared/utils/logger.util");
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use('/appointments', appointmentRoutes);
-
-
-// Root route
-app.get('/', (req, res) => {
-  res.json({ ok: true, message: 'Backend is running' });
-});
-
-// Health check for Supabase
-app.get('/health/supabase', async (req, res) => {
+// Test database connection before starting server
+const startServer = async () => {
   try {
-    const { data, error } = await supabase.from('appointments').select('id').limit(1);
-    if (error) throw error;
-    return res.json({ ok: true, supabaseReachable: true });
-  } catch (e) {
-    return res.status(500).json({ ok: false, error: e.message });
+    // Test database connection
+    logger.info("Testing database connection...");
+    const dbConnected = await testConnection();
+
+    if (!dbConnected) {
+      logger.error("Failed to connect to database. Exiting...");
+      process.exit(1);
+    }
+
+    // Start Express server
+    const server = app.listen(config.PORT, () => {
+      logger.info("=".repeat(60));
+      logger.info(`🏥 Se7ety Healthcare API - Layered Monolith`);
+      logger.info("=".repeat(60));
+      logger.info(`✅ Server running on http://localhost:${config.PORT}`);
+      logger.info(`📋 Environment: ${config.NODE_ENV}`);
+      logger.info(`🔗 API Base: ${config.API_PREFIX}/${config.API_VERSION}`);
+      logger.info("=".repeat(60));
+      logger.info(`📍 Health Check: http://localhost:${config.PORT}/health`);
+      logger.info(
+        `📍 API Root: http://localhost:${config.PORT}${config.API_PREFIX}/${config.API_VERSION}`
+      );
+      logger.info("=".repeat(60));
+      logger.info(`🔐 Auth: ${config.API_PREFIX}/${config.API_VERSION}/auth`);
+      logger.info(
+        `📅 Appointments: ${config.API_PREFIX}/${config.API_VERSION}/appointments`
+      );
+      logger.info(
+        `👨‍⚕️ Doctors: ${config.API_PREFIX}/${config.API_VERSION}/doctors`
+      );
+      logger.info("=".repeat(60));
+    });
+
+    // Graceful shutdown
+    process.on("SIGTERM", () => {
+      logger.info("SIGTERM received, shutting down gracefully...");
+      server.close(() => {
+        logger.info("Server closed");
+        process.exit(0);
+      });
+    });
+
+    process.on("SIGINT", () => {
+      logger.info("SIGINT received, shutting down gracefully...");
+      server.close(() => {
+        logger.info("Server closed");
+        process.exit(0);
+      });
+    });
+  } catch (error) {
+    logger.error("Failed to start server", { error: error.message });
+    process.exit(1);
   }
-});
+};
 
-// 🩺 Create a new appointment
-app.post('/appointments', async (req, res) => {
-  const { patient_id, doctor_id, date, time, notes, status } = req.body;
-
-  if (!patient_id || !doctor_id || !date || !time) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('appointments')
-      .insert([
-        {
-          patient_id,
-          doctor_id,
-          date,
-          time,
-          notes: notes || '',
-          status: status || 'pending', // default value
-        },
-      ])
-      .select();
-
-    if (error) throw error;
-    res.status(201).json({ message: 'Appointment created', appointment: data[0] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// 📋 Get all appointments (include doctor & patient info)
-app.get('/appointments', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('appointments')
-      .select(`
-        id,
-        date,
-        time,
-        notes,
-        status,
-        created_at,
-        doctor:doctor_id ( id, name, specialty ),
-        patient:patient_id ( id, name, age )
-      `)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    res.json({ ok: true, appointments: data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// 🧑‍⚕️ Get appointments by doctor
-app.get('/appointments/doctor/:id', async (req, res) => {
-  const doctorId = req.params.id;
-
-  try {
-    const { data, error } = await supabase
-      .from('appointments')
-      .select('*')
-      .eq('doctor_id', doctorId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    res.json({ ok: true, appointments: data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// 👩‍🦰 Get appointments by patient
-app.get('/appointments/patient/:id', async (req, res) => {
-  const patientId = req.params.id;
-
-  try {
-    const { data, error } = await supabase
-      .from('appointments')
-      .select('*')
-      .eq('patient_id', patientId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    res.json({ ok: true, appointments: data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-const port = process.env.PORT || 3001;
-app.listen(port, () => {
-  console.log(`Server listening on http://localhost:${port}`);
-});
+// Start the server
+startServer();
