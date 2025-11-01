@@ -13,6 +13,7 @@ const { notFoundHandler, errorHandler } = require('./shared/middleware/error.mid
 const authRoutes = require('./features/auth/auth.routes');
 const appointmentsRoutes = require('./features/appointments/appointments.routes');
 const doctorsRoutes = require('./features/doctors/doctors.routes');
+const schedulesRoutes = require('./features/schedules/schedules.routes');
 
 // Create Express app
 const app = express();
@@ -51,7 +52,8 @@ app.get(`${config.API_PREFIX}/${config.API_VERSION}`, (req, res) => {
     endpoints: {
       auth: `${config.API_PREFIX}/${config.API_VERSION}/auth`,
       appointments: `${config.API_PREFIX}/${config.API_VERSION}/appointments`,
-      doctors: `${config.API_PREFIX}/${config.API_VERSION}/doctors`
+      doctors: `${config.API_PREFIX}/${config.API_VERSION}/doctors`,
+      schedules: `${config.API_PREFIX}/${config.API_VERSION}/schedules`
     },
     documentation: {
       health: '/health',
@@ -64,6 +66,7 @@ app.get(`${config.API_PREFIX}/${config.API_VERSION}`, (req, res) => {
 app.use(`${config.API_PREFIX}/${config.API_VERSION}/auth`, authRoutes);
 app.use(`${config.API_PREFIX}/${config.API_VERSION}/appointments`, appointmentsRoutes);
 app.use(`${config.API_PREFIX}/${config.API_VERSION}/doctors`, doctorsRoutes);
+app.use(`${config.API_PREFIX}/${config.API_VERSION}/schedules`, schedulesRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
