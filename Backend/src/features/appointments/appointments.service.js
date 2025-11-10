@@ -77,19 +77,31 @@ const getPastAppointments = async (userId, role) => {
 /**
  * Create new appointment
  */
+/**
+ * Create new appointment
+ */
 const createAppointment = async (appointmentData) => {
   // Validate appointment date is in the future
-  const appointmentDate = new Date(appointmentData.appointmentDate);
-  const now = new Date();
+  let appointmentDate = new Date(appointmentData.date);
 
+  // Handle cases like "2025-11-20"
+  if (isNaN(appointmentDate.getTime())) {
+    appointmentDate = new Date(`${appointmentData.date}T00:00:00Z`);
+  }
+
+  if (isNaN(appointmentDate.getTime())) {
+    throw new Error('Invalid date format');
+  }
+
+  const now = new Date();
   if (appointmentDate <= now) {
     throw new Error('Appointment date must be in the future');
   }
 
-  // Check for conflicting appointments
+  // ✅ Use 'date' instead of 'appointmentDate'
   const conflicts = await appointmentsRepository.findConflicts(
     appointmentData.doctorId,
-    appointmentData.appointmentDate
+    appointmentData.date
   );
 
   if (conflicts && conflicts.length > 0) {
@@ -107,6 +119,37 @@ const createAppointment = async (appointmentData) => {
 
   return appointment;
 };
+
+// const createAppointment = async (appointmentData) => {
+//   // Validate appointment date is in the future
+// const appointmentDate = new Date(appointmentData.date);
+//   const now = new Date();
+
+//   if (appointmentDate <= now) {
+//     throw new Error('Appointment date must be in the future');
+//   }
+
+//   // Check for conflicting appointments
+//   const conflicts = await appointmentsRepository.findConflicts(
+//     appointmentData.doctorId,
+//     appointmentData.appointmentDate
+//   );
+
+//   if (conflicts && conflicts.length > 0) {
+//     throw new Error('Doctor is not available at this time. Please choose another time slot.');
+//   }
+
+//   // Create appointment
+//   const appointment = await appointmentsRepository.create(appointmentData);
+  
+//   logger.info('Appointment created', { 
+//     appointmentId: appointment.id,
+//     patientId: appointmentData.patientId,
+//     doctorId: appointmentData.doctorId
+//   });
+
+//   return appointment;
+// };
 
 /**
  * Update appointment
