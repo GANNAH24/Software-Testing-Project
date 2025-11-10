@@ -139,8 +139,8 @@ const create = async (appointmentData) => {
       {
         patient_id: appointmentData.patientId,
         doctor_id: appointmentData.doctorId,
-        date: appointmentData.appointmentDate,
-        time_slot: appointmentData.timeSlot, 
+        date: appointmentData.date,              // ✅ fixed key
+        time_slot: appointmentData.time_slot,     // ✅ fixed key
         reason: appointmentData.reason,
         status: appointmentData.status || "scheduled",
         notes: appointmentData.notes || null,
@@ -160,6 +160,7 @@ const create = async (appointmentData) => {
 
   return data;
 };
+
 
 /**
  * Update appointment
@@ -227,18 +228,15 @@ const cancel = async (appointmentId, cancelReason = null) => {
 /**
  * Check for conflicting appointments
  */
-const findConflicts = async (
-  doctorId,
-  appointmentDate,
-  excludeAppointmentId = null
-) => {
-  const appointmentTime = new Date(appointmentDate);
-  const oneHourBefore = new Date(
-    appointmentTime.getTime() - 60 * 60 * 1000
-  ).toISOString();
-  const oneHourAfter = new Date(
-    appointmentTime.getTime() + 60 * 60 * 1000
-  ).toISOString();
+const findConflicts = async (doctorId, date, excludeAppointmentId = null) => {
+  // Convert to Date if time is included
+  const appointmentTime = new Date(date);
+  if (isNaN(appointmentTime.getTime())) {
+    throw new Error("Invalid date format in findConflicts()");
+  }
+
+  const oneHourBefore = new Date(appointmentTime.getTime() - 60 * 60 * 1000).toISOString();
+  const oneHourAfter = new Date(appointmentTime.getTime() + 60 * 60 * 1000).toISOString();
 
   let query = supabase
     .from("appointments")
@@ -258,7 +256,7 @@ const findConflicts = async (
   if (error) {
     logger.error("Error finding conflicts", {
       doctorId,
-      appointmentDate,
+      date,
       error: error.message,
     });
     throw error;
@@ -266,6 +264,7 @@ const findConflicts = async (
 
   return data;
 };
+
 
 module.exports = {
   findAll,
