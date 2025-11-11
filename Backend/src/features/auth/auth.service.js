@@ -53,7 +53,8 @@ const register = async (email, password, role, additionalData = {}) => {
         data: {
           role: role,
           full_name: additionalData.fullName
-        }
+        },
+        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email`
       }
     });
 
@@ -208,7 +209,9 @@ const changePassword = async (userId, oldPassword, newPassword) => {
  */
 const forgotPassword = async (email) => {
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password`
+    });
     if (error) throw error;
 
     logger.info('Password reset requested', { email });

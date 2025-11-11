@@ -1,0 +1,175 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Se7ety Healthcare API",
+  "dateExported": "2025-11-10",
+  "version": "1.1",
+  "folders": [],
+  "requests": [
+    {
+      "name": "Health Check",
+      "method": "GET",
+      "url": "http://localhost:3000/health",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "name": "API Root",
+      "method": "GET",
+      "url": "http://localhost:3000/api/v1",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "name": "Get Password Requirements",
+      "method": "GET",
+      "url": "http://localhost:3000/api/v1/auth/password-requirements",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "name": "Register Patient",
+      "method": "POST",
+      "url": "http://localhost:3000/api/v1/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"patient@test.com\",\n  \"password\": \"Patient@123!\",\n  \"role\": \"patient\",\n  \"fullName\": \"John Patient\",\n  \"dateOfBirth\": \"1990-01-01\",\n  \"gender\": \"male\",\n  \"phone\": \"+1234567890\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "name": "Register Doctor",
+      "method": "POST",
+      "url": "http://localhost:3000/api/v1/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"doctor@test.com\",\n  \"password\": \"Doctor@123!\",\n  \"role\": \"doctor\",\n  \"fullName\": \"Dr. Sarah Smith\",\n  \"specialty\": \"Cardiology\",\n  \"location\": \"New York\",\n  \"qualifications\": \"MD, FACC\",\n  \"phoneNumber\": \"+1234567891\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "name": "Login",
+      "method": "POST",
+      "url": "http://localhost:3000/api/v1/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"patient@test.com\",\n  \"password\": \"Patient@123!\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "name": "Get Current User (Protected)",
+      "method": "GET",
+      "url": "http://localhost:3000/api/v1/auth/me",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer YOUR_TOKEN_HERE"
+        }
+      ],
+      "body": {},
+      "tests": []
+    },
+    {
+      "name": "Change Password (Protected)",
+      "method": "POST",
+      "url": "http://localhost:3000/api/v1/auth/change-password",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer YOUR_TOKEN_HERE"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"oldPassword\": \"Patient@123!\",\n  \"newPassword\": \"NewPatient@456!\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "name": "Forgot Password",
+      "method": "POST",
+      "url": "http://localhost:3000/api/v1/auth/forgot-password",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"patient@test.com\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "name": "Logout (Protected)",
+      "method": "POST",
+      "url": "http://localhost:3000/api/v1/auth/logout",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer YOUR_TOKEN_HERE"
+        }
+      ],
+      "body": {},
+      "tests": []
+    },
+    {
+      "name": "Get All Doctors",
+      "method": "GET",
+      "url": "http://localhost:3000/api/v1/doctors",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "name": "Get Doctor by ID",
+      "method": "GET",
+      "url": "http://localhost:3000/api/v1/doctors/1",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "name": "Search Doctors by Name",
+      "method": "GET",
+      "url": "http://localhost:3000/api/v1/doctors?name=Sarah",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "name": "Search Doctors by Specialty",
+      "method": "GET",
+      "url": "http://localhost:3000/api/v1/doctors?specialty=Cardiology",
+      "headers": [],
+      "body": {},
+      "tests": []
+    }
+  ]
+}
