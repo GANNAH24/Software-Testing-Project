@@ -228,41 +228,102 @@ const cancel = async (appointmentId, cancelReason = null) => {
 /**
  * Check for conflicting appointments
  */
-const findConflicts = async (doctorId, date, excludeAppointmentId = null) => {
-  // Convert to Date if time is included
-  const appointmentTime = new Date(date);
-  if (isNaN(appointmentTime.getTime())) {
-    throw new Error("Invalid date format in findConflicts()");
+const findConflicts = async (doctorId, dateOrDatetime, timeSlot = null, excludeAppointmentId = null) => {
+  // If a timeSlot is provided we check same-day slot overlaps (more accurate when appointments store time_slot)
+  try {
+    if (timeSlot) {
+      // Normalize date portion
+      const dt = new Date(dateOrDatetime);
+      if (isNaN(dt.getTime())) {
+        throw new Error('Invalid date/datetime format in findConflicts()');
+      }
+      const dateOnly = dt.toISOString().split('T')[0];
+
+      let query = supabase
+        .from('appointments')
+        .select('appointment_id, date, time_slot, status')
+        .eq('doctor_id', doctorId)
+        .eq('date', dateOnly)
+        .eq('status', 'scheduled')
+        .is('deleted_at', null);
+
+      if (excludeAppointmentId) query = query.neq('appointment_id', excludeAppointmentId);
+
+      const { data, error } = await query;
+      if (error) {
+        logger.error('Error finding conflicts (by time_slot)', { doctorId, dateOnly, error: error.message });
+        throw error;
+      }
+
+      // Helper to test overlap between two 'HH:mm-HH:mm' strings
+      const slotOverlaps = (slotA, slotB) => {
+        const a = slotA.split('-');
+        const b = slotB.split('-');
+        if (a.length !== 2 || b.length !== 2) return false;
+        const aStart = a[0].trim();
+        const aEnd = a[1].trim();
+        const bStart = b[0].trim();
+        const bEnd = b[1].trim();
+
+        // Compare using minutes since midnight
+        const toMinutes = s => {
+          const [hh, mm] = s.split(':').map(x => parseInt(x, 10));
+          return hh * 60 + mm;
+        };
+
+        const aS = toMinutes(aStart);
+        const aE = toMinutes(aEnd);
+        const bS = toMinutes(bStart);
+        const bE = toMinutes(bEnd);
+
+        return (
+          (bS >= aS && bS < aE) ||
+          (bE > aS && bE <= aE) ||
+          (bS <= aS && bE >= aE)
+        );
+      };
+
+      const conflicts = (data || []).filter(appt => {
+        if (!appt.time_slot) return false;
+        return slotOverlaps(appt.time_slot, timeSlot);
+      });
+
+      return conflicts;
+    }
+
+    // Fallback: original ±1 hour window when no time_slot provided
+    const appointmentTime = new Date(dateOrDatetime);
+    if (isNaN(appointmentTime.getTime())) {
+      throw new Error('Invalid date format in findConflicts()');
+    }
+
+    const oneHourBefore = new Date(appointmentTime.getTime() - 60 * 60 * 1000).toISOString();
+    const oneHourAfter = new Date(appointmentTime.getTime() + 60 * 60 * 1000).toISOString();
+
+    let query = supabase
+      .from('appointments')
+      .select('appointment_id, date, status')
+      .eq('doctor_id', doctorId)
+      .eq('status', 'scheduled')
+      .is('deleted_at', null)
+      .gte('date', oneHourBefore)
+      .lte('date', oneHourAfter);
+
+    if (excludeAppointmentId) {
+      query = query.neq('appointment_id', excludeAppointmentId);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      logger.error('Error finding conflicts', { doctorId, dateOrDatetime, error: error.message });
+      throw error;
+    }
+
+    return data;
+  } catch (err) {
+    logger.error('findConflicts failed', { doctorId, dateOrDatetime, timeSlot, error: err.message });
+    throw err;
   }
-
-  const oneHourBefore = new Date(appointmentTime.getTime() - 60 * 60 * 1000).toISOString();
-  const oneHourAfter = new Date(appointmentTime.getTime() + 60 * 60 * 1000).toISOString();
-
-  let query = supabase
-    .from("appointments")
-    .select("appointment_id, date, status")
-    .eq("doctor_id", doctorId)
-    .eq("status", "scheduled")
-    .is("deleted_at", null)
-    .gte("date", oneHourBefore)
-    .lte("date", oneHourAfter);
-
-  if (excludeAppointmentId) {
-    query = query.neq("appointment_id", excludeAppointmentId);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    logger.error("Error finding conflicts", {
-      doctorId,
-      date,
-      error: error.message,
-    });
-    throw error;
-  }
-
-  return data;
 };
 
 
