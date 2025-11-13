@@ -9,6 +9,7 @@ const config = {
   // Server
   PORT: process.env.PORT || 3000,
   NODE_ENV: process.env.NODE_ENV || 'development',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
   
   // Database
   SUPABASE_URL: process.env.SUPABASE_URL,
@@ -21,6 +22,11 @@ const config = {
   
   // Security
   BCRYPT_ROUNDS: parseInt(process.env.BCRYPT_ROUNDS) || 10,
+  COOKIE_SECRET: process.env.COOKIE_SECRET || 'dev-cookie-secret',
+  COOKIE_NAME: process.env.COOKIE_NAME || 'access_token',
+  COOKIE_SECURE: process.env.COOKIE_SECURE === 'true',
+  COOKIE_SAMESITE: process.env.COOKIE_SAMESITE || 'lax',
+  COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || undefined,
   
   // API
   API_VERSION: 'v1',

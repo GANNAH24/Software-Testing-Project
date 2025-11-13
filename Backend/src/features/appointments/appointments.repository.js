@@ -265,6 +265,33 @@ const findConflicts = async (doctorId, date, excludeAppointmentId = null) => {
   return data;
 };
 
+/**
+ * Find appointments needing reminders within a window
+ */
+const findDueReminders = async (startISO, endISO, type) => {
+  const reminderColumn = type === '24h' ? 'reminder_24h_sent_at' : 'reminder_2h_sent_at';
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('*')
+    .eq('status', 'scheduled')
+    .is('deleted_at', null)
+    .is(reminderColumn, null)
+    .gte('date', startISO)
+    .lt('date', endISO);
+
+  if (error) {
+    logger.error('Error fetching due reminders', { startISO, endISO, type, error: error.message });
+    throw error;
+  }
+  return data;
+};
+
+const markReminderSent = async (appointmentId, type) => {
+  const updates = {};
+  if (type === '24h') updates.reminder_24h_sent_at = new Date().toISOString();
+  else updates.reminder_2h_sent_at = new Date().toISOString();
+  return await update(appointmentId, updates);
+};
 
 module.exports = {
   findAll,
@@ -278,4 +305,6 @@ module.exports = {
   softDelete,
   cancel,
   findConflicts,
+  findDueReminders,
+  markReminderSent,
 };

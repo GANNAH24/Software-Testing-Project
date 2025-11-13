@@ -4,6 +4,7 @@
  */
 
 const authService = require('./auth.service');
+const config = require('../../config/environment');
 const { getPasswordRequirements } = require('../../shared/utils/password.util');
 const { successResponse, errorResponse } = require('../../shared/utils/response.util');
 const { asyncHandler } = require('../../shared/middleware/error.middleware');
@@ -48,6 +49,17 @@ const login = asyncHandler(async (req, res) => {
 
   const result = await authService.login(email, password);
 
+  // Set JWT cookie for browser clients (httpOnly)
+  const cookieOptions = {
+    httpOnly: true,
+    secure: config.COOKIE_SECURE,
+    sameSite: config.COOKIE_SAMESITE,
+    domain: config.COOKIE_DOMAIN,
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  };
+  res.cookie(config.COOKIE_NAME, result.session.access_token, cookieOptions);
+
   res.json(successResponse({
     user: {
       id: result.user.id,
@@ -65,8 +77,22 @@ const login = asyncHandler(async (req, res) => {
  * POST /api/v1/auth/logout
  */
 const logout = asyncHandler(async (req, res) => {
-  const token = req.headers.authorization?.substring(7);
+  // Try to get token from header or cookie
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.startsWith('Bearer ')
+    ? authHeader.substring(7)
+    : req.cookies?.[config.COOKIE_NAME];
+
   await authService.logout(token);
+
+  // Clear auth cookie
+  res.clearCookie(config.COOKIE_NAME, {
+    httpOnly: true,
+    secure: config.COOKIE_SECURE,
+    sameSite: config.COOKIE_SAMESITE,
+    domain: config.COOKIE_DOMAIN,
+    path: '/',
+  });
 
   res.json(successResponse(null, 'Logout successful'));
 });

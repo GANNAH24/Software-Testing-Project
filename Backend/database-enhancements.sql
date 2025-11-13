@@ -10,6 +10,7 @@
 -- ================================================
 
 -- Appointments indexes (improve query performance)
+/*
 CREATE INDEX IF NOT EXISTS idx_appointments_patient_id ON public.appointments(patient_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_doctor_id ON public.appointments(doctor_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_date ON public.appointments(date);

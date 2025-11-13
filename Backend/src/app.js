@@ -5,6 +5,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const config = require('./config/environment');
 const logger = require('./shared/utils/logger.util');
 const { notFoundHandler, errorHandler } = require('./shared/middleware/error.middleware');
@@ -20,9 +21,14 @@ const patientsRoutes = require('./features/patients/patients.routes');
 const app = express();
 
 // Middleware
-app.use(cors());
+const corsOptions = {
+  origin: config.FRONTEND_URL,
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser(config.COOKIE_SECRET));
 
 // Request logging
 app.use((req, res, next) => {

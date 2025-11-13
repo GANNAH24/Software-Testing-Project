@@ -4,6 +4,7 @@
  */
 
 const { supabase } = require('../../config/database');
+const config = require('../../config/environment');
 const { unauthorizedResponse, forbiddenResponse } = require('../utils/response.util');
 const logger = require('../utils/logger.util');
 
@@ -13,12 +14,17 @@ const logger = require('../utils/logger.util');
 const verifyToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
+    let token = null;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json(unauthorizedResponse('No token provided'));
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.cookies && req.cookies[config.COOKIE_NAME]) {
+      token = req.cookies[config.COOKIE_NAME];
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    if (!token) {
+      return res.status(401).json(unauthorizedResponse('No token provided'));
+    }
 
     // Verify token with Supabase
     const { data: { user }, error } = await supabase.auth.getUser(token);
@@ -126,12 +132,17 @@ const requireAnyRole = (...roles) => {
 const optionalAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
+    let token = null;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next(); // No token, continue without user
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.cookies && req.cookies[config.COOKIE_NAME]) {
+      token = req.cookies[config.COOKIE_NAME];
     }
 
-    const token = authHeader.substring(7);
+    if (!token) {
+      return next(); // No token, continue without user
+    }
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (!error && user) {
