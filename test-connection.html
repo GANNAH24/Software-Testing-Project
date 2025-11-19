@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Backend-Frontend Connection Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+    .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+    .success { background: #d4edda; border-color: #c3e6cb; }
+    .error { background: #f8d7da; border-color: #f5c6cb; }
+    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1> Backend-Frontend Connection Test</h1>
+  <p>Base URL: <code>http://localhost:3000/api/v1</code></p>
+  
+  <button onclick='testHealth()'>Test Health Endpoint</button>
+  <button onclick='testAuth()'>Test Register</button>
+  <button onclick='testDoctors()'>Test Get Doctors</button>
+  <button onclick='clearResults()'>Clear</button>
+
+  <div id='results'></div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000';
+    const API_V1 = '${API_BASE}/api/v1';
+    let authToken = localStorage.getItem('test_token');
+
+    function addResult(title, data, success) {
+      const div = document.createElement('div');
+      div.className = 'test ' + (success ? 'success' : 'error');
+      div.innerHTML = '<h3>' + title + '</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+      document.getElementById('results').prepend(div);
+    }
+
+    async function testHealth() {
+      try {
+        const res = await fetch('${API_BASE}/health');
+        const data = await res.json();
+        addResult(' Health Check', data, res.ok);
+      } catch (err) {
+        addResult(' Health Check Failed', { error: err.message }, false);
+      }
+    }
+
+    async function testAuth() {
+      const email = 'test' + Date.now() + '@test.com';
+      try {
+        const res = await fetch('${API_V1}/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password: 'Test@123',
+            role: 'patient',
+            fullName: 'Test User'
+          })
+        });
+        const data = await res.json();
+        if (data.data?.token) {
+          authToken = data.data.token;
+          localStorage.setItem('test_token', authToken);
+        }
+        addResult(' Register', data, res.ok);
+      } catch (err) {
+        addResult(' Register Failed', { error: err.message }, false);
+      }
+    }
+
+    async function testDoctors() {
+      try {
+        const res = await fetch('${API_V1}/doctors');
+        const data = await res.json();
+        addResult(' Get Doctors', data, res.ok);
+      } catch (err) {
+        addResult(' Get Doctors Failed', { error: err.message }, false);
+      }
+    }
+
+    function clearResults() {
+      document.getElementById('results').innerHTML = '';
+    }
+  </script>
+</body>
+</html>

@@ -1,12 +1,12 @@
 import axios from 'axios';
-import API_CONFIG from '../../config/api.config';
+import apiConfig, { API_ENDPOINTS } from '../../config/api.config';
+import { API_BASE_URL } from '../../config/constants';
 
+// Prefer environment base URL (may already contain version) else fallback to config
 const apiClient = axios.create({
-  baseURL: API_CONFIG.API_URL,
-  timeout: API_CONFIG.TIMEOUT,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: API_BASE_URL || apiConfig.baseURL,
+  timeout: apiConfig.timeout,
+  headers: apiConfig.headers,
 });
 
 // Request interceptor - add auth token
@@ -33,4 +33,12 @@ apiClient.interceptors.response.use(
   }
 );
 
+// Convenience endpoint export
+export { API_ENDPOINTS };
 export default apiClient;
+
+// Example helper methods
+export const get = (url, config) => apiClient.get(url, config);
+export const post = (url, data, config) => apiClient.post(url, data, config);
+export const put = (url, data, config) => apiClient.put(url, data, config);
+export const del = (url, config) => apiClient.delete(url, config);

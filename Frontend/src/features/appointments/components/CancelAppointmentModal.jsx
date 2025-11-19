@@ -1,1 +1,0 @@
-// Cancel appointment modal component

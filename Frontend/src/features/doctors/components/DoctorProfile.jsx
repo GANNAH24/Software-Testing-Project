@@ -1,1 +1,0 @@
-// Doctor profile component

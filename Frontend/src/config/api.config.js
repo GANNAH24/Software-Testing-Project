@@ -1,11 +1,67 @@
-const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000',
-  API_VERSION: process.env.REACT_APP_API_VERSION || 'v1',
-  TIMEOUT: 30000,
-  
-  get API_URL() {
-    return `${this.BASE_URL}/api/${this.API_VERSION}`;
-  }
+import { API_BASE_URL, API_TIMEOUT } from './constants';
+
+// API Configuration
+export const apiConfig = {
+  baseURL: API_BASE_URL,
+  timeout: API_TIMEOUT,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 };
 
-export default API_CONFIG;
+// API Endpoints
+export const API_ENDPOINTS = {
+  // Auth
+  AUTH: {
+    LOGIN: '/auth/login',
+    REGISTER: '/auth/register',
+    LOGOUT: '/auth/logout',
+    REFRESH: '/auth/refresh',
+    VERIFY: '/auth/verify',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    RESET_PASSWORD: '/auth/reset-password',
+  },
+  
+  // Patients
+  PATIENTS: {
+    BASE: '/patients',
+    BY_ID: (id) => `/patients/${id}`,
+    PROFILE: '/patients/profile',
+    APPOINTMENTS: '/patients/appointments',
+  },
+  
+  // Doctors
+  DOCTORS: {
+    BASE: '/doctors',
+    BY_ID: (id) => `/doctors/${id}`,
+    PROFILE: '/doctors/profile',
+    SEARCH: '/doctors/search',
+    SPECIALTIES: '/doctors/specialties',
+  },
+  
+  // Appointments
+  APPOINTMENTS: {
+    BASE: '/appointments',
+    BY_ID: (id) => `/appointments/${id}`,
+    CREATE: '/appointments/create',
+    UPDATE: (id) => `/appointments/${id}/update`,
+    CANCEL: (id) => `/appointments/${id}/cancel`,
+    COMPLETE: (id) => `/appointments/${id}/complete`,
+  },
+  
+  // Schedules
+  SCHEDULES: {
+    BASE: '/schedules',
+    BY_ID: (id) => `/schedules/${id}`,
+    BY_DOCTOR: (doctorId) => `/schedules/doctor/${doctorId}`,
+    AVAILABLE_SLOTS: '/schedules/available-slots',
+  },
+  
+  // Admin
+  ADMIN: {
+    USERS: '/admin/users',
+    STATS: '/admin/stats',
+  },
+};
+
+export default apiConfig;

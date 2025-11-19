@@ -1,1 +1,0 @@
-// Schedules listing page

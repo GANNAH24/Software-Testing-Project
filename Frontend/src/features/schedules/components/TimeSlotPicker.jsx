@@ -1,1 +1,0 @@
-// Time slot picker component

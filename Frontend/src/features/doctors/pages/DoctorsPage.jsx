@@ -1,1 +1,0 @@
-// Doctors listing page

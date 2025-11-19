@@ -1,1 +1,0 @@
-// Weekly schedule view component
