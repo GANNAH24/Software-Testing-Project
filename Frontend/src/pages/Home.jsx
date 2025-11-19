@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { Search, MapPin, Star, ChevronRight, Stethoscope, Users, Calendar, Shield } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { DoctorCard } from '../components/DoctorCard';
-import { mockDoctors, specialties } from '../lib/mockData';
+import { specialties } from '../lib/mockData';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import doctorService from '../shared/services/doctor.service';
 
 export function Home({ navigate }) {
   const [loading, setLoading] = useState(true);
@@ -13,7 +14,21 @@ export function Home({ navigate }) {
   const [currentPage, setCurrentPage] = useState(1);
   const doctorsPerPage = 6;
 
-  useEffect(() => { setTimeout(() => { setDoctors(mockDoctors); setLoading(false); }, 800); }, []);
+  useEffect(() => {
+    const loadDoctors = async () => {
+      try {
+        const result = await doctorService.list();
+        const list = result?.data || result || [];
+        setDoctors(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error('Error loading doctors:', err);
+        setDoctors([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDoctors();
+  }, []);
   const handleSearch = (e) => { e.preventDefault(); navigate(`/search?q=${encodeURIComponent(searchQuery)}&specialty=${selectedSpecialty}`); };
   const filteredDoctors = doctors.filter(doc => { const matchesSearch = !searchQuery || doc.name.toLowerCase().includes(searchQuery.toLowerCase()) || doc.specialty.toLowerCase().includes(searchQuery.toLowerCase()); const matchesSpecialty = !selectedSpecialty || doc.specialty === selectedSpecialty; return matchesSearch && matchesSpecialty; });
   const totalPages = Math.ceil(filteredDoctors.length / doctorsPerPage);

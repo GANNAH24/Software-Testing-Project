@@ -9,8 +9,10 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { DoctorCard } from '../components/DoctorCard';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { useAuth } from '../App';
-import { mockDoctors, specialties, locations, timeSlots } from '../lib/mockData';
+import { specialties, locations, timeSlots } from '../lib/mockData';
 import { toast } from 'sonner';
+import doctorService from '../shared/services/doctor.service';
+import appointmentService from '../shared/services/appointment.service';
 
 export function BookAppointment({ navigate }) {
   const { user } = useAuth();
@@ -29,18 +31,30 @@ export function BookAppointment({ navigate }) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const doctorId = params.get('doctor');
-    setLoading(true);
-    setTimeout(() => {
-      setDoctors(mockDoctors);
-      if (doctorId) {
-        const doctor = mockDoctors.find(d => d.id === doctorId);
-        if (doctor) {
-          setSelectedDoctor(doctor);
-          setStep(2);
+    
+    const loadDoctors = async () => {
+      setLoading(true);
+      try {
+        const result = await doctorService.list();
+        const list = result?.data || result || [];
+        const doctorList = Array.isArray(list) ? list : [];
+        setDoctors(doctorList);
+        
+        if (doctorId) {
+          const doctor = doctorList.find(d => d.doctor_id === doctorId || d.id === doctorId);
+          if (doctor) {
+            setSelectedDoctor(doctor);
+            setStep(2);
+          }
         }
+      } catch (err) {
+        console.error('Error loading doctors:', err);
+        setDoctors([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, 500);
+    };
+    loadDoctors();
   }, []);
 
   const filteredDoctors = doctors.filter(doc => {
@@ -79,12 +93,26 @@ export function BookAppointment({ navigate }) {
       setErrors(newErrors);
       return;
     }
+    
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const appointmentData = {
+        doctor_id: selectedDoctor.doctor_id || selectedDoctor.id,
+        date: selectedDate,
+        time_slot: selectedTime,
+        reason: notes || 'General consultation',
+        status: 'scheduled'
+      };
+      
+      await appointmentService.create(appointmentData);
       toast.success('Appointment booked successfully!');
       navigate('/patient/appointments');
-    }, 1000);
+    } catch (err) {
+      console.error('Error booking appointment:', err);
+      toast.error(err.response?.data?.message || 'Failed to book appointment');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -4,7 +4,8 @@ import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { useAuth } from '../App';
-import { mockAppointments, mockDoctors } from '../lib/mockData';
+import appointmentService from '../shared/services/appointment.service';
+import doctorService from '../shared/services/doctor.service';
 
 export function PatientDashboard({ navigate }) {
   const { user } = useAuth();
@@ -13,16 +14,46 @@ export function PatientDashboard({ navigate }) {
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
 
   useEffect(() => {
-    setTimeout(() => {
-      const userAppointments = mockAppointments.filter(apt => apt.patient_id === user?.id);
-      const today = new Date().toISOString().split('T')[0];
-      const upcoming = userAppointments.filter(apt => apt.date >= today && (apt.status === 'scheduled' || apt.status === 'booked'));
-      const past = userAppointments.filter(apt => apt.date < today || apt.status === 'completed');
-      setStats({ upcoming: upcoming.length, past: past.length, total: userAppointments.length });
-      const upcomingWithDoctors = upcoming.slice(0, 3).map(apt => ({ ...apt, doctor: mockDoctors.find(d => d.id === apt.doctor_id) }));
-      setUpcomingAppointments(upcomingWithDoctors);
-      setLoading(false);
-    }, 800);
+    const loadDashboardData = async () => {
+      try {
+        const [appointmentsRes, doctorsRes] = await Promise.all([
+          appointmentService.list(),
+          doctorService.list()
+        ]);
+        
+        const appointments = appointmentsRes?.data || appointmentsRes || [];
+        const doctors = doctorsRes?.data || doctorsRes || [];
+        const today = new Date().toISOString().split('T')[0];
+        
+        const upcoming = appointments.filter(apt => 
+          apt.date >= today && (apt.status === 'scheduled' || apt.status === 'booked')
+        );
+        const past = appointments.filter(apt => 
+          apt.date < today || apt.status === 'completed'
+        );
+        
+        setStats({ 
+          upcoming: upcoming.length, 
+          past: past.length, 
+          total: appointments.length 
+        });
+        
+        const upcomingWithDoctors = upcoming.slice(0, 3).map(apt => ({
+          ...apt,
+          doctor: doctors.find(d => d.doctor_id === apt.doctor_id || d.id === apt.doctor_id)
+        }));
+        
+        setUpcomingAppointments(upcomingWithDoctors);
+      } catch (err) {
+        console.error('Error loading dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (user?.id) {
+      loadDashboardData();
+    }
   }, [user?.id]);
 
   return (

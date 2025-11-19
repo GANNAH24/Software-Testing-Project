@@ -5,7 +5,7 @@ import { Card } from '../components/ui/card';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { CalendarBookDialog } from '../components/patient/CalendarBookDialog';
 import { useAuth } from '../App';
-import { mockDoctors } from '../lib/mockData';
+import doctorService from '../shared/services/doctor.service';
 
 export function DoctorProfile({ navigate, params }) {
   const { user } = useAuth();
@@ -14,11 +14,19 @@ export function DoctorProfile({ navigate, params }) {
   const [bookDialogOpen, setBookDialogOpen] = useState(false);
 
   useEffect(() => {
-    setTimeout(() => {
-      const foundDoctor = mockDoctors.find(d => d.id === params.id);
-      setDoctor(foundDoctor || null);
-      setLoading(false);
-    }, 800);
+    const loadDoctor = async () => {
+      try {
+        const result = await doctorService.byId(params.id);
+        const doctorData = result?.data || result;
+        setDoctor(doctorData || null);
+      } catch (err) {
+        console.error('Error loading doctor:', err);
+        setDoctor(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDoctor();
   }, [params.id]);
 
   const handleBookAppointment = () => {

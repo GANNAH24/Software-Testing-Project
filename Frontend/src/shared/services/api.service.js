@@ -23,7 +23,7 @@ apiClient.interceptors.request.use(
 
 // Response interceptor - handle errors
 apiClient.interceptors.response.use(
-  (response) => response.data,
+  (response) => response.data, // Backend wraps in {success, data, message}, so we return the whole response.data
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('authToken');

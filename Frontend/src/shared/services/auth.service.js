@@ -1,4 +1,4 @@
-﻿import apiClient, { API_ENDPOINTS } from '../config/api.config';
+﻿import apiClient, { API_ENDPOINTS } from './api.service';
 export const authService = {
   login: async (email, password) => await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, { email, password }),
   register: async (userData) => await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, userData),

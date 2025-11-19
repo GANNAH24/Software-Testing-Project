@@ -6,7 +6,7 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { toast } from 'sonner';
-import { authService } from '../shared/auth.service';
+import { authService } from '../shared/services/auth.service';
 
 export function Login({ navigate, onLogin }) {
   const [email, setEmail] = useState('');

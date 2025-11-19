@@ -5,7 +5,8 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { DoctorCard } from '../components/DoctorCard';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
-import { mockDoctors, specialties, locations } from '../lib/mockData';
+import { specialties, locations } from '../lib/mockData';
+import doctorService from '../shared/services/doctor.service';
 
 export function DoctorSearch({ navigate }) {
   const [loading, setLoading] = useState(true);
@@ -23,7 +24,20 @@ export function DoctorSearch({ navigate }) {
     const specialty = params.get('specialty');
     if (q) setSearchTerm(q);
     if (specialty) setSelectedSpecialty(specialty);
-    setTimeout(() => { setDoctors(mockDoctors); setLoading(false); }, 800);
+    
+    const loadDoctors = async () => {
+      try {
+        const result = await doctorService.list();
+        const list = result?.data || result || [];
+        setDoctors(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error('Error loading doctors:', err);
+        setDoctors([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDoctors();
   }, []);
 
   const handleSearch = () => { setLoading(true); setTimeout(() => { setLoading(false); }, 500); };

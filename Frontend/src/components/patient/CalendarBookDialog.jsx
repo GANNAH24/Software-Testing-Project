@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Clock } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
@@ -14,7 +14,8 @@ import { Textarea } from '../ui/textarea';
 import { Calendar } from '../ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { mockDoctors } from '../../lib/mockData';
+import doctorService from '../../shared/services/doctor.service';
+import appointmentService from '../../shared/services/appointment.service';
 
 
 
@@ -50,11 +51,28 @@ export function CalendarBookDialog({
   const [selectedDate, setSelectedDate] = useState();
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [notes, setNotes] = useState('');
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const loadDoctors = async () => {
+      try {
+        const result = await doctorService.list();
+        const list = result?.data || result || [];
+        setDoctors(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error('Error loading doctors:', err);
+      }
+    };
+    if (open) {
+      loadDoctors();
+    }
+  }, [open]);
 
   const availableSlots = getAvailableSlotsForDate(selectedDate);
-  const selectedDoctor = mockDoctors.find(d => d.id === selectedDoctorId);
+  const selectedDoctor = doctors.find(d => d.doctor_id === selectedDoctorId || d.id === selectedDoctorId);
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     if (!selectedDoctorId) {
       toast.error('❌ Please select a doctor');
       return;
@@ -64,15 +82,32 @@ export function CalendarBookDialog({
       return;
     }
 
-    const doctor = mockDoctors.find(d => d.id === selectedDoctorId);
-    toast.success(`✅ Appointment booked with ${doctor?.name} on ${selectedDate.toLocaleDateString()} at ${selectedSlot}!`);
-    
-    // Reset form
-    setSelectedDoctorId(preSelectedDoctorId || '');
-    setSelectedDate(undefined);
-    setSelectedSlot(null);
-    setNotes('');
-    onOpenChange(false);
+    setLoading(true);
+    try {
+      const appointmentData = {
+        doctor_id: selectedDoctorId,
+        date: selectedDate.toISOString().split('T')[0],
+        time_slot: selectedSlot,
+        reason: notes || 'General consultation',
+        status: 'scheduled'
+      };
+      
+      await appointmentService.create(appointmentData);
+      const doctor = doctors.find(d => d.doctor_id === selectedDoctorId || d.id === selectedDoctorId);
+      toast.success(`✅ Appointment booked with ${doctor?.name} on ${selectedDate.toLocaleDateString()} at ${selectedSlot}!`);
+      
+      // Reset form
+      setSelectedDoctorId(preSelectedDoctorId || '');
+      setSelectedDate(undefined);
+      setSelectedSlot(null);
+      setNotes('');
+      onOpenChange(false);
+    } catch (err) {
+      console.error('Error booking appointment:', err);
+      toast.error('Failed to book appointment. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDateSelect = (date) => {
@@ -100,8 +135,8 @@ export function CalendarBookDialog({
                   <SelectValue placeholder="Choose a doctor..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockDoctors.map((doctor) => (
-                    <SelectItem key={doctor.id} value={doctor.id}>
+                  {doctors.map((doctor) => (
+                    <SelectItem key={doctor.doctor_id || doctor.id} value={doctor.doctor_id || doctor.id}>
                       {doctor.name} - {doctor.specialty}
                     </SelectItem>
                   ))}

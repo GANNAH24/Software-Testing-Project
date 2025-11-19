@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Alert, AlertDescription } from './ui/alert';
 import { toast } from 'sonner';
-import { authService } from '../shared/auth.service';
+import { authService } from '../shared/services/auth.service';
 
 
 const MOCK_PASSWORD_REQUIREMENTS = {

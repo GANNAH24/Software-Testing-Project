@@ -43,12 +43,20 @@ const findAll = async (filters = {}) => {
 };
 
 const findById = async (doctorId) => {
-  const { data, error} = await supabase
+  // Try both doctor_id and id fields for flexibility
+  let query = supabase
     .from('doctors')
     .select('*')
-    .eq('doctor_id', doctorId)
-    .is('deleted_at', null)
-    .single();
+    .is('deleted_at', null);
+  
+  // Check if doctorId looks like a UUID (has dashes)
+  if (doctorId && doctorId.includes('-')) {
+    query = query.or(`doctor_id.eq.${doctorId},id.eq.${doctorId}`);
+  } else {
+    query = query.eq('doctor_id', doctorId);
+  }
+  
+  const { data, error } = await query.maybeSingle();
 
   if (error && error.code !== 'PGRST116') {
     logger.error('Error finding doctor', { doctorId, error: error.message });
@@ -129,18 +137,8 @@ const advancedSearch = async (filters) => {
 };
 
 const getDetailedProfile = async (doctorId) => {
-  // Get doctor basic information
-  const { data: doctor, error } = await supabase
-    .from('doctors')
-    .select('*')
-    .eq('doctor_id', doctorId)
-    .is('deleted_at', null)
-    .single();
-
-  if (error && error.code !== 'PGRST116') {
-    logger.error('Error finding detailed doctor profile', { doctorId, error: error.message });
-    throw error;
-  }
+  // Get doctor basic information - use findById for consistency
+  const doctor = await findById(doctorId);
 
   if (!doctor) {
     return null;
@@ -189,10 +187,16 @@ const create = async (doctorData) => {
 };
 
 const update = async (doctorId, updates) => {
+  // Find the doctor first to get the correct record
+  const existing = await findById(doctorId);
+  if (!existing) {
+    throw new Error('Doctor not found');
+  }
+  
   const { data, error } = await supabase
     .from('doctors')
     .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('doctor_id', doctorId)
+    .eq('doctor_id', existing.doctor_id)
     .is('deleted_at', null)
     .select()
     .single();
@@ -205,10 +209,16 @@ const update = async (doctorId, updates) => {
 };
 
 const softDelete = async (doctorId) => {
+  // Find the doctor first to get the correct record
+  const existing = await findById(doctorId);
+  if (!existing) {
+    throw new Error('Doctor not found');
+  }
+  
   const { data, error } = await supabase
     .from('doctors')
     .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-    .eq('doctor_id', doctorId)
+    .eq('doctor_id', existing.doctor_id)
     .is('deleted_at', null)
     .select()
     .single();
