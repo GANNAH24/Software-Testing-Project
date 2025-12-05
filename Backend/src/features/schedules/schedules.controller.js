@@ -78,17 +78,32 @@ const blockTime = asyncHandler(async (req, res) => {
     res.status(201).json(successResponse(schedule, 'Time blocked successfully', 201));
 });
 
-module.exports = {
-    createSchedule,
-    getWeeklySchedule,
-    getDailySchedule,
-    blockTime
-};
-
+/**
+ * Get all schedules with optional filters
+ * GET /api/v1/schedules
+ */
+const getAllSchedules = asyncHandler(async (req, res) => {
+    const { doctorId, date, isAvailable } = req.query;
+    
+    const filters = {};
+    if (doctorId) filters.doctorId = doctorId;
+    if (date) filters.date = date;
+    if (isAvailable !== undefined) filters.isAvailable = isAvailable === 'true';
+    
+    // If doctorId provided, get schedules for that doctor
+    if (doctorId) {
+        const schedules = await schedulesService.getDoctorSchedules(doctorId, filters);
+        res.json(successResponse(schedules));
+    } else {
+        // Get all schedules (could be limited by filters)
+        const schedules = await schedulesService.getDoctorSchedules(null, filters);
+        res.json(successResponse(schedules));
+    }
+});
 
 /**
  * Update schedule (e.g., block or set available)
- * PATCH /api/v1/schedules/:id
+ * PATCH/PUT /api/v1/schedules/:id
  */
 const updateSchedule = asyncHandler(async (req, res) => {
     const scheduleId = req.params.id;
@@ -109,5 +124,28 @@ const updateSchedule = asyncHandler(async (req, res) => {
     res.json(successResponse(updated, 'Schedule updated successfully'));
 });
 
-// Export the updateSchedule function
-module.exports.updateSchedule = updateSchedule;
+/**
+ * Delete schedule
+ * DELETE /api/v1/schedules/:id
+ */
+const deleteSchedule = asyncHandler(async (req, res) => {
+    const scheduleId = req.params.id;
+    
+    // Ensure doctor exists
+    const doctor = await ensureDoctorForUser(req.user);
+    
+    // Delete the schedule
+    await schedulesService.deleteSchedule(scheduleId);
+    
+    res.json(successResponse(null, 'Schedule deleted successfully'));
+});
+
+module.exports = {
+    createSchedule,
+    getWeeklySchedule,
+    getDailySchedule,
+    blockTime,
+    getAllSchedules,
+    updateSchedule,
+    deleteSchedule
+};
