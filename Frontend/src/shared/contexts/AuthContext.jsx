@@ -12,11 +12,17 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
+      console.log('Initializing auth...');
       const token = storage.getToken();
       const savedUser = storage.getUser();
+      console.log('Stored auth:', { hasToken: !!token, user: savedUser });
+      
       if (token && savedUser) {
         setUser(savedUser);
         setIsAuthenticated(true);
+        console.log('User authenticated from storage:', savedUser);
+      } else {
+        console.log('No stored auth found');
       }
       setLoading(false);
     };
@@ -26,28 +32,59 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, { email, password });
-      const { user: userData, token } = response;
+      console.log('Login response:', response);
+      
+      // API interceptor returns response.data which is the backend's successResponse
+      // Structure: { success: true, data: { user, token, roleData }, message, timestamp }
+      let userData, token;
+      
+      if (response.data && response.data.user && response.data.token) {
+        // Response has nested data object
+        userData = response.data.user;
+        token = response.data.token;
+      } else if (response.user && response.token) {
+        // Response is flat (already unwrapped)
+        userData = response.user;
+        token = response.token;
+      } else {
+        console.error('Invalid response structure:', response);
+        return { success: false, error: 'Invalid server response' };
+      }
+      
+      if (!userData || !token) {
+        console.error('Missing user or token:', { userData, token });
+        return { success: false, error: 'Invalid server response - missing credentials' };
+      }
+      
+      console.log('Saving to localStorage:', { user: userData, token: token.substring(0, 20) + '...' });
       storage.setToken(token);
       storage.setUser(userData);
+      
+      // Wait a tick to ensure localStorage is written
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       setUser(userData);
       setIsAuthenticated(true);
+      console.log('Auth state updated - user should be logged in');
+      
       return { success: true, user: userData };
     } catch (error) {
-      return { success: false, error: error.response?.data?.message || 'Login failed' };
+      console.error('Login error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Login failed';
+      return { success: false, error: errorMessage };
     }
   };
 
   const register = async (userData) => {
     try {
       const response = await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, userData);
-      const { user: newUser, token } = response;
-      storage.setToken(token);
-      storage.setUser(newUser);
-      setUser(newUser);
-      setIsAuthenticated(true);
-      return { success: true, user: newUser };
+      // API interceptor returns response.data which contains { success, data: { user, token }, message }
+      const { user: newUser, token } = response.data;
+      // Don't auto-login after registration - user should be redirected to login page
+      return { success: true, user: newUser, token };
     } catch (error) {
-      return { success: false, error: error.response?.data?.message || 'Registration failed' };
+      console.error('Registration error:', error);
+      return { success: false, error: error.response?.data?.message || error.message || 'Registration failed' };
     }
   };
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Stethoscope, Star, Calendar } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -7,11 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../ui/badge';
 import { QuickBookDialog } from './QuickBookDialog';
 import doctorService from '../../shared/services/doctor.service';
+import { useAuthContext } from '../../shared/contexts/AuthContext';
 
 const SPECIALTIES = ['All Specialties', 'Cardiology', 'Pediatrics', 'Dermatology', 'Orthopedics', 'Neurology', 'General Practice'];
 const LOCATIONS = ['All Locations', 'New York, NY', 'Los Angeles, CA', 'Chicago, IL', 'Houston, TX', 'Phoenix, AZ', 'Philadelphia, PA', 'San Antonio, TX', 'San Diego, CA'];
 
-export function FindDoctors({ navigate, user }) {
+export function FindDoctors() {
+  const navigate = useNavigate();
+  const { user } = useAuthContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All Specialties');
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
@@ -48,11 +52,11 @@ export function FindDoctors({ navigate, user }) {
   });
 
   const handleBookAppointment = (doctorId) => {
-    navigate('book-appointment', { doctorId });
+    navigate('/patient/book-appointment', { state: { doctorId } });
   };
 
   const handleViewProfile = (doctorId) => {
-    navigate('doctor-profile', { doctorId });
+    navigate(`/doctor/${doctorId}`);
   };
 
   const openBookDialog = (doctor) => {

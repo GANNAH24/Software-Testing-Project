@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { SlidersHorizontal, Calendar, Users, Shield, Star, ArrowRight, Stethoscope, Heart, Clock, MapPin, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent } from './ui/card';
@@ -23,7 +24,8 @@ const stagger = {
   transition: { staggerChildren: 0.15 }
 };
 
-export function Home({ navigate }) {
+export function Home() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState(null);
@@ -378,7 +380,7 @@ export function Home({ navigate }) {
                 transition={{ delay: 0.6 }}
               >
                 <motion.button
-                  onClick={() => navigate('register')}
+                  onClick={() => navigate('/register')}
                   className="text-white underline underline-offset-4 hover:text-yellow-300 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -579,7 +581,7 @@ export function Home({ navigate }) {
           <div className="flex gap-4 justify-center flex-wrap">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
-                onClick={() => navigate('register')}
+                onClick={() => navigate('/register')}
                 size="lg"
                 className="bg-white text-[#667eea] hover:bg-gray-100 h-14 px-8 text-lg"
               >
@@ -588,7 +590,7 @@ export function Home({ navigate }) {
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
-                onClick={() => navigate('find-doctors')}
+                onClick={() => navigate('/patient/find-doctors')}
                 size="lg"
                 variant="outline"
                 className="border-2 border-white bg-white text-[#667eea] hover:bg-white/90 h-14 px-8 text-lg shadow-lg"

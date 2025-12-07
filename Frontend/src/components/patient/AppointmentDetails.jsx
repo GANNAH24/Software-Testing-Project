@@ -1,43 +1,47 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, User, FileText, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import appointmentService from '../../shared/services/appointment.service';
+import { toast } from 'sonner';
 
+export function AppointmentDetails() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [appointment, setAppointment] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const fetchAppointment = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        const response = await appointmentService.get(id);
+        const data = response?.data || response?.appointment || response;
+        setAppointment(data);
+      } catch (error) {
+        console.error('Failed to fetch appointment:', error);
+        toast.error('Failed to load appointment details');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-const MOCK_APPOINTMENTS = {
-  '1': {
-    id: '1',
-    doctorId: '1',
-    doctorName: 'Dr. Sarah Johnson',
-    specialty: 'Cardiology',
-    doctorPhone: '+1 (555) 123-4567',
-    doctorLocation: 'New York, NY',
-    patientName: 'John Doe',
-    date: '2025-11-15',
-    timeSlot: '10:00-11:00',
-    status: 'booked',
-    notes: 'Annual checkup for heart health monitoring',
-    cancelReason: null
-  },
-  '2': {
-    id: '2',
-    doctorId: '2',
-    doctorName: 'Dr. Michael Chen',
-    specialty: 'Pediatrics',
-    doctorPhone: '+1 (555) 234-5678',
-    doctorLocation: 'Los Angeles, CA',
-    patientName: 'John Doe',
-    date: '2025-11-20',
-    timeSlot: '14:00-15:00',
-    status: 'scheduled',
-    notes: '',
-    cancelReason: null
+    fetchAppointment();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
   }
-};
-
-export function AppointmentDetails({ appointmentId, navigate, user }) {
-  const appointment = appointmentId ? MOCK_APPOINTMENTS[appointmentId] : null;
 
   if (!appointment) {
     return (
@@ -48,7 +52,7 @@ export function AppointmentDetails({ appointmentId, navigate, user }) {
             <p className="text-gray-600 mb-6">
               The appointment you're looking for doesn't exist.
             </p>
-            <Button onClick={() => navigate('patient-appointments')}>
+            <Button onClick={() => navigate('/patient/appointments')}>
               Back to Appointments
             </Button>
           </CardContent>
@@ -59,12 +63,13 @@ export function AppointmentDetails({ appointmentId, navigate, user }) {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'booked':
-      case 'scheduled':
+      case 'pending':
+      case 'confirmed':
         return 'default';
       case 'completed':
         return 'secondary';
       case 'canceled':
+      case 'cancelled':
         return 'destructive';
       default:
         return 'default';
@@ -76,7 +81,7 @@ export function AppointmentDetails({ appointmentId, navigate, user }) {
       <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"
-          onClick={() => navigate('patient-appointments')}
+          onClick={() => navigate('/patient/appointments')}
           className="mb-6"
         >
           ← Back to Appointments
@@ -103,31 +108,35 @@ export function AppointmentDetails({ appointmentId, navigate, user }) {
                 <User className="w-5 h-5 text-gray-400 mt-0.5" />
                 <div>
                   <div className="text-sm text-gray-500">Doctor</div>
-                  <div className="text-gray-900">{appointment.doctorName}</div>
-                  <div className="text-sm text-[#667eea]">{appointment.specialty}</div>
+                  <div className="text-gray-900">{appointment.doctor?.fullName || appointment.doctor?.full_name || 'Dr. Unknown'}</div>
+                  <div className="text-sm text-[#667eea]">{appointment.doctor?.specialty || 'General'}</div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                <div>
-                  <div className="text-sm text-gray-500">Phone</div>
-                  <div className="text-gray-900">{appointment.doctorPhone}</div>
+              {appointment.doctor?.phoneNumber && (
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <div>
+                    <div className="text-sm text-gray-500">Phone</div>
+                    <div className="text-gray-900">{appointment.doctor.phoneNumber}</div>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <div>
-                  <div className="text-sm text-gray-500">Location</div>
-                  <div className="text-gray-900">{appointment.doctorLocation}</div>
+              {appointment.doctor?.location && (
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <div>
+                    <div className="text-sm text-gray-500">Location</div>
+                    <div className="text-gray-900">{appointment.doctor.location}</div>
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -156,14 +165,14 @@ export function AppointmentDetails({ appointmentId, navigate, user }) {
                 <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
                 <div>
                   <div className="text-sm text-gray-500">Time</div>
-                  <div className="text-gray-900">{appointment.timeSlot}</div>
+                  <div className="text-gray-900">{appointment.timeSlot || appointment.time_slot}</div>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
                 <div className="w-5 h-5 text-gray-400 mt-0.5">
                   <div className={`w-3 h-3 rounded-full ${
-                    appointment.status === 'booked' || appointment.status === 'scheduled' ? 'bg-blue-500' :
+                    appointment.status === 'pending' || appointment.status === 'confirmed' ? 'bg-blue-500' :
                     appointment.status === 'completed' ? 'bg-green-500' : 'bg-red-500'
                   }`} />
                 </div>
@@ -191,7 +200,7 @@ export function AppointmentDetails({ appointmentId, navigate, user }) {
           )}
 
           {/* Cancellation Reason */}
-          {appointment.cancelReason && (
+          {(appointment.cancelReason || appointment.cancel_reason) && (
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -200,28 +209,37 @@ export function AppointmentDetails({ appointmentId, navigate, user }) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700">{appointment.cancelReason}</p>
+                <p className="text-gray-700">{appointment.cancelReason || appointment.cancel_reason}</p>
               </CardContent>
             </Card>
           )}
         </div>
 
         {/* Actions */}
-        {(appointment.status === 'booked' || appointment.status === 'scheduled') && (
+        {(appointment.status === 'pending' || appointment.status === 'confirmed') && (
           <Card className="mt-6">
             <CardContent className="p-6">
               <div className="flex gap-4">
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={() => navigate('patient-appointments')}
+                  onClick={() => navigate('/patient/appointments')}
                 >
-                  Modify Appointment
+                  Back to Appointments
                 </Button>
                 <Button
                   variant="destructive"
                   className="flex-1"
-                  onClick={() => navigate('patient-appointments')}
+                  onClick={async () => {
+                    try {
+                      await appointmentService.cancel(appointment.id);
+                      toast.success('Appointment canceled successfully');
+                      navigate('/patient/appointments');
+                    } catch (error) {
+                      console.error('Failed to cancel:', error);
+                      toast.error('Failed to cancel appointment');
+                    }
+                  }}
                 >
                   Cancel Appointment
                 </Button>

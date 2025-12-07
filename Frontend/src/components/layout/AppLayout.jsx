@@ -1,29 +1,39 @@
 import { Menu, X, User, LogOut, LayoutDashboard, Calendar, Users, Stethoscope, Settings, Activity, Search } from 'lucide-react';
 import { useState } from 'react';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { HeartbeatLogo } from '../HeartbeatLogo';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { useAuthContext } from '../../shared/contexts/AuthContext';
 
-// Converted from TSX: removed AppLayoutProps interface and type annotations
-export function AppLayout({ children, user, navigate, onLogout }) {
+export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const { user, logout } = useAuthContext();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   const getNavigationItems = () => {
     if (!user) return [];
     if (user.role === 'patient') return [
-      { icon: LayoutDashboard, label: 'Dashboard', route: 'patient-dashboard' },
-      { icon: Search, label: 'Find Doctors', route: 'find-doctors' },
-      { icon: Calendar, label: 'My Appointments', route: 'patient-appointments' }
+      { icon: LayoutDashboard, label: 'Dashboard', route: '/patient/dashboard' },
+      { icon: Search, label: 'Find Doctors', route: '/patient/find-doctors' },
+      { icon: Calendar, label: 'My Appointments', route: '/patient/appointments' }
     ];
     if (user.role === 'doctor') return [
-      { icon: LayoutDashboard, label: 'Dashboard', route: 'doctor-dashboard' },
-      { icon: Calendar, label: 'Manage Schedule', route: 'manage-schedule' },
-      { icon: Users, label: 'My Appointments', route: 'doctor-appointments' }
+      { icon: LayoutDashboard, label: 'Dashboard', route: '/doctor/dashboard' },
+      { icon: Calendar, label: 'Manage Schedule', route: '/doctor/schedule' },
+      { icon: Users, label: 'My Bookings', route: '/doctor/appointments' }
     ];
     if (user.role === 'admin') return [
-      { icon: LayoutDashboard, label: 'Dashboard', route: 'admin-dashboard' },
-      { icon: Stethoscope, label: 'Manage Doctors', route: 'manage-doctors' }
+      { icon: LayoutDashboard, label: 'Dashboard', route: '/admin/dashboard' },
+      { icon: Stethoscope, label: 'Manage Doctors', route: '/admin/doctors' },
+      { icon: Users, label: 'Manage Patients', route: '/admin/patients' },
+      { icon: Activity, label: 'System Health', route: '/admin/system-health' }
     ];
     return [];
   };
@@ -35,10 +45,10 @@ export function AppLayout({ children, user, navigate, onLogout }) {
       <div className="flex-1 py-6">
         <nav className="space-y-1 px-3">
           {navItems.map(item => (
-            <button key={item.route} onClick={() => { navigate(item.route); setMobileSidebarOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-[#667eea]/10 hover:text-[#667eea] rounded-lg transition-colors">
+            <Link key={item.route} to={item.route} onClick={() => setMobileSidebarOpen(false)} className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-[#667eea]/10 hover:text-[#667eea] rounded-lg transition-colors">
               <item.icon className="w-5 h-5" />
               <span>{item.label}</span>
-            </button>
+            </Link>
           ))}
         </nav>
       </div>
@@ -54,12 +64,12 @@ export function AppLayout({ children, user, navigate, onLogout }) {
               <button onClick={() => { setSidebarOpen(!sidebarOpen); setMobileSidebarOpen(!mobileSidebarOpen); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 {sidebarOpen || mobileSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
-              <button onClick={() => navigate('home')} className="flex items-center gap-2">
+              <Link to="/" className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-lg flex items-center justify-center">
                   <HeartbeatLogo className="w-6 h-6 text-white" />
                 </div>
                 <span className="hidden sm:inline text-gray-900">Se7ety</span>
-              </button>
+              </Link>
             </div>
             <div className="flex items-center gap-4">
               {user && (
@@ -67,15 +77,15 @@ export function AppLayout({ children, user, navigate, onLogout }) {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="gap-2">
                       <User className="w-4 h-4" />
-                      <span className="hidden sm:inline">{user.fullName}</span>
+                      <span className="hidden sm:inline">{user.fullName || user.full_name || 'User'}</span>
                       <span className="text-xs text-gray-500 capitalize hidden md:inline">({user.role})</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => navigate('my-profile')}><User className="w-4 h-4 mr-2" />My Profile</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate('change-password')}><Settings className="w-4 h-4 mr-2" />Change Password</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate(`/${user.role}/profile`)}><User className="w-4 h-4 mr-2" />My Profile</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate(`/${user.role}/change-password`)}><Settings className="w-4 h-4 mr-2" />Change Password</DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={onLogout}><LogOut className="w-4 h-4 mr-2" />Logout</DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout}><LogOut className="w-4 h-4 mr-2" />Logout</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
@@ -91,7 +101,7 @@ export function AppLayout({ children, user, navigate, onLogout }) {
           <aside className="lg:hidden fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-gray-200 z-40"><SidebarContent /></aside>
         )}
         {mobileSidebarOpen && <div className="lg:hidden fixed inset-0 bg-black/50 z-30 top-16" onClick={() => setMobileSidebarOpen(false)} />}
-        <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>{children}</main>
+        <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}><Outlet /></main>
       </div>
     </div>
   );
