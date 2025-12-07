@@ -83,14 +83,20 @@ const blockTime = asyncHandler(async (req, res) => {
  * GET /api/v1/schedules
  */
 const getAllSchedules = asyncHandler(async (req, res) => {
-    const { doctorId, date, isAvailable } = req.query;
+    let { doctorId, date, isAvailable } = req.query;
+    
+    // If no doctorId provided but user is a doctor, use their doctor ID
+    if (!doctorId && req.user && req.user.role === 'doctor') {
+        const doctor = await ensureDoctorForUser(req.user);
+        doctorId = doctor.doctor_id || doctor.id || doctor.doctorId;
+    }
     
     const filters = {};
     if (doctorId) filters.doctorId = doctorId;
     if (date) filters.date = date;
     if (isAvailable !== undefined) filters.isAvailable = isAvailable === 'true';
     
-    // If doctorId provided, get schedules for that doctor
+    // If doctorId provided or derived, get schedules for that doctor
     if (doctorId) {
         const schedules = await schedulesService.getDoctorSchedules(doctorId, filters);
         res.json(successResponse(schedules));
