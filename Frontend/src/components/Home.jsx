@@ -224,7 +224,7 @@ export function Home() {
                 <div className="col-span-full text-center py-12 text-red-600">{loadError}</div>
               )}
               {!loadingDoctors && !loadError && filteredDoctors.map((doctor) => (
-                <Card key={doctor.id} className="hover:shadow-lg transition-shadow">
+                <Card key={doctor.doctor_id || doctor.id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4 mb-4">
                       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center flex-shrink-0">
@@ -259,7 +259,7 @@ export function Home() {
                       <Button
                         variant="outline"
                         className="flex-1"
-                        onClick={() => navigate(`/doctor/${doctor.id}`)}
+                        onClick={() => navigate(`/doctor/${doctor.doctor_id || doctor.id}`)}
                       >
                         View Profile
                       </Button>
@@ -607,8 +607,7 @@ export function Home() {
         <QuickBookDialog
           open={bookDialogOpen}
           onOpenChange={setBookDialogOpen}
-          doctorName={selectedDoctor.name}
-          doctorId={selectedDoctor.id}
+          doctorId={selectedDoctor?.doctor_id || selectedDoctor?.id}
           specialty={selectedDoctor.specialty}
         />
       )}

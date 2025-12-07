@@ -63,14 +63,15 @@ export function PatientAppointments() {
   };
 
   const handleCancel = async () => {
-    if (!selectedAppointment?.id) return;
+    const appointmentId = selectedAppointment?.appointment_id || selectedAppointment?.id;
+    if (!appointmentId) return;
 
     try {
-      await appointmentService.cancel(selectedAppointment.id);
+      await appointmentService.cancel(appointmentId);
       
       // Update local state
       setAppointments(appointments.map(apt =>
-        apt.id === selectedAppointment.id
+        (apt.appointment_id || apt.id) === appointmentId
           ? { ...apt, status: 'canceled' }
           : apt
       ));
@@ -85,13 +86,16 @@ export function PatientAppointments() {
   };
 
   const handleDelete = async () => {
-    if (!selectedAppointment?.id) return;
+    const appointmentId = selectedAppointment?.appointment_id || selectedAppointment?.id;
+    if (!appointmentId) return;
 
     try {
-      await appointmentService.remove(selectedAppointment.id);
+      await appointmentService.remove(appointmentId);
       
       // Update local state
-      setAppointments(appointments.filter(apt => apt.id !== selectedAppointment.id));
+      setAppointments(appointments.filter(apt => 
+        (apt.appointment_id || apt.id) !== appointmentId
+      ));
       
       toast.success('Appointment deleted successfully');
       setDeleteDialogOpen(false);
@@ -176,17 +180,17 @@ export function PatientAppointments() {
                         </thead>
                         <tbody>
                           {filteredAppointments.map((apt) => (
-                            <tr key={apt.id} className="border-b border-gray-200 last:border-0">
+                            <tr key={apt.appointment_id || apt.id} className="border-b border-gray-200 last:border-0">
                               <td className="p-4">
                                 <div>
-                                  <div className="text-gray-900">{apt.doctor?.fullName || apt.doctor?.full_name || 'Dr. Unknown'}</div>
-                                  <div className="text-sm text-gray-600">{apt.doctor?.specialty || 'General'}</div>
+                                  <div className="text-gray-900">{apt.doctor_name || apt.doctor?.fullName || apt.doctor?.full_name || 'Dr. Unknown'}</div>
+                                  <div className="text-sm text-gray-600">{apt.doctor_specialty || apt.doctor?.specialty || 'General'}</div>
                                 </div>
                               </td>
                               <td className="p-4 text-gray-900">
                                 {new Date(apt.date).toLocaleDateString()}
                               </td>
-                              <td className="p-4 text-gray-900">{apt.timeSlot || apt.time_slot}</td>
+                              <td className="p-4 text-gray-900">{apt.time_slot || apt.timeSlot}</td>
                               <td className="p-4">
                                 <span className={`inline-flex px-2 py-1 rounded text-xs capitalize ${getStatusColor(apt.status)}`}>
                                   {apt.status}
@@ -197,7 +201,7 @@ export function PatientAppointments() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => navigate(`/patient/appointments/${apt.id}`)}
+                                    onClick={() => navigate(`/doctor/${apt.doctor_id}`)}
                                   >
                                     <Eye className="w-4 h-4" />
                                   </Button>

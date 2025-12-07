@@ -180,7 +180,7 @@ export function FindDoctors() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredDoctors.map((doctor) => (
-              <Card key={doctor.id} className="hover:shadow-lg transition-shadow">
+              <Card key={doctor.doctor_id || doctor.id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   {/* Doctor Avatar */}
                   <div className="flex items-start gap-4 mb-4">
@@ -229,7 +229,7 @@ export function FindDoctors() {
                       Book Now
                     </Button>
                     <Button
-                      onClick={() => handleViewProfile(doctor.id)}
+                      onClick={() => handleViewProfile(doctor.doctor_id || doctor.id)}
                       variant="outline"
                       className="flex-1"
                     >
@@ -249,7 +249,7 @@ export function FindDoctors() {
           open={bookDialogOpen}
           onOpenChange={setBookDialogOpen}
           doctorName={selectedDoctor.name}
-          doctorId={selectedDoctor.id}
+          doctorId={selectedDoctor?.doctor_id || selectedDoctor?.id}
           specialty={selectedDoctor.specialty}
         />
       )}

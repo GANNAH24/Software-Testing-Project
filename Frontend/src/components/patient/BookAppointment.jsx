@@ -222,10 +222,10 @@ export function BookAppointment() {
                   <div className="space-y-3">
                     {MOCK_DOCTORS.map((doctor) => (
                       <button
-                        key={doctor.id}
-                        onClick={() => setSelectedDoctor(doctor.id)}
+                        key={doctor.doctor_id || doctor.id}
+                        onClick={() => setSelectedDoctor(doctor.doctor_id || doctor.id)}
                         className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${
-                          selectedDoctor === doctor.id
+                          selectedDoctor === (doctor.doctor_id || doctor.id)
                             ? 'border-[#667eea] bg-[#667eea]/10'
                             : 'border-gray-200 hover:border-gray-300'
                         }`}

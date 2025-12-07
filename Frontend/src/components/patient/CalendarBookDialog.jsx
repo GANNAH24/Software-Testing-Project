@@ -16,31 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import doctorService from '../../shared/services/doctor.service';
 import appointmentService from '../../shared/services/appointment.service';
-
-
-
-// Mock available slots for any given date
-const getAvailableSlotsForDate = (date)=> {
-  if (!date) return [];
-  
-  // Mock logic: different slots for different days of week
-  const dayOfWeek = date.getDay();
-  const baseSlots = [
-    '09:00-10:00',
-    '10:00-11:00',
-    '11:00-12:00',
-    '14:00-15:00',
-    '15:00-16:00',
-    '16:00-17:00',
-  ];
-  
-  // Weekends have fewer slots
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
-    return baseSlots.slice(0, 3);
-  }
-  
-  return baseSlots;
-};
+import scheduleService from '../../shared/services/schedule.service';
 
 export function CalendarBookDialog({
   open,
@@ -53,6 +29,8 @@ export function CalendarBookDialog({
   const [notes, setNotes] = useState('');
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   useEffect(() => {
     const loadDoctors = async () => {
@@ -69,7 +47,39 @@ export function CalendarBookDialog({
     }
   }, [open]);
 
-  const availableSlots = getAvailableSlotsForDate(selectedDate);
+  // Load available slots when doctor and date are selected
+  useEffect(() => {
+    const loadAvailableSlots = async () => {
+      if (!selectedDoctorId || !selectedDate) {
+        setAvailableSlots([]);
+        return;
+      }
+
+      setLoadingSlots(true);
+      try {
+        const dateStr = selectedDate.toISOString().split('T')[0];
+        const result = await scheduleService.availableSlots(selectedDoctorId, dateStr);
+        const slots = result?.data?.availableSlots || result?.availableSlots || [];
+        setAvailableSlots(Array.isArray(slots) ? slots : []);
+      } catch (err) {
+        console.error('Error loading available slots:', err);
+        // Fallback to default slots if API fails
+        setAvailableSlots([
+          '09:00-10:00',
+          '10:00-11:00',
+          '11:00-12:00',
+          '14:00-15:00',
+          '15:00-16:00',
+          '16:00-17:00',
+        ]);
+      } finally {
+        setLoadingSlots(false);
+      }
+    };
+
+    loadAvailableSlots();
+  }, [selectedDoctorId, selectedDate]);
+
   const selectedDoctor = doctors.find(d => d.doctor_id === selectedDoctorId || d.id === selectedDoctorId);
 
   const handleConfirmBooking = async () => {
@@ -180,7 +190,7 @@ export function CalendarBookDialog({
               </div>
 
               {/* Time Slots */}
-              {selectedDate && availableSlots.length > 0 && (
+              {selectedDate && (
                 <div>
                   <Label className="mb-3 block">
                     Available Slots for {selectedDate.toLocaleDateString('en-US', {
@@ -190,24 +200,36 @@ export function CalendarBookDialog({
                       day: 'numeric'
                     })}
                   </Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {availableSlots.map((slot) => (
-                      <button
-                        key={slot}
-                        onClick={() => setSelectedSlot(slot)}
-                        className={`p-3 rounded-lg border-2 transition-all ${
-                          selectedSlot === slot
-                            ? 'border-[#667eea] bg-[#667eea]/10'
-                            : 'border-gray-200 hover:border-[#667eea]/50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-center gap-2">
-                          <Clock className="w-4 h-4 text-[#667eea]" />
-                          <span className="text-sm text-gray-900">{slot}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                  {loadingSlots ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Clock className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                      <p>Loading available slots...</p>
+                    </div>
+                  ) : availableSlots.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {availableSlots.map((slot) => (
+                        <button
+                          key={slot}
+                          onClick={() => setSelectedSlot(slot)}
+                          className={`p-3 rounded-lg border-2 transition-all ${
+                            selectedSlot === slot
+                              ? 'border-[#667eea] bg-[#667eea]/10'
+                              : 'border-gray-200 hover:border-[#667eea]/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            <Clock className="w-4 h-4 text-[#667eea]" />
+                            <span className="text-sm text-gray-900">{slot}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
+                      <p>No available slots for this date</p>
+                      <p className="text-sm mt-1">Please select a different date</p>
+                    </div>
+                  )}
                 </div>
               )}
 
