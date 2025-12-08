@@ -32,7 +32,7 @@ const getPatientAppointments = async (patientId) => {
   
   const now = new Date();
   const pastAppointments = appointments.filter(apt => new Date(apt.appointment_date) < now);
-  const upcomingAppointments = appointments.filter(apt => new Date(apt.appointment_date) >= now && apt.status === 'scheduled');
+  const upcomingAppointments = appointments.filter(apt => new Date(apt.appointment_date) >= now && (apt.status === 'scheduled' || apt.status === 'booked' || apt.status === 'confirmed'));
 
   return {
     all: appointments,
@@ -49,8 +49,17 @@ const getDoctorAppointments = async (doctorId) => {
   const appointments = await appointmentsRepository.findByDoctorId(doctorId);
   
   const now = new Date();
-  const pastAppointments = appointments.filter(apt => new Date(apt.appointment_date) < now);
-  const upcomingAppointments = appointments.filter(apt => new Date(apt.appointment_date) >= now && apt.status === 'scheduled');
+  // const pastAppointments = appointments.filter(apt => new Date(apt.appointment_date) < now);
+  // const upcomingAppointments = appointments.filter(apt => new Date(apt.appointment_date) >= now && apt.status === 'scheduled');
+
+const pastAppointments = appointments.filter(apt => 
+  new Date(apt.date) < now
+);
+
+const upcomingAppointments = appointments.filter(apt => 
+  new Date(apt.date) >= now && (apt.status === 'scheduled' || apt.status === 'booked' || apt.status === 'confirmed')
+);
+
 
   return {
     all: appointments,

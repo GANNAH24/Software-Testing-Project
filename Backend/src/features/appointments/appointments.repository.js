@@ -97,20 +97,24 @@ const findByDoctorId = async (doctorId) => {
  */
 const findUpcoming = async (userId, role) => {
   const now = new Date().toISOString();
-  const filters = {
-    startDate: now,
-    status: "scheduled",
-  };
+
+  let query = supabase.from("appointments").select("*").is("deleted_at", null)
+                     .gte("date", now)
+                     .in("status", ['scheduled', 'booked', 'confirmed']); // explicitly list the statuses
 
   if (role === "patient") {
-    filters.patientId = userId;
+    query = query.eq("patient_id", userId);
   } else if (role === "doctor") {
-    filters.doctorId = userId;
+    query = query.eq("doctor_id", userId);
   }
 
-  return await findAll(filters);
-};
+  query = query.order("date", { ascending: true }).order("time_slot", { ascending: true });
 
+  const { data, error } = await query;
+  if (error) throw error;
+
+  return data;
+};
 /**
  * Get past appointments
  */
