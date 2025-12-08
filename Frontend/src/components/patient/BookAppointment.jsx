@@ -59,16 +59,38 @@ export function BookAppointment({ navigate, user }) {
     }
   };
 
-  const handleSubmit = () => {
-    if (!validateStep(step)) return;
-
+const handleSubmit = async () => {
+  try {
     setLoading(true);
-    setTimeout(() => {
-      setSuccess(true);
-      setLoading(false);
-      toast.success('Appointment booked successfully!');
-    }, 1000);
-  };
+
+    const res = await fetch('http://localhost:3000/api/v1/appointments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${user.session.access_token}`
+      },
+      body: JSON.stringify({
+        doctor_id: selectedDoctorId,
+        date: selectedDate,
+        time_slot: selectedTimeSlot,
+        reason: reason,
+        notes: notes
+      })
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) throw new Error(result.message);
+
+    toast.success('Appointment booked successfully!');
+    navigate('/patient/appointments');
+
+  } catch (err) {
+    toast.error(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (success) {
     const doctor = MOCK_DOCTORS.find(d => d.id === selectedDoctor);

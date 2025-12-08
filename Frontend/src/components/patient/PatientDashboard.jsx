@@ -1,21 +1,35 @@
+import { useEffect, useState } from 'react';
 import { Calendar, Clock, CheckCircle, Search } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-
-
-
-// Mock data
-const MOCK_STATS = {
-  upcomingAppointments: 4,
-  pastAppointments: 8
-};
+import appointmentService from '../../shared/services/appointment.service';
 
 export function PatientDashboard({ navigate, user }) {
+  const [stats, setStats] = useState({ upcomingAppointments: 0, pastAppointments: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const result = await appointmentService.getStatsForPatient(user.id);
+        setStats({
+          upcomingAppointments: result?.upcoming || 0,
+          pastAppointments: result?.past || 0,
+        });
+      } catch (err) {
+        console.error('Error fetching patient stats:', err);
+      }
+    };
+    fetchStats();
+  }, [user.id]);
+
   return (
     <div className="p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
+        {/* Welcome */}
         <div className="mb-8">
-          <h1 className="text-gray-900 mb-2">Welcome back, {user?.fullName?.split(' ')[0] || 'Patient'}!</h1>
+          <h1 className="text-gray-900 mb-2">
+            Welcome back, {user?.fullName?.split(' ')[0] || 'Patient'}!
+          </h1>
           <p className="text-gray-600">Manage your appointments and healthcare</p>
         </div>
 
@@ -26,7 +40,7 @@ export function PatientDashboard({ navigate, user }) {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-2">Upcoming Appointments</p>
-                  <p className="text-3xl text-gray-900">{MOCK_STATS.upcomingAppointments}</p>
+                  <p className="text-3xl text-gray-900">{stats.upcomingAppointments}</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <Calendar className="w-6 h-6 text-blue-600" />
@@ -40,7 +54,7 @@ export function PatientDashboard({ navigate, user }) {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-2">Past Appointments</p>
-                  <p className="text-3xl text-gray-900">{MOCK_STATS.pastAppointments}</p>
+                  <p className="text-3xl text-gray-900">{stats.pastAppointments}</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                   <CheckCircle className="w-6 h-6 text-green-600" />
@@ -54,7 +68,9 @@ export function PatientDashboard({ navigate, user }) {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-2">Total Appointments</p>
-                  <p className="text-3xl text-gray-900">{MOCK_STATS.upcomingAppointments + MOCK_STATS.pastAppointments}</p>
+                  <p className="text-3xl text-gray-900">
+                    {stats.upcomingAppointments + stats.pastAppointments}
+                  </p>
                 </div>
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                   <Clock className="w-6 h-6 text-purple-600" />
