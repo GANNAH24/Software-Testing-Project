@@ -2,6 +2,7 @@
  * Doctors Controller
  * Presentation layer for doctors
  */
+//Imperative
 
 const doctorsService = require('./doctors.service');
 const { successResponse } = require('../../shared/utils/response.util');

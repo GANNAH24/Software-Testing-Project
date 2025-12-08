@@ -43,25 +43,32 @@ const findAll = async (filters = {}) => {
 };
 
 const findById = async (doctorId) => {
-  // Try both doctor_id and id fields for flexibility
-  let query = supabase
+  // First try to find by doctor_id
+  let { data, error } = await supabase
     .from('doctors')
     .select('*')
-    .is('deleted_at', null);
-  
-  // Check if doctorId looks like a UUID (has dashes)
-  if (doctorId && doctorId.includes('-')) {
-    query = query.or(`doctor_id.eq.${doctorId},id.eq.${doctorId}`);
-  } else {
-    query = query.eq('doctor_id', doctorId);
+    .eq('doctor_id', doctorId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  // If not found and looks like a UUID, try user_id
+  if (!data && !error && doctorId && doctorId.includes('-')) {
+    const result = await supabase
+      .from('doctors')
+      .select('*')
+      .eq('user_id', doctorId)
+      .is('deleted_at', null)
+      .maybeSingle();
+    
+    data = result.data;
+    error = result.error;
   }
-  
-  const { data, error } = await query.maybeSingle();
 
   if (error && error.code !== 'PGRST116') {
     logger.error('Error finding doctor', { doctorId, error: error.message });
     throw error;
   }
+  
   return data;
 };
 

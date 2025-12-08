@@ -1,9 +1,8 @@
 import { Heart, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { HeartbeatLogo } from './HeartbeatLogo';
 
-
-
-export function Footer({ navigate }) {
+export function Footer() {
   return (
     <footer className="bg-gray-900 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -40,36 +39,36 @@ export function Footer({ navigate }) {
             <h3 className="text-white mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <button
-                  onClick={() => navigate('home')}
+                <Link
+                  to="/"
                   className="hover:text-[#667eea] transition-colors text-sm"
                 >
                   Home
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  onClick={() => navigate('about-us')}
+                <Link
+                  to="/about"
                   className="hover:text-[#667eea] transition-colors text-sm"
                 >
                   About Us
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  onClick={() => navigate('advanced-search')}
+                <Link
+                  to="/search"
                   className="hover:text-[#667eea] transition-colors text-sm"
                 >
                   Find Doctors
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  onClick={() => navigate('contact')}
+                <Link
+                  to="/contact"
                   className="hover:text-[#667eea] transition-colors text-sm"
                 >
                   Contact
-                </button>
+                </Link>
               </li>
             </ul>
           </div>
@@ -79,20 +78,20 @@ export function Footer({ navigate }) {
             <h3 className="text-white mb-4">For Patients</h3>
             <ul className="space-y-2">
               <li>
-                <button
-                  onClick={() => navigate('register')}
+                <Link
+                  to="/register"
                   className="hover:text-[#667eea] transition-colors text-sm"
                 >
                   Register
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  onClick={() => navigate('login')}
+                <Link
+                  to="/login"
                   className="hover:text-[#667eea] transition-colors text-sm"
                 >
                   Login
-                </button>
+                </Link>
               </li>
               <li>
                 <span className="text-sm text-gray-400">Book Appointments</span>

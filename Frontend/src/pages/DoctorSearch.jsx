@@ -5,7 +5,6 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { DoctorCard } from '../components/DoctorCard';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
-import { specialties, locations } from '../lib/mockData';
 import doctorService from '../shared/services/doctor.service';
 
 export function DoctorSearch({ navigate }) {
@@ -18,6 +17,10 @@ export function DoctorSearch({ navigate }) {
   const [minReviews, setMinReviews] = useState('');
   const [sortBy, setSortBy] = useState('reviews');
 
+  // Get unique specialties and locations from loaded doctors
+  const [specialties, setSpecialties] = useState([]);
+  const [locations, setLocations] = useState([]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get('q');
@@ -29,7 +32,14 @@ export function DoctorSearch({ navigate }) {
       try {
         const result = await doctorService.list();
         const list = result?.data || result || [];
-        setDoctors(Array.isArray(list) ? list : []);
+        const doctorsList = Array.isArray(list) ? list : [];
+        setDoctors(doctorsList);
+        
+        // Extract unique specialties and locations
+        const uniqueSpecialties = [...new Set(doctorsList.map(d => d.specialty).filter(Boolean))];
+        const uniqueLocations = [...new Set(doctorsList.map(d => d.location).filter(Boolean))];
+        setSpecialties(uniqueSpecialties);
+        setLocations(uniqueLocations);
       } catch (err) {
         console.error('Error loading doctors:', err);
         setDoctors([]);
@@ -85,7 +95,7 @@ export function DoctorSearch({ navigate }) {
       {loading ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">{[...Array(6)].map((_, i) => (<LoadingSkeleton key={i} variant="card" />))}</div>
       ) : filteredDoctors.length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">{filteredDoctors.map(doctor => (<DoctorCard key={doctor.id} doctor={doctor} onClick={() => navigate(`/doctor/${doctor.id}`)} />))}</div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">{filteredDoctors.map(doctor => (<DoctorCard key={doctor.doctor_id || doctor.id} doctor={doctor} onClick={() => navigate(`/doctor/${doctor.doctor_id || doctor.id}`)} />))}</div>
       ) : (
         <div className="text-center py-16 bg-white rounded-lg border border-gray-200"><Search className="w-16 h-16 text-gray-300 mx-auto mb-4" /><h3 className="text-xl text-gray-900 mb-2">No doctors found</h3><p className="text-gray-600 mb-6">Try adjusting your search criteria or filters</p><Button onClick={handleClearFilters}>Clear All Filters</Button></div>
       )}

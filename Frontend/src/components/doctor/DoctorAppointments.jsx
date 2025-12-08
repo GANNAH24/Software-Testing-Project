@@ -1,113 +1,115 @@
-import { useState, useEffect } from "react";
-import appointmentService from "../../shared/services/appointment.service";
-import { Calendar, Clock, CheckCircle, X } from "lucide-react";
-import { Button } from "../ui/button";
-import { Card, CardContent } from "../ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
-import { Textarea } from "../ui/textarea";
-import { Label } from "../ui/label";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, Clock, CheckCircle, X } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Card, CardContent } from '../ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Textarea } from '../ui/textarea';
+import { Label } from '../ui/label';
+import { toast } from 'sonner';
+import { useAuthContext } from '../../shared/contexts/AuthContext';
+import appointmentService from '../../shared/services/appointment.service';
 
-export function DoctorAppointments({ navigate, user }) {
+export function DoctorAppointments() {
+  const navigate = useNavigate();
+  const { user } = useAuthContext();
   const [appointments, setAppointments] = useState([]);
-  const [selectedTab, setSelectedTab] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [selectedTab, setSelectedTab] = useState('all');
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
 
-  const filterAppointments = (status) => {
-    if (status === "all") return appointments;
-    if (status === "upcoming")
-      return appointments.filter(
-        (a) => a.status === "booked" || a.status === "scheduled"
-      );
-    if (status === "past")
-      return appointments.filter(
-        (a) => a.status === "completed" || a.status === "canceled"
-      );
-    return appointments;
-  };
-
   useEffect(() => {
-    if (!user?.id) return;
-
-    const loadAppointments = async () => {
+    const fetchAppointments = async () => {
+      if (!user?.id) return;
+      
       try {
-        const result = await appointmentService.list({ doctor_id: user.id });
-        setAppointments(result?.data || []);
-      } catch (err) {
-        console.error("Failed to load appointments:", err);
-        toast.error("Failed to load appointments.");
+        setLoading(true);
+        const response = await appointmentService.byDoctor(user.id);
+        console.log('Doctor appointments response:', response);
+        
+        let data = response?.data || response?.appointments || response;
+        
+        // Ensure data is always an array
+        if (!Array.isArray(data)) {
+          console.warn('Appointments data is not an array:', data);
+          data = [];
+        }
+        
+        console.log('Setting appointments:', data);
+        setAppointments(data);
+      } catch (error) {
+        console.error('Failed to fetch appointments:', error);
+        toast.error('Failed to load appointments');
+        setAppointments([]); // Ensure it's always an array even on error
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadAppointments();
+    fetchAppointments();
   }, [user]);
 
+  const filterAppointments = (status) => {
+    // Extra safety check
+    if (!Array.isArray(appointments)) {
+      console.error('Appointments is not an array:', appointments);
+      return [];
+    }
+    
+    if (status === 'all') return appointments;
+    if (status === 'upcoming') return appointments.filter(a => a.status === 'pending' || a.status === 'confirmed' || a.status === "booked" || a.status === "scheduled");
+    if (status === 'past') return appointments.filter(a => a.status === 'completed' || a.status === 'canceled' || a.status === 'cancelled');
+    return appointments;
+  };
+
   const handleComplete = async () => {
+    if (!selectedAppointment?.id) return;
+
     try {
-      await appointmentService.update(selectedAppointment.id, {
-        status: "completed",
-      });
-      setAppointments(
-        appointments.map((a) =>
-          a.id === selectedAppointment.id ? { ...a, status: "completed" } : a
-        )
-      );
-      toast.success("Appointment marked as completed");
+      await appointmentService.complete(selectedAppointment.id);
+      setAppointments(appointments.map(apt => apt.id === selectedAppointment.id ? { ...apt, status: 'completed' } : apt));
+      toast.success('Appointment marked as completed');
       setCompleteDialogOpen(false);
       setSelectedAppointment(null);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to mark appointment as completed");
+    } catch (error) {
+      console.error('Failed to complete appointment:', error);
+      toast.error('Failed to complete appointment');
     }
   };
 
   const handleCancel = async () => {
-    if (!cancelReason.trim()) {
-      toast.error("Please provide a cancellation reason");
-      return;
-    }
+    if (!cancelReason.trim()) { toast.error('Please provide a cancellation reason'); return; }
+    if (!selectedAppointment?.id) return;
+
     try {
-      await appointmentService.update(selectedAppointment.id, {
-        status: "canceled",
-        cancelReason,
-      });
-      setAppointments(
-        appointments.map((a) =>
-          a.id === selectedAppointment.id
-            ? { ...a, status: "canceled", cancelReason }
-            : a
-        )
-      );
-      toast.success("Appointment canceled successfully");
+      await appointmentService.cancel(selectedAppointment.id);
+      setAppointments(appointments.map(apt => apt.id === selectedAppointment.id ? { ...apt, status: 'canceled', cancelReason } : apt));
+      toast.success('Appointment canceled successfully');
       setCancelDialogOpen(false);
-      setCancelReason("");
+      setCancelReason('');
       setSelectedAppointment(null);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to cancel appointment");
+    } catch (error) {
+      console.error('Failed to cancel appointment:', error);
+      toast.error('Failed to cancel appointment');
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
+      case 'pending':
       case "booked":
       case "scheduled":
         return "bg-blue-100 text-blue-800";
+      case 'confirmed': return 'bg-blue-100 text-blue-800';  
       case "completed":
         return "bg-green-100 text-green-800";
       case "canceled":
         return "bg-red-100 text-red-800";
+      case 'cancelled': return 'bg-red-100 text-red-800';  
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -115,10 +117,22 @@ export function DoctorAppointments({ navigate, user }) {
 
   const filteredAppointments = filterAppointments(selectedTab);
 
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-gray-900 mb-6">My Appointments</h1>
+        <h1 className="text-gray-900 mb-6">My Bookings</h1>
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="all">All</TabsTrigger>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -6,9 +7,11 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { toast } from 'sonner';
+import { useAuthContext } from '../shared/contexts/AuthContext';
 
-// Converted from TSX: removed ChangePasswordProps interface and all type annotations
-export function ChangePassword({ navigate, user }) {
+export function ChangePassword() {
+  const navigate = useNavigate();
+  const { user } = useAuthContext();
   const REQUIREMENTS = { minLength: 8, requireUppercase: true, requireLowercase: true, requireNumber: true, requireSpecialChar: true };
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -44,7 +47,16 @@ export function ChangePassword({ navigate, user }) {
   };
 
   if (!user) {
-    return (<div className="p-8 max-w-2xl mx-auto"><div className="bg-white rounded-lg shadow-sm p-12 text-center"><p className="text-gray-600">Please login to change your password</p></div></div>);
+    return (
+      <div className="p-8 max-w-2xl mx-auto">
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-gray-600 mb-4">Please login to change your password</p>
+            <Button onClick={() => navigate('/login')}>Go to Login</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

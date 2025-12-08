@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Alert, AlertDescription } from './ui/alert';
 import { toast } from 'sonner';
-import { authService } from '../shared/services/auth.service';
+import { useAuthContext } from '../shared/contexts/AuthContext';
 
 
 const MOCK_PASSWORD_REQUIREMENTS = {
@@ -27,11 +28,13 @@ const SPECIALTIES = [
   'Internal Medicine'
 ];
 
-export function Register({ navigate, onRegister }) {
+export function Register() {
   const [role, setRole] = useState('patient');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [passwordRequirements, setPasswordRequirements] = useState(MOCK_PASSWORD_REQUIREMENTS);
+  const { register: registerUser } = useAuthContext();
+  const navigate = useNavigate();
 
   // Common fields
   const [email, setEmail] = useState('');
@@ -127,20 +130,23 @@ export function Register({ navigate, onRegister }) {
         ...(role === 'doctor' ? { specialty, qualifications, location } : {}),
       };
 
-      const response = await authService.register(userData);
+      const result = await registerUser(userData);
 
-      if (response.success) {
-        toast.success('Registration successful!');
-        if (response.data.token) {
-          localStorage.setItem('authToken', response.data.token);
-        }
-        onRegister(response.data.user);
+      if (result.success) {
+        toast.success('Registration successful! Redirecting to login...');
+        // Redirect to login page after short delay
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
       } else {
-        toast.error(response.message || 'Registration failed');
+        const errorMsg = result.error || 'Registration failed';
+        toast.error(errorMsg);
       }
     } catch (err) {
       console.error('Registration error:', err);
-      toast.error(err.response?.data?.message || 'Registration failed. Please try again.');
+      // Only show error toast if result.success wasn't already handled
+      const msg = err.response?.data?.message || 'Registration failed. Please try again.';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -377,12 +383,12 @@ export function Register({ navigate, onRegister }) {
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Already have an account?{' '}
-                <button
-                  onClick={() => navigate('login')}
+                <Link
+                  to="/login"
                   className="text-[#667eea] hover:text-[#5568d3]"
                 >
                   Login
-                </button>
+                </Link>
               </p>
             </div>
           </CardContent>

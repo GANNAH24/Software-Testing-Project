@@ -12,8 +12,17 @@ const logger = require('../../shared/utils/logger.util');
 const findAllByDoctor = async (doctorId, filters = {}) => {
     let query = supabase
         .from('doctor_schedules')
-        .select('*')
-        .eq('doctor_id', doctorId);
+        .select('*');
+    
+    // Filter by doctor ID if provided
+    if (doctorId) {
+        query = query.eq('doctor_id', doctorId);
+    }
+
+    // Filter by specific date
+    if (filters.date) {
+        query = query.eq('date', filters.date);
+    }
 
     // Filter by date range
     if (filters.startDate) {
@@ -38,7 +47,7 @@ const findAllByDoctor = async (doctorId, filters = {}) => {
         throw error;
     }
 
-    return data;
+    return data || [];
 };
 
 /**
@@ -86,9 +95,16 @@ const create = async (scheduleData) => {
  * Update schedule
  */
 const update = async (scheduleId, updates) => {
+    // Convert camelCase to snake_case for database
+    const dbUpdates = {};
+    if (updates.date) dbUpdates.date = updates.date;
+    if (updates.timeSlot) dbUpdates.time_slot = updates.timeSlot;
+    if (updates.isAvailable !== undefined) dbUpdates.is_available = updates.isAvailable;
+    if (updates.notes) dbUpdates.notes = updates.notes;
+    
     const { data, error } = await supabase
         .from('doctor_schedules')
-        .update(updates)
+        .update(dbUpdates)
         .eq('schedule_id', scheduleId)
         .select()
         .single();

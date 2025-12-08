@@ -12,11 +12,17 @@ const { requireAuth, requireDoctor } = require('../../shared/middleware/auth.mid
 router.use(requireAuth());
 
 // Core schedule endpoints
+router.get('/', schedulesController.getAllSchedules); // Get all schedules (public with auth)
 router.post('/', requireDoctor(), schedulesController.createSchedule);
 router.get('/weekly', requireDoctor(), schedulesController.getWeeklySchedule);
 router.get('/daily', requireDoctor(), schedulesController.getDailySchedule);
 router.post('/block-time', requireDoctor(), schedulesController.blockTime);
+
 // Update schedule (set available/unavailable or change time)
 router.patch('/:id', requireDoctor(), schedulesController.updateSchedule);
+router.put('/:id', requireDoctor(), schedulesController.updateSchedule);
+
+// Delete schedule
+router.delete('/:id', requireDoctor(), schedulesController.deleteSchedule);
 
 module.exports = router;

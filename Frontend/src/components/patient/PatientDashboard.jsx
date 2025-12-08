@@ -1,35 +1,61 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, CheckCircle, Search } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
+import { useAuthContext } from '../../shared/contexts/AuthContext';
 import appointmentService from '../../shared/services/appointment.service';
 
-export function PatientDashboard({ navigate, user }) {
-  const [stats, setStats] = useState({ upcomingAppointments: 0, pastAppointments: 0 });
+export function PatientDashboard() {
+  const navigate = useNavigate();
+  const { user } = useAuthContext();
+  const [stats, setStats] = useState({ upcomingAppointments: 0, pastAppointments: 0, total: 0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
+      if (!user?.id) return;
+      
       try {
-        const result = await appointmentService.getStatsForPatient(user.id);
+        const response = await appointmentService.byPatient(user.id);
+        const appointments = response?.data || response?.appointments || response || [];
+        
+        const upcoming = appointments.filter(apt => apt.status === 'pending' || apt.status === 'confirmed' || apt.status === "booked" || apt.status === "scheduled").length;
+        const past = appointments.filter(apt => apt.status === 'completed' || apt.status === 'canceled' || apt.status === 'cancelled').length;
+        
         setStats({
-          upcomingAppointments: result?.upcoming || 0,
-          pastAppointments: result?.past || 0,
+          upcomingAppointments: upcoming,
+          pastAppointments: past,
+          total: appointments.length
         });
-      } catch (err) {
-        console.error('Error fetching patient stats:', err);
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      } finally {
+        setLoading(false);
       }
     };
+
     fetchStats();
-  }, [user.id]);
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Welcome */}
         <div className="mb-8">
-          <h1 className="text-gray-900 mb-2">
-            Welcome back, {user?.fullName?.split(' ')[0] || 'Patient'}!
-          </h1>
+          <h1 className="text-gray-900 mb-2">Welcome back, {(user?.fullName || user?.full_name || 'Patient').split(' ')[0]}!</h1>
           <p className="text-gray-600">Manage your appointments and healthcare</p>
         </div>
 
@@ -68,9 +94,7 @@ export function PatientDashboard({ navigate, user }) {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-2">Total Appointments</p>
-                  <p className="text-3xl text-gray-900">
-                    {stats.upcomingAppointments + stats.pastAppointments}
-                  </p>
+                  <p className="text-3xl text-gray-900">{stats.total}</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                   <Clock className="w-6 h-6 text-purple-600" />
@@ -86,7 +110,7 @@ export function PatientDashboard({ navigate, user }) {
             <h2 className="text-gray-900 mb-4">Quick Actions</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button
-                onClick={() => navigate('find-doctors')}
+                onClick={() => navigate('/patient/find-doctors')}
                 className="bg-[#667eea] hover:bg-[#5568d3] h-auto py-6 justify-start"
               >
                 <div className="flex items-center gap-4">
@@ -101,7 +125,7 @@ export function PatientDashboard({ navigate, user }) {
               </Button>
 
               <Button
-                onClick={() => navigate('patient-appointments')}
+                onClick={() => navigate('/patient/appointments')}
                 variant="outline"
                 className="h-auto py-6 justify-start"
               >

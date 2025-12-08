@@ -1,19 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { toast } from 'sonner';
-import { authService } from '../shared/services/auth.service';
+import { useAuthContext } from '../shared/contexts/AuthContext';
 
-export function Login({ navigate, onLogin }) {
+export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { login, user, isAuthenticated } = useAuthContext();
+  const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    console.log('Login page: checking auth status', { isAuthenticated, user });
+    if (isAuthenticated && user) {
+      const roleRoutes = {
+        patient: '/patient/dashboard',
+        doctor: '/doctor/dashboard',
+        admin: '/admin/dashboard',
+      };
+      const targetRoute = roleRoutes[user.role] || '/';
+      console.log('User is already logged in, redirecting to:', targetRoute);
+      navigate(targetRoute, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,18 +45,27 @@ export function Login({ navigate, onLogin }) {
     setLoading(true);
 
     try {
-      const response = await authService.login(email, password);
+      console.log('Attempting login...');
+      const result = await login(email, password);
+      console.log('Login result:', result);
       
-      if (response.success) {
+      if (result.success && result.user) {
+        console.log('Login successful, user role:', result.user.role);
         toast.success('Login successful!');
-        // Store token if needed (usually handled by authService or cookies)
-        if (response.data.token) {
-          localStorage.setItem('authToken', response.data.token);
-        }
-        onLogin(response.data.user);
+        // Redirect based on role
+        const roleRoutes = {
+          patient: '/patient/dashboard',
+          doctor: '/doctor/dashboard',
+          admin: '/admin/dashboard',
+        };
+        const targetRoute = roleRoutes[result.user.role] || '/';
+        console.log('Navigating to:', targetRoute);
+        navigate(targetRoute);
       } else {
-        setError(response.message || 'Login failed');
-        toast.error(response.message || 'Login failed');
+        console.log('Login failed:', result.error);
+        const errorMsg = result.error || 'Login failed';
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -103,13 +130,12 @@ export function Login({ navigate, onLogin }) {
               </div>
 
               <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => navigate('forgot-password')}
+                <Link
+                  to="/forgot-password"
                   className="text-sm text-[#667eea] hover:text-[#5568d3]"
                 >
                   Forgot password?
-                </button>
+                </Link>
               </div>
 
               <Button
@@ -124,12 +150,12 @@ export function Login({ navigate, onLogin }) {
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Don't have an account?{' '}
-                <button
-                  onClick={() => navigate('register')}
+                <Link
+                  to="/register"
                   className="text-[#667eea] hover:text-[#5568d3]"
                 >
                   Sign up
-                </button>
+                </Link>
               </p>
             </div>
 

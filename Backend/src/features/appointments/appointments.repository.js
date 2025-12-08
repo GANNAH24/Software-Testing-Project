@@ -14,7 +14,23 @@ const findAll = async (filters = {}) => {
     .from("appointments")
     .select(
       `
-      *
+      *,
+      doctor:doctor_id (
+        doctor_id,
+        user_id,
+        first_name,
+        last_name,
+        specialty,
+        phone,
+        location
+      ),
+      patient:patient_id (
+        patient_id,
+        user_id,
+        first_name,
+        last_name,
+        phone
+      )
     `
     )
     .is("deleted_at", null); // Exclude soft-deleted
@@ -53,7 +69,16 @@ const findAll = async (filters = {}) => {
     throw error;
   }
 
-  return data;
+  // Format the data to include flattened doctor and patient info
+  return data.map(apt => ({
+    ...apt,
+    doctor_name: apt.doctor ? `Dr. ${apt.doctor.first_name} ${apt.doctor.last_name}` : null,
+    doctor_specialty: apt.doctor?.specialty,
+    doctor_phone: apt.doctor?.phone,
+    doctor_location: apt.doctor?.location,
+    patient_name: apt.patient ? `${apt.patient.first_name} ${apt.patient.last_name}` : null,
+    patient_phone: apt.patient?.phone
+  }));
 };
 
 /**
