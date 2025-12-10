@@ -65,6 +65,8 @@ const getPastAppointments = async (userId, role) => {
  * Create new appointment
  */
 const createAppointment = async (appointmentData) => {
+  const { supabase } = require('../../config/database');
+  
   // Validate appointment date is in the future
   let appointmentDate = new Date(appointmentData.date);
 
@@ -77,19 +79,47 @@ const createAppointment = async (appointmentData) => {
     throw new Error('Invalid date format');
   }
 
-  const now = new Date();
-  if (appointmentDate <= now) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (appointmentDate < today) {
     throw new Error('Appointment date must be in the future');
   }
 
-  // ✅ Use 'date' instead of 'appointmentDate'
-  const conflicts = await appointmentsRepository.findConflicts(
-    appointmentData.doctorId,
-    appointmentData.date
-  );
+  // Check if doctor has this time slot available in their schedule
+  const { data: schedules, error: scheduleError } = await supabase
+    .from('doctor_schedules')
+    .select('*')
+    .eq('doctor_id', appointmentData.doctorId || appointmentData.doctor_id)
+    .eq('date', appointmentData.date)
+    .eq('time_slot', appointmentData.timeSlot || appointmentData.time_slot)
+    .eq('is_available', true);
 
-  if (conflicts && conflicts.length > 0) {
+  if (scheduleError) {
+    logger.error('Error checking doctor schedule', { error: scheduleError.message });
+    throw new Error('Failed to check doctor availability');
+  }
+
+  if (!schedules || schedules.length === 0) {
     throw new Error('Doctor is not available at this time. Please choose another time slot.');
+  }
+
+  // Check for existing appointments at this time slot
+  const { data: existingAppointments, error: appointmentError } = await supabase
+    .from('appointments')
+    .select('appointment_id')
+    .eq('doctor_id', appointmentData.doctorId || appointmentData.doctor_id)
+    .eq('date', appointmentData.date)
+    .eq('time_slot', appointmentData.timeSlot || appointmentData.time_slot)
+    .in('status', ['pending', 'confirmed', 'scheduled'])
+    .is('deleted_at', null);
+
+  if (appointmentError) {
+    logger.error('Error checking appointment conflicts', { error: appointmentError.message });
+    throw new Error('Failed to check appointment availability');
+  }
+
+  if (existingAppointments && existingAppointments.length > 0) {
+    throw new Error('This time slot is already booked. Please choose another time.');
   }
 
   // Create appointment

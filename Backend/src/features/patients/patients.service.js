@@ -18,6 +18,15 @@ const PatientsService = {
     return await PatientsRepository.getPatientById(patientId);
   },
 
+  // Get a patient by user ID
+  async getByUserId(userId) {
+    const patient = await PatientsRepository.getPatientByUserId(userId);
+    if (!patient) {
+      throw new Error('Patient not found');
+    }
+    return patient;
+  },
+
   // Create a new patient
   async create(patientData) {
     return await PatientsRepository.createPatient(patientData);

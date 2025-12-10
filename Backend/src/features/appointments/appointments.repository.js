@@ -18,18 +18,19 @@ const findAll = async (filters = {}) => {
       doctor:doctor_id (
         doctor_id,
         user_id,
-        first_name,
-        last_name,
+        name,
         specialty,
         phone,
         location
       ),
       patient:patient_id (
         patient_id,
-        user_id,
-        first_name,
-        last_name,
-        phone
+        phone,
+        date_of_birth,
+        gender,
+        profiles!patient_id (
+          full_name
+        )
       )
     `
     )
@@ -72,12 +73,14 @@ const findAll = async (filters = {}) => {
   // Format the data to include flattened doctor and patient info
   return data.map(apt => ({
     ...apt,
-    doctor_name: apt.doctor ? `Dr. ${apt.doctor.first_name} ${apt.doctor.last_name}` : null,
+    doctor_name: apt.doctor?.name ? `Dr. ${apt.doctor.name}` : null,
     doctor_specialty: apt.doctor?.specialty,
     doctor_phone: apt.doctor?.phone,
     doctor_location: apt.doctor?.location,
-    patient_name: apt.patient ? `${apt.patient.first_name} ${apt.patient.last_name}` : null,
-    patient_phone: apt.patient?.phone
+    patient_name: apt.patient?.profiles?.full_name || `Patient ${apt.patient_id}`,
+    patient_phone: apt.patient?.phone,
+    patient_gender: apt.patient?.gender,
+    patient_dob: apt.patient?.date_of_birth
   }));
 };
 

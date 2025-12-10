@@ -42,7 +42,9 @@ export function ManageSchedule() {
   async function fetchSchedules() {
     try {
       setLoading(true);
-      const response = await scheduleService.list();
+      // Only fetch schedules from today onwards by default
+      const today = new Date().toISOString().split('T')[0];
+      const response = await scheduleService.list({ startDate: today });
       const data = response?.data || response?.schedules || response || [];
       console.log('Fetched schedules response:', response);
       console.log('Processed schedules data:', data);

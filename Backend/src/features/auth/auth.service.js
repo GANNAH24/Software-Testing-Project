@@ -189,12 +189,47 @@ const changePassword = async (userId, oldPassword, newPassword) => {
     throw error;
   }
 
+  // Check if old and new passwords are the same
+  if (oldPassword === newPassword) {
+    throw new Error('New password must be different from the old password');
+  }
+
   try {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword
+    // Get user's email to verify old password
+    const profile = await authRepository.findProfileById(userId);
+    if (!profile) {
+      throw new Error('User profile not found');
+    }
+
+    // Create a temporary Supabase client to verify the old password
+    const { createClient } = require('@supabase/supabase-js');
+    const tempClient = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY
+    );
+
+    // Verify old password by attempting sign in with temp client
+    const { error: signInError } = await tempClient.auth.signInWithPassword({
+      email: profile.email,
+      password: oldPassword
     });
 
-    if (error) throw error;
+    if (signInError) {
+      logger.warn('Old password verification failed', { userId, error: signInError.message });
+      throw new Error('Current password is incorrect');
+    }
+
+    // Old password is correct, now update to new password
+    // Use service role key to update password directly
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      userId,
+      { password: newPassword }
+    );
+
+    if (updateError) {
+      logger.error('Password update failed', { userId, error: updateError.message });
+      throw updateError;
+    }
 
     logger.info('Password changed successfully', { userId });
     return { success: true };

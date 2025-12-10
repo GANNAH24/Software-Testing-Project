@@ -245,6 +245,9 @@ export function DoctorProfile() {
         open={bookDialogOpen}
         onOpenChange={setBookDialogOpen}
         preSelectedDoctorId={doctor.doctor_id || doctor.id}
+        onSuccess={() => {
+          console.log('Appointment booked successfully from DoctorProfile');
+        }}
       />
     </div>
   );

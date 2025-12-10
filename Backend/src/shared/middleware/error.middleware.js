@@ -10,6 +10,12 @@ const logger = require('../utils/logger.util');
  * Not Found Handler
  */
 const notFoundHandler = (req, res, next) => {
+  // CORS headers should already be set by CORS middleware, but ensure they're present
+  if (!res.getHeader('Access-Control-Allow-Origin')) {
+    const origin = req.headers.origin || '*';
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
   res.status(404).json(errorResponse(`Route not found: ${req.method} ${req.path}`, null, 404));
 };
 

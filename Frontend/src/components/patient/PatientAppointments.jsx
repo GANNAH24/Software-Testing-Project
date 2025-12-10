@@ -31,33 +31,74 @@ export function PatientAppointments() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
 
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      if (!user?.id) return;
-      
-      try {
-        setLoading(true);
-        const response = await appointmentService.byPatient(user.id);
-        const data = response?.data || response?.appointments || response || [];
-        setAppointments(data);
-      } catch (error) {
-        console.error('Failed to fetch appointments:', error);
-        toast.error('Failed to load appointments');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchAppointments = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoading(true);
+      const response = await appointmentService.byPatient(user.id);
+      console.log('Appointments response:', response);
+      const data = response?.data || response?.appointments || response || [];
+      console.log('Appointments data:', data);
+      setAppointments(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to fetch appointments:', error);
+      toast.error('Failed to load appointments');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchAppointments();
+  }, [user]);
+
+  // Auto-refresh when window regains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchAppointments();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [user]);
 
   const filterAppointments = (status) => {
     if (status === 'all') return appointments;
+    
+    const now = new Date();
+    
     if (status === 'upcoming') {
-      return appointments.filter(a => a.status === 'pending' || a.status === 'confirmed');
+      return appointments.filter(a => {
+        // Parse the date from the appointment (YYYY-MM-DD format)
+        const [year, month, day] = a.date.split('-').map(Number);
+        const appointmentDate = new Date(year, month - 1, day);
+        
+        // Extract hour from time_slot (e.g., "09:00-10:00" -> 9)
+        if (a.time_slot) {
+          const [startTime] = a.time_slot.split('-');
+          const [hours, minutes] = startTime.split(':');
+          appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+        
+        return appointmentDate > now && (a.status === 'pending' || a.status === 'confirmed' || a.status === 'scheduled');
+      });
     }
     if (status === 'past') {
-      return appointments.filter(a => a.status === 'completed' || a.status === 'canceled' || a.status === 'cancelled');
+      return appointments.filter(a => {
+        // Parse the date from the appointment (YYYY-MM-DD format)
+        const [year, month, day] = a.date.split('-').map(Number);
+        const appointmentDate = new Date(year, month - 1, day);
+        
+        // Extract hour from time_slot (e.g., "09:00-10:00" -> 9)
+        if (a.time_slot) {
+          const [startTime] = a.time_slot.split('-');
+          const [hours, minutes] = startTime.split(':');
+          appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+        
+        return appointmentDate <= now || a.status === 'completed' || a.status === 'canceled' || a.status === 'cancelled';
+      });
     }
     return appointments;
   };
@@ -240,7 +281,7 @@ export function PatientAppointments() {
                 {/* Mobile Card View */}
                 <div className="md:hidden space-y-4">
                   {filteredAppointments.map((apt) => (
-                    <Card key={apt.id}>
+                    <Card key={apt.appointment_id || apt.id}>
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start mb-3">
                           <div>
@@ -335,7 +376,8 @@ export function PatientAppointments() {
         {/* Book Appointment Dialog */}
         <CalendarBookDialog 
           open={bookDialogOpen} 
-          onOpenChange={setBookDialogOpen} 
+          onOpenChange={setBookDialogOpen}
+          onSuccess={fetchAppointments}
         />
       </div>
     </div>

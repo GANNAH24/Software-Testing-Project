@@ -20,8 +20,39 @@ export function PatientDashboard() {
         const response = await appointmentService.byPatient(user.id);
         const appointments = response?.data || response?.appointments || response || [];
         
-        const upcoming = appointments.filter(apt => apt.status === 'pending' || apt.status === 'confirmed').length;
-        const past = appointments.filter(apt => apt.status === 'completed' || apt.status === 'canceled' || apt.status === 'cancelled').length;
+        const now = new Date();
+        
+        // Filter upcoming appointments: future date/time with active status
+        const upcoming = appointments.filter(apt => {
+          // Parse the date from the appointment (YYYY-MM-DD format)
+          const [year, month, day] = apt.date.split('-').map(Number);
+          const appointmentDate = new Date(year, month - 1, day);
+          
+          // Extract hour from time_slot
+          if (apt.time_slot) {
+            const [startTime] = apt.time_slot.split('-');
+            const [hours, minutes] = startTime.split(':');
+            appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          }
+          
+          return appointmentDate > now && (apt.status === 'pending' || apt.status === 'confirmed' || apt.status === 'scheduled');
+        }).length;
+        
+        // Filter past appointments: past date/time or completed/canceled status
+        const past = appointments.filter(apt => {
+          // Parse the date from the appointment (YYYY-MM-DD format)
+          const [year, month, day] = apt.date.split('-').map(Number);
+          const appointmentDate = new Date(year, month - 1, day);
+          
+          // Extract hour from time_slot
+          if (apt.time_slot) {
+            const [startTime] = apt.time_slot.split('-');
+            const [hours, minutes] = startTime.split(':');
+            appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          }
+          
+          return appointmentDate <= now || apt.status === 'completed' || apt.status === 'canceled' || apt.status === 'cancelled';
+        }).length;
         
         setStats({
           upcomingAppointments: upcoming,

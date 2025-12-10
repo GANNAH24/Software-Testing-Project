@@ -22,35 +22,45 @@ export function DoctorAppointments() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
 
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      if (!user?.id) return;
+  const fetchAppointments = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoading(true);
+      const response = await appointmentService.byDoctor(user.id);
+      console.log('Doctor appointments response:', response);
       
-      try {
-        setLoading(true);
-        const response = await appointmentService.byDoctor(user.id);
-        console.log('Doctor appointments response:', response);
-        
-        let data = response?.data || response?.appointments || response;
-        
-        // Ensure data is always an array
-        if (!Array.isArray(data)) {
-          console.warn('Appointments data is not an array:', data);
-          data = [];
-        }
-        
-        console.log('Setting appointments:', data);
-        setAppointments(data);
-      } catch (error) {
-        console.error('Failed to fetch appointments:', error);
-        toast.error('Failed to load appointments');
-        setAppointments([]); // Ensure it's always an array even on error
-      } finally {
-        setLoading(false);
+      let data = response?.data || response?.appointments || response;
+      
+      // Ensure data is always an array
+      if (!Array.isArray(data)) {
+        console.warn('Appointments data is not an array:', data);
+        data = [];
       }
-    };
+      
+      console.log('Setting appointments:', data);
+      setAppointments(data);
+    } catch (error) {
+      console.error('Failed to fetch appointments:', error);
+      toast.error('Failed to load appointments');
+      setAppointments([]); // Ensure it's always an array even on error
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchAppointments();
+  }, [user]);
+
+  // Auto-refresh when window regains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchAppointments();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [user]);
 
   const filterAppointments = (status) => {
@@ -61,17 +71,49 @@ export function DoctorAppointments() {
     }
     
     if (status === 'all') return appointments;
-    if (status === 'upcoming') return appointments.filter(a => a.status === 'pending' || a.status === 'confirmed');
-    if (status === 'past') return appointments.filter(a => a.status === 'completed' || a.status === 'canceled' || a.status === 'cancelled');
+    
+    const now = new Date();
+    
+    if (status === 'upcoming') {
+      return appointments.filter(a => {
+        // Parse the date and time_slot to create a full datetime
+        const appointmentDate = new Date(a.date);
+        
+        // Extract hour from time_slot (e.g., "09:00-10:00" -> 9)
+        if (a.time_slot) {
+          const [startTime] = a.time_slot.split('-');
+          const [hours, minutes] = startTime.split(':');
+          appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+        
+        return appointmentDate > now && (a.status === 'pending' || a.status === 'confirmed' || a.status === 'scheduled');
+      });
+    }
+    if (status === 'past') {
+      return appointments.filter(a => {
+        // Parse the date and time_slot to create a full datetime
+        const appointmentDate = new Date(a.date);
+        
+        // Extract hour from time_slot (e.g., "09:00-10:00" -> 9)
+        if (a.time_slot) {
+          const [startTime] = a.time_slot.split('-');
+          const [hours, minutes] = startTime.split(':');
+          appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+        
+        return appointmentDate <= now || a.status === 'completed' || a.status === 'canceled' || a.status === 'cancelled';
+      });
+    }
     return appointments;
   };
 
   const handleComplete = async () => {
-    if (!selectedAppointment?.id) return;
+    const appointmentId = selectedAppointment?.appointment_id || selectedAppointment?.id;
+    if (!appointmentId) return;
 
     try {
-      await appointmentService.complete(selectedAppointment.id);
-      setAppointments(appointments.map(apt => apt.id === selectedAppointment.id ? { ...apt, status: 'completed' } : apt));
+      await appointmentService.complete(appointmentId);
+      setAppointments(appointments.map(apt => (apt.appointment_id || apt.id) === appointmentId ? { ...apt, status: 'completed' } : apt));
       toast.success('Appointment marked as completed');
       setCompleteDialogOpen(false);
       setSelectedAppointment(null);
@@ -83,11 +125,12 @@ export function DoctorAppointments() {
 
   const handleCancel = async () => {
     if (!cancelReason.trim()) { toast.error('Please provide a cancellation reason'); return; }
-    if (!selectedAppointment?.id) return;
+    const appointmentId = selectedAppointment?.appointment_id || selectedAppointment?.id;
+    if (!appointmentId) return;
 
     try {
-      await appointmentService.cancel(selectedAppointment.id);
-      setAppointments(appointments.map(apt => apt.id === selectedAppointment.id ? { ...apt, status: 'canceled', cancelReason } : apt));
+      await appointmentService.cancel(appointmentId);
+      setAppointments(appointments.map(apt => (apt.appointment_id || apt.id) === appointmentId ? { ...apt, status: 'canceled', cancelReason } : apt));
       toast.success('Appointment canceled successfully');
       setCancelDialogOpen(false);
       setCancelReason('');
@@ -151,8 +194,8 @@ export function DoctorAppointments() {
                       <th className="text-left p-4 text-sm text-gray-600">Status</th>
                       <th className="text-left p-4 text-sm text-gray-600">Actions</th></tr></thead>
                     <tbody>{filteredAppointments.map(apt => (
-                      <tr key={apt.id} className="border-b border-gray-200 last:border-0">
-                        <td className="p-4"><div><div className="text-gray-900">{apt.patient?.fullName || apt.patient?.full_name || 'Unknown Patient'}</div><div className="text-sm text-gray-600">{apt.patient?.phoneNumber || apt.patient?.phone || 'N/A'}</div></div></td>
+                      <tr key={apt.appointment_id || apt.id} className="border-b border-gray-200 last:border-0">
+                        <td className="p-4"><div><div className="text-gray-900">{apt.patient_name || 'Unknown Patient'}</div><div className="text-sm text-gray-600">{apt.patient_phone || apt.patient?.phone || 'N/A'}</div></div></td>
                         <td className="p-4 text-gray-900">{new Date(apt.date).toLocaleDateString()}</td>
                         <td className="p-4 text-gray-900">{apt.timeSlot || apt.time_slot}</td>
                         <td className="p-4"><span className={`inline-flex px-2 py-1 rounded text-xs capitalize ${getStatusColor(apt.status)}`}>{apt.status}</span></td>
@@ -167,12 +210,12 @@ export function DoctorAppointments() {
                   </table>
                 </CardContent></Card></div>
                 <div className="md:hidden space-y-4">{filteredAppointments.map(apt => (
-                  <Card key={apt.id}><CardContent className="p-4">
+                  <Card key={apt.appointment_id || apt.id}><CardContent className="p-4">
                     <div className="flex justify-between items-start mb-3">
-                      <div><div className="text-gray-900">{apt.patientName}</div><div className="text-sm text-gray-600">{apt.patientPhone}</div></div>
+                      <div><div className="text-gray-900">{apt.patient_name || 'Unknown Patient'}</div><div className="text-sm text-gray-600">{apt.patient_phone || 'N/A'}</div></div>
                       <span className={`px-2 py-1 rounded text-xs capitalize ${getStatusColor(apt.status)}`}>{apt.status}</span>
                     </div>
-                    <div className="space-y-2 mb-4"><div className="flex items-center gap-2 text-sm text-gray-600"><Calendar className="w-4 h-4" />{new Date(apt.date).toLocaleDateString()}</div><div className="flex items-center gap-2 text-sm text-gray-600"><Clock className="w-4 h-4" />{apt.timeSlot}</div>{apt.notes && (<div className="text-sm text-gray-600"><strong>Notes:</strong> {apt.notes}</div>)}</div>
+                    <div className="space-y-2 mb-4"><div className="flex items-center gap-2 text-sm text-gray-600"><Calendar className="w-4 h-4" />{new Date(apt.date).toLocaleDateString()}</div><div className="flex items-center gap-2 text-sm text-gray-600"><Clock className="w-4 h-4" />{apt.time_slot || apt.timeSlot}</div>{apt.notes && (<div className="text-sm text-gray-600"><strong>Notes:</strong> {apt.notes}</div>)}</div>
                     {(apt.status === 'booked' || apt.status === 'scheduled') && (<div className="flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => { setSelectedAppointment(apt); setCompleteDialogOpen(true); }} className="flex-1"><CheckCircle className="w-4 h-4 mr-1" />Complete</Button>
                       <Button size="sm" variant="outline" onClick={() => { setSelectedAppointment(apt); setCancelDialogOpen(true); }}><X className="w-4 h-4" /></Button>
@@ -187,9 +230,9 @@ export function DoctorAppointments() {
         <Dialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
           <DialogContent><DialogHeader><DialogTitle>Complete Appointment</DialogTitle><DialogDescription>Mark this appointment as completed?</DialogDescription></DialogHeader>
             {selectedAppointment && (<div className="bg-gray-50 rounded-lg p-4 text-sm space-y-2">
-              <div className="flex justify-between"><span className="text-gray-600">Patient:</span><span className="text-gray-900">{selectedAppointment.patientName}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Patient:</span><span className="text-gray-900">{selectedAppointment.patient_name || 'Unknown Patient'}</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Date:</span><span className="text-gray-900">{new Date(selectedAppointment.date).toLocaleDateString()}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Time:</span><span className="text-gray-900">{selectedAppointment.timeSlot}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Time:</span><span className="text-gray-900">{selectedAppointment.time_slot || selectedAppointment.timeSlot}</span></div>
             </div>)}
             <DialogFooter><Button variant="outline" onClick={() => setCompleteDialogOpen(false)}>Cancel</Button><Button onClick={handleComplete} className="bg-green-600 hover:bg-green-700">Mark as Completed</Button></DialogFooter>
           </DialogContent>

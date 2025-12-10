@@ -93,7 +93,9 @@ const searchDoctors = async (searchTerm, specialty = null) => {
 module.exports = {
   getAllDoctors,
   getDoctorById,
+  getById: getDoctorById, // Alias
   getDoctorByUserId,
+  getByUserId: getDoctorByUserId, // Alias
   getDoctorsBySpecialty,
   getDoctorsByLocation,
   advancedSearchDoctors,
