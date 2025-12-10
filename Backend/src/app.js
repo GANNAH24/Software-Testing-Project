@@ -15,6 +15,7 @@ const appointmentsRoutes = require('./features/appointments/appointments.routes'
 const doctorsRoutes = require('./features/doctors/doctors.routes');
 const schedulesRoutes = require('./features/schedules/schedules.routes');
 const patientsRoutes = require('./features/patients/patients.routes');
+const messagesRoutes = require('./features/messages/messages.routes');
 
 // Create Express app
 const app = express();
@@ -93,6 +94,7 @@ app.use(`${config.API_PREFIX}/${config.API_VERSION}/appointments`, appointmentsR
 app.use(`${config.API_PREFIX}/${config.API_VERSION}/doctors`, doctorsRoutes);
 app.use(`${config.API_PREFIX}/${config.API_VERSION}/schedules`, schedulesRoutes);
 app.use(`${config.API_PREFIX}/${config.API_VERSION}/patients`, patientsRoutes);
+app.use(`${config.API_PREFIX}/${config.API_VERSION}/messages`, messagesRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

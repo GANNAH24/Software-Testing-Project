@@ -51,10 +51,6 @@ export function ChangePassword() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      // Navigate back to dashboard
-      if (user.role === 'patient') navigate('/patient/dashboard');
-      else if (user.role === 'doctor') navigate('/doctor/dashboard');
-      else if (user.role === 'admin') navigate('/admin/dashboard');
     } catch (err) {
       console.error('Password change error:', err);
       setError(err.response?.data?.error || err.message || 'Failed to change password');

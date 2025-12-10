@@ -8,6 +8,7 @@ const config = require("./src/config/environment");
 const { testConnection } = require("./src/config/database");
 const logger = require("./src/shared/utils/logger.util");
 const { startReminderScheduler } = require('./src/shared/jobs/reminder.job');
+const { initializeSocket } = require('./src/config/socket');
 
 // Test database connection before starting server
 const startServer = async () => {
@@ -43,6 +44,10 @@ const startServer = async () => {
         `👨‍⚕️ Doctors: ${config.API_PREFIX}/${config.API_VERSION}/doctors`
       );
       logger.info("=".repeat(60));
+
+      // Initialize Socket.IO for real-time chat
+      initializeSocket(server);
+      logger.info('💬 Socket.IO initialized for real-time chat');
 
       // Start background reminder scheduler after server is up
       startReminderScheduler();

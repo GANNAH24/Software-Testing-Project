@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, CheckCircle, X } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, X, MessageCircle, Phone } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -10,6 +10,7 @@ import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { useAuthContext } from '../../shared/contexts/AuthContext';
 import appointmentService from '../../shared/services/appointment.service';
+import { messagesService } from '../../shared/services/messages.service';
 
 export function DoctorAppointments() {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ export function DoctorAppointments() {
       }
       
       console.log('Setting appointments:', data);
+      console.log('Sample appointment data:', data[0]); // Log first appointment to see structure
       setAppointments(data);
     } catch (error) {
       console.error('Failed to fetch appointments:', error);
@@ -141,6 +143,39 @@ export function DoctorAppointments() {
     }
   };
 
+  const handleMessagePatient = async (patientUserId) => {
+    if (!user?.id || !patientUserId) {
+      console.error('Missing user ID or patient user ID', { userId: user?.id, patientUserId });
+      toast.error('Cannot start conversation - missing IDs');
+      return;
+    }
+
+    try {
+      console.log('Creating conversation:', { patientId: patientUserId, doctorId: user.id });
+      // Create or get existing conversation
+      const response = await messagesService.createConversation(patientUserId, user.id);
+      console.log('API Response:', response);
+      
+      const conversation = response?.data || response;
+      console.log('Conversation:', conversation);
+      
+      if (!conversation || !conversation.id) {
+        console.error('Invalid conversation response:', conversation);
+        toast.error('Failed to create conversation - invalid response');
+        return;
+      }
+      
+      // Navigate to chat window
+      navigate(`/doctor/messages/${conversation.id}`);
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      toast.error(`Failed to open chat: ${error.response?.data?.message || error.message}`);
+      // If conversation already exists, navigate to messages list
+      navigate('/doctor/messages');
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
@@ -195,7 +230,26 @@ export function DoctorAppointments() {
                       <th className="text-left p-4 text-sm text-gray-600">Actions</th></tr></thead>
                     <tbody>{filteredAppointments.map(apt => (
                       <tr key={apt.appointment_id || apt.id} className="border-b border-gray-200 last:border-0">
-                        <td className="p-4"><div><div className="text-gray-900">{apt.patient_name || 'Unknown Patient'}</div><div className="text-sm text-gray-600">{apt.patient_phone || apt.patient?.phone || 'N/A'}</div></div></td>
+                        <td className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="text-gray-900">{apt.patient_name || 'Unknown Patient'}</div>
+                              <div className="text-sm text-gray-600 flex items-center gap-1">
+                                <Phone className="w-3 h-3" />
+                                {apt.patient_phone || apt.patient?.phone || 'N/A'}
+                              </div>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => handleMessagePatient(apt.patient_id)}
+                              className="text-[#667eea] hover:text-[#667eea] hover:bg-[#667eea]/10"
+                              title="Message Patient"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
                         <td className="p-4 text-gray-900">{new Date(apt.date).toLocaleDateString()}</td>
                         <td className="p-4 text-gray-900">{apt.timeSlot || apt.time_slot}</td>
                         <td className="p-4"><span className={`inline-flex px-2 py-1 rounded text-xs capitalize ${getStatusColor(apt.status)}`}>{apt.status}</span></td>
@@ -212,8 +266,24 @@ export function DoctorAppointments() {
                 <div className="md:hidden space-y-4">{filteredAppointments.map(apt => (
                   <Card key={apt.appointment_id || apt.id}><CardContent className="p-4">
                     <div className="flex justify-between items-start mb-3">
-                      <div><div className="text-gray-900">{apt.patient_name || 'Unknown Patient'}</div><div className="text-sm text-gray-600">{apt.patient_phone || 'N/A'}</div></div>
-                      <span className={`px-2 py-1 rounded text-xs capitalize ${getStatusColor(apt.status)}`}>{apt.status}</span>
+                      <div>
+                        <div className="text-gray-900">{apt.patient_name || 'Unknown Patient'}</div>
+                        <div className="text-sm text-gray-600 flex items-center gap-1">
+                          <Phone className="w-3 h-3" />
+                          {apt.patient_phone || apt.patient?.phone || 'N/A'}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => handleMessagePatient(apt.patient_id)}
+                          className="text-[#667eea] hover:text-[#667eea] hover:bg-[#667eea]/10 p-2"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </Button>
+                        <span className={`px-2 py-1 rounded text-xs capitalize ${getStatusColor(apt.status)}`}>{apt.status}</span>
+                      </div>
                     </div>
                     <div className="space-y-2 mb-4"><div className="flex items-center gap-2 text-sm text-gray-600"><Calendar className="w-4 h-4" />{new Date(apt.date).toLocaleDateString()}</div><div className="flex items-center gap-2 text-sm text-gray-600"><Clock className="w-4 h-4" />{apt.time_slot || apt.timeSlot}</div>{apt.notes && (<div className="text-sm text-gray-600"><strong>Notes:</strong> {apt.notes}</div>)}</div>
                     {(apt.status === 'booked' || apt.status === 'scheduled') && (<div className="flex gap-2">

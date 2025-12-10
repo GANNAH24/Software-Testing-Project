@@ -65,8 +65,24 @@ const findById = async (doctorId) => {
   }
 
   if (error && error.code !== 'PGRST116') {
-    logger.error('Error finding doctor', { doctorId, error: error.message });
+    logger.error('Error finding doctor', { doctorId, error: error.message, details: error });
     throw error;
+  }
+  
+  // If we found a doctor, fetch the profile data separately
+  if (data && data.user_id) {
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', data.user_id)
+      .single();
+    
+    if (!profileError && profileData) {
+      data.full_name = profileData.full_name;
+    }
+    
+    // Get email from auth.users (accessible through Supabase admin API)
+    // For now, we'll get it from the authenticated user or leave it null
   }
   
   return data;
