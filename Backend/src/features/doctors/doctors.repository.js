@@ -181,6 +181,7 @@ const create = async (doctorData) => {
       qualifications: doctorData.qualifications,
       reviews: doctorData.reviews || 0,
       location: doctorData.location,
+      phone: doctorData.phone,
       created_at: new Date().toISOString()
     }])
     .select()
