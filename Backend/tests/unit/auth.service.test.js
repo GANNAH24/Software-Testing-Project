@@ -58,7 +58,7 @@ describe('AuthService - User Registration', () => {
 
       validatePassword.mockReturnValue({ isValid: true, errors: [] });
       authRepository.findProfileByEmail.mockResolvedValue(null);
-      
+
       supabase.auth.signUp.mockResolvedValue({
         data: {
           user: { id: 'user-123', email: mockPatientData.email },
@@ -120,7 +120,7 @@ describe('AuthService - User Registration', () => {
 
       validatePassword.mockReturnValue({ isValid: true, errors: [] });
       authRepository.findProfileByEmail.mockResolvedValue(null);
-      
+
       supabase.auth.signUp.mockResolvedValue({
         data: {
           user: { id: 'user-456', email: mockDoctorData.email },
@@ -273,7 +273,7 @@ describe('AuthService - User Registration', () => {
         'patient@test.com',
         'SecurePass123!',
         'patient',
-        { 
+        {
           fullName: 'John Doe',
           phone: '+123456',
           gender: 'male'
@@ -303,7 +303,7 @@ describe('AuthService - User Registration', () => {
         'doctor@test.com',
         'SecurePass123!',
         'doctor',
-        { 
+        {
           fullName: 'Dr. Smith',
           location: 'New York'
           // Missing specialty
@@ -389,16 +389,20 @@ describe('AuthService - User Login', () => {
   describe('Login - Error Handling', () => {
     it('should reject login with invalid credentials', async () => {
       // Arrange
+      const errorMessage = 'Invalid login credentials';
       supabase.auth.signInWithPassword.mockResolvedValue({
         data: { user: null, session: null },
-        error: { message: 'Invalid login credentials' }
+        error: new Error(errorMessage)
       });
+
+      authRepository.findProfileById.mockResolvedValue(null);
+      authRepository.getRoleSpecificData.mockResolvedValue(null);
 
       // Act & Assert
       await expect(authService.login(
         'user@test.com',
         'WrongPassword'
-      )).rejects.toThrow('Invalid login credentials');
+      )).rejects.toThrow(errorMessage);
     });
 
     it('should handle missing email', async () => {
@@ -437,10 +441,10 @@ describe('AuthService - Password Reset', () => {
       });
 
       // Act
-      const result = await authService.resetPassword(email);
+      const result = await authService.forgotPassword(email);
 
       // Assert
-      expect(result).toHaveProperty('message');
+      expect(result).toHaveProperty('success', true);
       expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith(
         email,
         expect.objectContaining({
@@ -453,20 +457,21 @@ describe('AuthService - Password Reset', () => {
   describe('Password Reset - Error Handling', () => {
     it('should reject invalid email format', async () => {
       // Act & Assert
-      await expect(authService.resetPassword('invalid-email'))
+      await expect(authService.forgotPassword('invalid-email'))
         .rejects.toThrow('Invalid email format');
     });
 
     it('should handle Supabase errors', async () => {
       // Arrange
+      const errorMessage = 'Email service unavailable';
       supabase.auth.resetPasswordForEmail.mockResolvedValue({
         data: null,
-        error: { message: 'Email service unavailable' }
+        error: new Error(errorMessage)
       });
 
       // Act & Assert
-      await expect(authService.resetPassword('user@test.com'))
-        .rejects.toThrow('Email service unavailable');
+      await expect(authService.forgotPassword('user@test.com'))
+        .rejects.toThrow(errorMessage);
     });
   });
 });

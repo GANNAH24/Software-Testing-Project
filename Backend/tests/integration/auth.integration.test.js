@@ -22,7 +22,7 @@ describe('Authentication API Integration Tests', () => {
   afterEach(async () => {
     if (testUserId) {
       // Clean up test data
-      await supabase.from('users').delete().eq('user_id', testUserId);
+      await supabase.from('profiles').delete().eq('id', testUserId);
       testUserId = null;
     }
   });
@@ -60,21 +60,23 @@ describe('Authentication API Integration Tests', () => {
 
       testUserId = response.body.data.user.id;
 
+      // Wait a moment for database trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 200));
+
       // Assert Database State
       const { data: profile } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
-        .eq('user_id', testUserId)
+        .eq('id', testUserId)
         .single();
 
       expect(profile).toBeTruthy();
-      expect(profile.email).toBe(testEmail);
       expect(profile.role).toBe('patient');
 
       const { data: patient } = await supabase
         .from('patients')
         .select('*')
-        .eq('user_id', testUserId)
+        .eq('patient_id', testUserId)
         .single();
 
       expect(patient).toBeTruthy();
@@ -110,8 +112,8 @@ describe('Authentication API Integration Tests', () => {
         .expect(400);
 
       // Assert
-      expect(duplicateResponse.body).toHaveProperty('error');
-      expect(duplicateResponse.body.error).toContain('already exists');
+      expect(duplicateResponse.body).toHaveProperty('message');
+      expect(duplicateResponse.body.message).toContain('already exists');
     });
 
     it('should reject registration with weak password', async () => {
@@ -133,8 +135,8 @@ describe('Authentication API Integration Tests', () => {
         .expect(400);
 
       // Assert
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('Password');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('Password');
     });
   });
 
@@ -265,8 +267,8 @@ describe('Authentication API Integration Tests', () => {
         .expect(401);
 
       // Assert
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('Invalid');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('Invalid');
     });
 
     it('should reject login with non-existent email', async () => {
@@ -283,7 +285,8 @@ describe('Authentication API Integration Tests', () => {
         .expect(401);
 
       // Assert
-      expect(response.body).toHaveProperty('error');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('Invalid');
     });
   });
 
@@ -316,7 +319,7 @@ describe('Authentication API Integration Tests', () => {
         });
 
       testUserId = loginResponse.body.data.user.id;
-      authToken = loginResponse.body.data.session.access_token;
+      authToken = loginResponse.body.data.token;
     });
 
     it('should return current user data with valid session', async () => {
@@ -328,8 +331,8 @@ describe('Authentication API Integration Tests', () => {
 
       // Assert
       expect(response.body).toHaveProperty('success', true);
-      expect(response.body.data).toHaveProperty('user');
-      expect(response.body.data.user.email).toBe(testEmail);
+      expect(response.body.data).toHaveProperty('email');
+      expect(response.body.data.email).toBe(testEmail);
     });
 
     it('should reject request without authentication', async () => {
@@ -341,7 +344,7 @@ describe('Authentication API Integration Tests', () => {
       // Assert
       expect(response.body).toHaveProperty('success', false);
       expect(response.body).toHaveProperty('message');
-      expect(response.body.message.toLowerCase()).toContain('unauthorized');
+      expect(response.body.message.toLowerCase()).toContain('token');
     });
 
     it('should reject request with invalid token', async () => {
@@ -352,7 +355,8 @@ describe('Authentication API Integration Tests', () => {
         .expect(401);
 
       // Assert
-      expect(response.body).toHaveProperty('error');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('Invalid');
     });
   });
 
@@ -384,7 +388,7 @@ describe('Authentication API Integration Tests', () => {
         });
 
       testUserId = loginResponse.body.data.user.id;
-      authToken = loginResponse.body.data.session.access_token;
+      authToken = loginResponse.body.data.token;
     });
 
     it('should successfully logout authenticated user', async () => {

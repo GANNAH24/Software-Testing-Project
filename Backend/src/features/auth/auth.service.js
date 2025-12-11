@@ -23,6 +23,7 @@ const register = async (email, password, role, additionalData = {}) => {
   if (!passwordValidation.isValid) {
     const error = new Error('Password does not meet requirements');
     error.passwordErrors = passwordValidation.errors;
+    error.statusCode = 400;
     throw error;
   }
 
@@ -40,7 +41,9 @@ const register = async (email, password, role, additionalData = {}) => {
   // Check if user already exists
   const existingProfile = await authRepository.findProfileByEmail(email);
   if (existingProfile) {
-    throw new Error('User with this email already exists');
+    const error = new Error('User with this email already exists');
+    error.statusCode = 400;
+    throw error;
   }
 
   try {
@@ -84,7 +87,9 @@ const register = async (email, password, role, additionalData = {}) => {
     } else if (role === 'doctor') {
       // Validate required doctor fields
       if (!additionalData.specialty || !additionalData.location) {
-        throw new Error('Doctors must provide specialty and location');
+        const error = new Error('Doctors must provide specialty and location');
+        error.statusCode = 400;
+        throw error;
       }
       await authRepository.createDoctor(userId, additionalData);
     }
@@ -140,6 +145,16 @@ const login = async (email, password) => {
     };
   } catch (error) {
     logger.error('Login error', { email, error: error.message });
+
+    // Add appropriate status codes
+    if (error.message && (error.message.includes('Invalid login') || error.message.includes('credentials'))) {
+      error.statusCode = 401;
+    } else if (error.message && error.message.includes('not found')) {
+      error.statusCode = 401;
+    } else if (!error.statusCode) {
+      error.statusCode = 400;
+    }
+
     throw error;
   }
 };
@@ -243,6 +258,14 @@ const changePassword = async (userId, oldPassword, newPassword) => {
  * Request password reset
  */
 const forgotPassword = async (email) => {
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    const error = new Error('Invalid email format');
+    error.statusCode = 400;
+    throw error;
+  }
+
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password`

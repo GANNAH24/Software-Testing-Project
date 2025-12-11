@@ -69,7 +69,7 @@ const getPatientAppointments = asyncHandler(async (req, res) => {
 const getDoctorAppointments = asyncHandler(async (req, res) => {
   const doctorIdOrUserId = req.params.doctorId;
   let doctor = null;
-  
+
   // Try to get doctor by user_id first (in case auth user ID is passed)
   try {
     doctor = await doctorsService.getByUserId(doctorIdOrUserId);
@@ -81,13 +81,34 @@ const getDoctorAppointments = asyncHandler(async (req, res) => {
       return res.status(404).json(errorResponse('Doctor not found', 404));
     }
   }
-  
+
   if (!doctor) {
     return res.status(404).json(errorResponse('Doctor not found', 404));
   }
-  
+
   const appointments = await appointmentsService.getDoctorAppointments(doctor.doctor_id);
   res.json(successResponse(appointments));
+});
+
+// Get my appointments (for current authenticated user)
+const getMyAppointments = asyncHandler(async (req, res) => {
+  if (req.user.role === 'patient') {
+    const patient = await ensurePatientForUser(req.user);
+    const appointments = await appointmentsService.getPatientAppointments(patient.patient_id);
+    res.json(successResponse(appointments));
+  } else if (req.user.role === 'doctor') {
+    // Get doctor ID from user
+    let doctor;
+    try {
+      doctor = await doctorsService.getByUserId(req.user.id);
+    } catch (err) {
+      doctor = await doctorsService.getDoctorByUserId(req.user.id);
+    }
+    const appointments = await appointmentsService.getDoctorAppointments(doctor.doctor_id);
+    res.json(successResponse(appointments));
+  } else {
+    res.status(403).json(errorResponse('Unauthorized', null, 403));
+  }
 });
 
 // Get upcoming appointments
@@ -112,7 +133,7 @@ const getPastAppointments = asyncHandler(async (req, res) => {
 const createAppointment = asyncHandler(async (req, res) => {
   // Ensure patient record exists for the authenticated user
   const patient = await ensurePatientForUser(req.user);
-  
+
   const appointmentData = {
     patientId: patient.patient_id,
     doctorId: req.body.doctor_id,
@@ -141,11 +162,24 @@ const updateAppointment = asyncHandler(async (req, res) => {
 
 // Cancel appointment
 const cancelAppointment = asyncHandler(async (req, res) => {
-  const appointment = await appointmentsService.cancelAppointment(
+  // Get appointment first to check ownership
+  const appointment = await appointmentsService.getAppointmentById(req.params.id);
+
+  // Check if user is authorized to cancel (must be the patient who booked it or a doctor/admin)
+  if (req.user.role === 'patient') {
+    // For patients, need to check if they own the appointment
+    const patient = await ensurePatientForUser(req.user);
+    if (appointment.patient_id !== patient.patient_id) {
+      return res.status(403).json(errorResponse('Forbidden: You can only cancel your own appointments', null, 403));
+    }
+  }
+  // Doctors and admins can cancel any appointment
+
+  const cancelledAppointment = await appointmentsService.cancelAppointment(
     req.params.id,
-    req.body.cancel_reason
+    req.body?.cancel_reason
   );
-  res.json(successResponse(appointment, 'Appointment cancelled successfully'));
+  res.json(successResponse(cancelledAppointment, 'Appointment cancelled successfully'));
 });
 
 // Delete appointment
@@ -168,6 +202,7 @@ module.exports = {
   getAppointmentById,
   getPatientAppointments,
   getDoctorAppointments,
+  getMyAppointments,
   getUpcomingAppointments,
   getPastAppointments,
   createAppointment,

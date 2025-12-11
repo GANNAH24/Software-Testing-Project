@@ -95,11 +95,26 @@ const findById = async (appointmentId) => {
     .is("deleted_at", null)
     .single();
 
-  if (error && error.code !== "PGRST116") {
+  if (error) {
+    // PGRST116 means no rows returned - this is expected for not found
+    if (error.code === "PGRST116") {
+      return null;
+    }
+
+    // Other errors (like invalid UUID format) should be logged and thrown
     logger.error("Error finding appointment by ID", {
       appointmentId,
       error: error.message,
+      errorCode: error.code
     });
+
+    // If it's a validation error (invalid UUID), return 400
+    if (error.message && error.message.includes('invalid input syntax')) {
+      const validationError = new Error('Invalid appointment ID format');
+      validationError.statusCode = 400;
+      throw validationError;
+    }
+
     throw error;
   }
 
@@ -210,7 +225,16 @@ const update = async (appointmentId, updates) => {
       appointmentId,
       updates,
       error: error.message,
+      errorCode: error.code
     });
+
+    // If no rows were updated, the appointment doesn't exist
+    if (error.code === 'PGRST116') {
+      const notFoundError = new Error('Appointment not found');
+      notFoundError.statusCode = 404;
+      throw notFoundError;
+    }
+
     throw error;
   }
 

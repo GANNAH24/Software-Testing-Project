@@ -3,15 +3,19 @@
  * Global test configuration and utilities
  */
 
-// Set test environment variables
+// Load environment variables from .env file
+require('dotenv').config();
+
+// Set test environment
 process.env.NODE_ENV = 'test';
-process.env.SUPABASE_URL = 'https://test.supabase.co';
-process.env.SUPABASE_ANON_KEY = 'test-anon-key';
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
-process.env.JWT_SECRET = 'test-jwt-secret';
-process.env.COOKIE_SECRET = 'test-cookie-secret';
-process.env.PORT = '3000';
-process.env.FRONTEND_URL = 'http://localhost:5173';
+
+// Only override these if not already set
+if (!process.env.JWT_SECRET) process.env.JWT_SECRET = 'test-jwt-secret';
+if (!process.env.COOKIE_SECRET) process.env.COOKIE_SECRET = 'test-cookie-secret';
+if (!process.env.PORT) process.env.PORT = '3000';
+if (!process.env.FRONTEND_URL) process.env.FRONTEND_URL = 'http://localhost:5173';
+
+// For unit tests, we'll mock Supabase. For integration tests, use real credentials from .env
 
 // Global test timeout
 jest.setTimeout(10000);

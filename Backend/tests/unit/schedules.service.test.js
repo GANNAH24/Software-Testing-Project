@@ -93,7 +93,7 @@ describe('SchedulesService - Create Schedule', () => {
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(12);
       expect(schedulesRepository.create).toHaveBeenCalledTimes(12);
-      
+
       // Verify dates are 7 days apart
       const firstDate = new Date(result[0].date);
       const secondDate = new Date(result[1].date);
@@ -140,7 +140,7 @@ describe('SchedulesService - Create Schedule', () => {
     it('should accept valid time slot formats', async () => {
       // Arrange
       const validTimeSlots = ['09:00-10:00', '14:30-15:30', '23:00-23:59'];
-      
+
       schedulesRepository.checkConflicts.mockResolvedValue(false);
       schedulesRepository.create.mockResolvedValue({
         schedule_id: 'schedule-123',
@@ -322,14 +322,14 @@ describe('SchedulesService - Delete Schedule', () => {
       };
 
       schedulesRepository.findById.mockResolvedValue(existingSchedule);
-      schedulesRepository.softDelete.mockResolvedValue(true);
+      schedulesRepository.remove.mockResolvedValue(true);
 
       // Act
       const result = await schedulesService.deleteSchedule(scheduleId);
 
       // Assert
       expect(result).toEqual({ success: true });
-      expect(schedulesRepository.softDelete).toHaveBeenCalledWith(scheduleId);
+      expect(schedulesRepository.remove).toHaveBeenCalledWith(scheduleId);
     });
   });
 
@@ -358,10 +358,13 @@ describe('SchedulesService - Toggle Availability', () => {
     it('should mark schedule as unavailable', async () => {
       // Arrange
       const scheduleId = 'schedule-123';
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 5); // 5 days in future (more than 24 hours)
+
       const existingSchedule = {
         schedule_id: scheduleId,
         doctor_id: 'doctor-123',
-        date: '2025-12-15',
+        date: futureDate.toISOString().split('T')[0],
         time_slot: '10:00-11:00',
         is_available: true
       };
@@ -373,8 +376,8 @@ describe('SchedulesService - Toggle Availability', () => {
       });
 
       // Act
-      const result = await schedulesService.updateSchedule(scheduleId, { 
-        isAvailable: false 
+      const result = await schedulesService.updateSchedule(scheduleId, {
+        isAvailable: false
       });
 
       // Assert
@@ -399,12 +402,33 @@ describe('SchedulesService - Toggle Availability', () => {
       });
 
       // Act
-      const result = await schedulesService.updateSchedule(scheduleId, { 
-        isAvailable: true 
+      const result = await schedulesService.updateSchedule(scheduleId, {
+        isAvailable: true
       });
 
       // Assert
       expect(result.is_available).toBe(true);
+    });
+
+    it('should reject making schedule unavailable within 24 hours', async () => {
+      // Arrange
+      const scheduleId = 'schedule-123';
+      const nearFuture = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12 hours from now
+
+      const existingSchedule = {
+        schedule_id: scheduleId,
+        doctor_id: 'doctor-123',
+        date: nearFuture.toISOString().split('T')[0],
+        time_slot: `${nearFuture.getHours().toString().padStart(2, '0')}:00-${(nearFuture.getHours() + 1).toString().padStart(2, '0')}:00`,
+        is_available: true
+      };
+
+      schedulesRepository.findById.mockResolvedValue(existingSchedule);
+
+      // Act & Assert
+      await expect(schedulesService.updateSchedule(scheduleId, {
+        isAvailable: false
+      })).rejects.toThrow('Cannot make time slot unavailable less than 24 hours before scheduled time');
     });
   });
 });

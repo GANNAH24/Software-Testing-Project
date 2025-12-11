@@ -91,6 +91,27 @@ const updateSchedule = async (scheduleId, updates) => {
         throw new Error('Schedule not found');
     }
 
+    // If toggling availability to false, check 24-hour policy
+    if (updates.hasOwnProperty('isAvailable') && updates.isAvailable === false && existing.is_available === true) {
+        const scheduleDate = new Date(existing.date);
+        const timeSlot = existing.time_slot || existing.timeSlot;
+        if (timeSlot) {
+            const [startTime] = timeSlot.split('-');
+            const [hours, minutes] = startTime.split(':');
+            const scheduleDateTime = new Date(scheduleDate);
+            scheduleDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+            const now = new Date();
+            const hoursDifference = (scheduleDateTime - now) / (1000 * 60 * 60);
+
+            if (hoursDifference < 24) {
+                const error = new Error('Cannot make time slot unavailable less than 24 hours before scheduled time');
+                error.statusCode = 400;
+                throw error;
+            }
+        }
+    }
+
     // If updating time slot, check for conflicts
     if (updates.timeSlot) {
         // Validate time slot format
@@ -183,6 +204,22 @@ const blockTime = async (doctorId, date, timeSlot, reason = null) => {
     // 2. For any existing schedule that overlaps the requested timeSlot and is_available === true,
     //    update it to is_available = false (override availability).
     // 3. If no existing schedule has exactly the same timeSlot, create a new blocked schedule record.
+
+    // Check if the time slot is within 24 hours
+    const scheduleDate = new Date(date);
+    const [startTime] = timeSlot.split('-');
+    const [hours, minutes] = startTime.split(':');
+    const scheduleDateTime = new Date(scheduleDate);
+    scheduleDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+    const now = new Date();
+    const hoursDifference = (scheduleDateTime - now) / (1000 * 60 * 60);
+
+    if (hoursDifference < 24) {
+        const error = new Error('Cannot block time slot less than 24 hours before scheduled time');
+        error.statusCode = 400;
+        throw error;
+    }
 
     // Helper to parse 'HH:MM' from 'HH:MM:SS' or 'HH:MM'
     const fmt = (t) => t.toString().slice(0, 5);

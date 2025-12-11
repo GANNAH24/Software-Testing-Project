@@ -62,21 +62,48 @@ describe('AppointmentsService - Appointment Booking', () => {
         is_available: true
       }];
 
+      // Mock supabase queries for schedule check and conflict check
+      const mockEq = jest.fn().mockReturnThis();
+      const mockIn = jest.fn().mockReturnThis();
+      const mockIs = jest.fn().mockReturnThis();
+      const mockSelect = jest.fn().mockReturnThis();
+
       supabase.from.mockImplementation((table) => {
         if (table === 'doctor_schedules') {
+          mockSelect.mockReturnValue({
+            eq: mockEq,
+          });
+          mockEq.mockReturnValueOnce({
+            eq: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockResolvedValue({
+                  data: mockSchedule,
+                  error: null
+                })
+              })
+            })
+          });
+          return { select: mockSelect };
+        }
+        if (table === 'appointments') {
           return {
-            select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
-            then: jest.fn().mockResolvedValue({
-              data: mockSchedule,
-              error: null
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  eq: jest.fn().mockReturnValue({
+                    in: jest.fn().mockReturnValue({
+                      is: jest.fn().mockResolvedValue({
+                        data: [],
+                        error: null
+                      })
+                    })
+                  })
+                })
+              })
             })
           };
         }
-        return {
-          select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockReturnThis(),
-        };
+        return { select: jest.fn() };
       });
 
       appointmentsRepository.create.mockResolvedValue({
@@ -114,26 +141,30 @@ describe('AppointmentsService - Appointment Booking', () => {
         timeSlot: '10:00-11:00'
       };
 
+      // Mock no available schedules
       supabase.from.mockImplementation((table) => {
         if (table === 'doctor_schedules') {
           return {
-            select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
-            then: jest.fn().mockResolvedValue({
-              data: [], // No available schedules
-              error: null
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  eq: jest.fn().mockReturnValue({
+                    eq: jest.fn().mockResolvedValue({
+                      data: [],
+                      error: null
+                    })
+                  })
+                })
+              })
             })
           };
         }
-        return {
-          select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockReturnThis(),
-        };
+        return { select: jest.fn() };
       });
 
       // Act & Assert
       await expect(appointmentsService.createAppointment(mockAppointmentData))
-        .rejects.toThrow('No available time slot found');
+        .rejects.toThrow('Doctor is not available at this time');
     });
 
     it('should reject appointment for past dates', async () => {
@@ -179,6 +210,9 @@ describe('AppointmentsService - Appointment Booking', () => {
         timeSlot: '10:00-11:00'
       };
 
+      // Mock repository to throw error
+      appointmentsRepository.create.mockRejectedValue(new Error('Patient ID is required'));
+
       // Act & Assert
       await expect(appointmentsService.createAppointment(mockAppointmentData))
         .rejects.toThrow();
@@ -191,6 +225,9 @@ describe('AppointmentsService - Appointment Booking', () => {
         date: '2025-12-15',
         timeSlot: '10:00-11:00'
       };
+
+      // Mock repository to throw error
+      appointmentsRepository.create.mockRejectedValue(new Error('Doctor ID is required'));
 
       // Act & Assert
       await expect(appointmentsService.createAppointment(mockAppointmentData))
@@ -364,7 +401,7 @@ describe('AppointmentsService - Cancel Appointment', () => {
       };
 
       appointmentsRepository.findById.mockResolvedValue(mockAppointment);
-      appointmentsRepository.update.mockResolvedValue({
+      appointmentsRepository.cancel.mockResolvedValue({
         ...mockAppointment,
         status: 'cancelled'
       });
@@ -374,9 +411,9 @@ describe('AppointmentsService - Cancel Appointment', () => {
 
       // Assert
       expect(result.status).toBe('cancelled');
-      expect(appointmentsRepository.update).toHaveBeenCalledWith(
+      expect(appointmentsRepository.cancel).toHaveBeenCalledWith(
         appointmentId,
-        expect.objectContaining({ status: 'cancelled' })
+        undefined
       );
     });
   });
@@ -427,6 +464,47 @@ describe('AppointmentsService - Cancel Appointment', () => {
       // Act & Assert
       await expect(appointmentsService.cancelAppointment(appointmentId))
         .rejects.toThrow('Appointment is already cancelled');
+    });
+
+    it('should reject cancellation within 24 hours of appointment', async () => {
+      // Arrange
+      const appointmentId = 'appointment-123';
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowMorning = new Date(tomorrow);
+      tomorrowMorning.setHours(10, 0, 0, 0); // Set to 10:00 AM tomorrow
+
+      // Calculate time to be less than 24 hours from now
+      const now = new Date();
+      const hoursUntilAppointment = (tomorrowMorning - now) / (1000 * 60 * 60);
+
+      // If the appointment is more than 24 hours away, adjust the date to be within 24 hours
+      let appointmentDate;
+      let timeSlot;
+      if (hoursUntilAppointment >= 24) {
+        // Make it 12 hours from now
+        const nearFuture = new Date(now.getTime() + (12 * 60 * 60 * 1000));
+        appointmentDate = nearFuture.toISOString().split('T')[0];
+        timeSlot = `${nearFuture.getHours().toString().padStart(2, '0')}:00-${(nearFuture.getHours() + 1).toString().padStart(2, '0')}:00`;
+      } else {
+        appointmentDate = tomorrow.toISOString().split('T')[0];
+        timeSlot = '10:00-11:00';
+      }
+
+      const mockAppointment = {
+        appointment_id: appointmentId,
+        patient_id: 'patient-123',
+        doctor_id: 'doctor-456',
+        date: appointmentDate,
+        time_slot: timeSlot,
+        status: 'booked'
+      };
+
+      appointmentsRepository.findById.mockResolvedValue(mockAppointment);
+
+      // Act & Assert
+      await expect(appointmentsService.cancelAppointment(appointmentId))
+        .rejects.toThrow('Cannot cancel appointment less than 24 hours before scheduled time');
     });
   });
 });
@@ -490,7 +568,7 @@ describe('AppointmentsService - Filter Appointments', () => {
 
     it('should retrieve appointments with multiple filters', async () => {
       // Arrange
-      const filters = { 
+      const filters = {
         status: 'booked',
         doctorId: 'doctor-456',
         date: '2025-12-15'

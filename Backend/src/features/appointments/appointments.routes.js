@@ -11,17 +11,23 @@ const { requireAuth, requirePatient, requireAnyRole, requireDoctor } = require('
 // All appointment routes require authentication
 router.use(requireAuth());
 
-// Get all appointments (with filters)
-router.get('/', appointmentsController.getAllAppointments);
+// Get my appointments (current user)
+router.get('/my', appointmentsController.getMyAppointments);
 
 // Get my upcoming/past appointments
 router.get('/upcoming', appointmentsController.getUpcomingAppointments);
 router.get('/past', appointmentsController.getPastAppointments);
 
+// Doctor appointments (without parameter for current doctor)
+router.get('/doctor', requireDoctor(), appointmentsController.getMyAppointments);
+
+// Get all appointments (with filters)
+router.get('/', appointmentsController.getAllAppointments);
+
 // Patient appointments
 router.get('/patient/:patientId', appointmentsController.getPatientAppointments);
 
-// Doctor appointments
+// Doctor appointments with ID
 router.get('/doctor/:doctorId', appointmentsController.getDoctorAppointments);
 
 // Create appointment (patients only)
