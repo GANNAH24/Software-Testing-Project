@@ -2,7 +2,8 @@
 import { Home, Calendar, User, Users, Settings, MessageCircle } from 'lucide-react';
 import { messagesService } from '../services/messages.service';
 
-export const Sidebar = ({ user, navigate, currentRoute }) => {
+// Added isOpen to props
+export const Sidebar = ({ user, navigate, currentRoute, isOpen }) => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -17,7 +18,6 @@ export const Sidebar = ({ user, navigate, currentRoute }) => {
     };
 
     fetchUnreadCount();
-    // Refresh every 30 seconds
     const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
   }, [user?.id]);
@@ -36,8 +36,15 @@ export const Sidebar = ({ user, navigate, currentRoute }) => {
   ] : [];
 
   return (
-    <aside className='w-64 bg-white border-r h-screen sticky top-0'>
-      <div className='p-4 space-y-2'>
+    // Applied transition-transform and conditional translation
+    <aside 
+      className={`
+        bg-white border-r h-screen sticky top-0 
+        transition-transform duration-300 ease-in-out z-40
+        ${isOpen ? 'translate-x-0 w-64' : '-translate-x-full w-0 opacity-0 overflow-hidden'}
+      `}
+    >
+      <div className='p-4 space-y-2 min-w-[16rem]'> {/* min-w ensures content doesn't squash during transition */}
         {menuItems.map(({ icon: Icon, label, route, badge }) => (
           <button
             key={route}

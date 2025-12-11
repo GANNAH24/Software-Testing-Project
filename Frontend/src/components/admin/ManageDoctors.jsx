@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Edit, Trash2, Star, MapPin, Phone } from 'lucide-react';
+import { Plus, Edit, Trash2, Star, MapPin, Phone, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
@@ -8,8 +8,8 @@ import { Label } from '../ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
+import adminService from '../../shared/services/admin.service';
 
-// Converted from TSX: removed interfaces and type annotations
 export function ManageDoctors({ navigate, user }) {
   const SPECIALTIES = [
     'Cardiology',
@@ -20,70 +20,126 @@ export function ManageDoctors({ navigate, user }) {
     'Internal Medicine'
   ];
 
-  const INITIAL_DOCTORS = [
-    { id: '1', name: 'Dr. Sarah Johnson', specialty: 'Cardiology', qualifications: 'MD, FACC', location: 'New York, NY', phone: '+1 (555) 123-4567', reviewsCount: 127 },
-    { id: '2', name: 'Dr. Michael Chen', specialty: 'Pediatrics', qualifications: 'MD, FAAP', location: 'Los Angeles, CA', phone: '+1 (555) 234-5678', reviewsCount: 203 },
-    { id: '3', name: 'Dr. Emily Rodriguez', specialty: 'Dermatology', qualifications: 'MD, FAAD', location: 'Miami, FL', phone: '+1 (555) 345-6789', reviewsCount: 156 }
-  ];
-
-  const [doctors, setDoctors] = useState(INITIAL_DOCTORS);
+  // State Management
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [formData, setFormData] = useState({ name: '', specialty: '', qualifications: '', location: '', phone: '' });
+  
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    specialty: '', 
+    qualifications: '', 
+    location: '', 
+    phone: '' 
+  });
 
   const resetForm = () => setFormData({ name: '', specialty: '', qualifications: '', location: '', phone: '' });
 
-  const handleCreate = () => {
+  // Load Doctors (API Fetch)
+  const loadDoctors = async () => {
+    try {
+      setLoading(true);
+      // Passing searchQuery to backend for server-side filtering
+      const response = await adminService.getAllDoctors({ search: searchQuery });
+      // Assuming response.data is the array of doctors
+      setDoctors(response.data || []); 
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to load doctors');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial Load & Search Listener
+  useEffect(() => {
+    // specific debounce to prevent API spam while typing
+    const timer = setTimeout(() => {
+      loadDoctors();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Handlers
+  const handleCreate = async () => {
     const { name, specialty, qualifications, location, phone } = formData;
     if (!name || !specialty || !qualifications || !location || !phone) {
       toast.error('❌ Please fill in all fields');
       return;
     }
-    const newDoctor = { id: String(doctors.length + 1), ...formData, reviewsCount: 0 };
-    setDoctors([...doctors, newDoctor]);
-    toast.success('✅ Doctor created successfully!');
-    setCreateDialogOpen(false);
-    resetForm();
+
+    try {
+      await adminService.createDoctor(formData);
+      toast.success('✅ Doctor created successfully!');
+      loadDoctors(); // Refresh list
+      setCreateDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to create doctor');
+    }
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     const { name, specialty, qualifications, location, phone } = formData;
     if (!name || !specialty || !qualifications || !location || !phone) {
       toast.error('❌ Please fill in all fields');
       return;
     }
-    setDoctors(doctors.map(doc => doc.id === selectedDoctor?.id ? { ...doc, ...formData } : doc));
-    toast.success('✅ Doctor updated successfully!');
-    setUpdateDialogOpen(false);
-    setSelectedDoctor(null);
-    resetForm();
+
+    try {
+      // Using doctor_id based on your snippet requirements
+      await adminService.updateDoctor(selectedDoctor.doctor_id, formData);
+      toast.success('✅ Doctor updated successfully!');
+      loadDoctors(); // Refresh list
+      setUpdateDialogOpen(false);
+      setSelectedDoctor(null);
+      resetForm();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update doctor');
+    }
   };
 
-  const handleDelete = () => {
-    setDoctors(doctors.filter(doc => doc.id !== selectedDoctor?.id));
-    toast.success('🗑️ Doctor deleted successfully');
-    setDeleteDialogOpen(false);
-    setSelectedDoctor(null);
+  const handleDelete = async () => {
+    try {
+      // Using doctor_id based on your snippet requirements
+      await adminService.deleteDoctor(selectedDoctor.doctor_id);
+      toast.success('🗑️ Doctor deleted successfully');
+      loadDoctors(); // Refresh list
+      setDeleteDialogOpen(false);
+      setSelectedDoctor(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete doctor');
+    }
   };
 
   const openUpdateDialog = (doctor) => {
     setSelectedDoctor(doctor);
-    setFormData({ name: doctor.name, specialty: doctor.specialty, qualifications: doctor.qualifications, location: doctor.location, phone: doctor.phone });
+    setFormData({ 
+      name: doctor.name, 
+      specialty: doctor.specialty, 
+      qualifications: doctor.qualifications, 
+      location: doctor.location, 
+      phone: doctor.phone 
+    });
     setUpdateDialogOpen(true);
   };
-
-  const filteredDoctors = doctors.filter(doc => {
-    const q = searchQuery.toLowerCase();
-    return doc.name.toLowerCase().includes(q) || doc.specialty.toLowerCase().includes(q) || doc.location.toLowerCase().includes(q);
-  });
 
   return (
     <div className="p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
-        <motion.div className="flex justify-between items-center mb-6" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <motion.div 
+          className="flex justify-between items-center mb-6" 
+          initial={{ opacity: 0, y: -20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.5 }}
+        >
           <div>
             <h1 className="text-gray-900 flex items-center gap-2">👨‍⚕️ Manage Doctors</h1>
             <p className="text-gray-600 mt-1">Create, update, and manage doctor profiles</p>
@@ -96,60 +152,100 @@ export function ManageDoctors({ navigate, user }) {
         </motion.div>
 
         <div className="mb-6">
-          <Input type="text" placeholder="Search doctors by name, specialty, or location..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="max-w-md" />
+          <Input 
+            type="text" 
+            placeholder="Search doctors by name, specialty, or location..." 
+            value={searchQuery} 
+            onChange={(e) => setSearchQuery(e.target.value)} 
+            className="max-w-md" 
+          />
         </div>
 
-        <div className="hidden md:block">
-          <Card><CardContent className="p-0"><table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left p-4 text-sm text-gray-600">Name</th>
-                <th className="text-left p-4 text-sm text-gray-600">Specialty</th>
-                <th className="text-left p-4 text-sm text-gray-600">Location</th>
-                <th className="text-left p-4 text-sm text-gray-600">Phone</th>
-                <th className="text-left p-4 text-sm text-gray-600">Reviews</th>
-                <th className="text-left p-4 text-sm text-gray-600">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDoctors.map(doctor => (
-                <tr key={doctor.id} className="border-b border-gray-200 last:border-0">
-                  <td className="p-4"><div><div className="text-gray-900">{doctor.name}</div><div className="text-sm text-gray-600">{doctor.qualifications}</div></div></td>
-                  <td className="p-4 text-gray-900">{doctor.specialty}</td>
-                  <td className="p-4 text-gray-900">{doctor.location}</td>
-                  <td className="p-4 text-gray-900">{doctor.phone}</td>
-                  <td className="p-4"><div className="flex items-center gap-1"><Star className="w-4 h-4 text-yellow-500 fill-yellow-500" /><span className="text-gray-900">{doctor.reviewsCount}</span></div></td>
-                  <td className="p-4"><div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => openUpdateDialog(doctor)}><Edit className="w-4 h-4" /></Button>
-                    <Button size="sm" variant="outline" onClick={() => { setSelectedDoctor(doctor); setDeleteDialogOpen(true); }}><Trash2 className="w-4 h-4" /></Button>
-                  </div></td>
-                </tr>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-[#667eea]" />
+          </div>
+        ) : (
+          <>
+            <div className="hidden md:block">
+              <Card><CardContent className="p-0"><table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="text-left p-4 text-sm text-gray-600">Name</th>
+                    <th className="text-left p-4 text-sm text-gray-600">Specialty</th>
+                    <th className="text-left p-4 text-sm text-gray-600">Location</th>
+                    <th className="text-left p-4 text-sm text-gray-600">Phone</th>
+                    <th className="text-left p-4 text-sm text-gray-600">Reviews</th>
+                    <th className="text-left p-4 text-sm text-gray-600">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {doctors.map(doctor => (
+                    <tr key={doctor.doctor_id || doctor.id} className="border-b border-gray-200 last:border-0">
+                      <td className="p-4">
+                        <div>
+                          <div className="text-gray-900">{doctor.name}</div>
+                          <div className="text-sm text-gray-600">{doctor.qualifications}</div>
+                        </div>
+                      </td>
+                      <td className="p-4 text-gray-900">{doctor.specialty}</td>
+                      <td className="p-4 text-gray-900">{doctor.location}</td>
+                      <td className="p-4 text-gray-900">{doctor.phone}</td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                          <span className="text-gray-900">{doctor.reviewsCount || 0}</span>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => openUpdateDialog(doctor)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => { setSelectedDoctor(doctor); setDeleteDialogOpen(true); }}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table></CardContent></Card>
+            </div>
+
+            <div className="md:hidden space-y-4">
+              {doctors.map(doctor => (
+                <Card key={doctor.doctor_id || doctor.id}><CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="text-gray-900">{doctor.name}</div>
+                      <div className="text-sm text-[#667eea]">{doctor.specialty}</div>
+                    </div>
+                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded">
+                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                      <span className="text-sm text-gray-900">{doctor.reviewsCount || 0}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2 mb-4 text-sm">
+                    <div className="flex items-center gap-2 text-gray-600"><MapPin className="w-4 h-4" />{doctor.location}</div>
+                    <div className="flex items-center gap-2 text-gray-600"><Phone className="w-4 h-4" />{doctor.phone}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => openUpdateDialog(doctor)} className="flex-1">
+                      <Edit className="w-4 h-4 mr-2" /> Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setSelectedDoctor(doctor); setDeleteDialogOpen(true); }}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent></Card>
               ))}
-            </tbody>
-          </table></CardContent></Card>
-        </div>
+            </div>
 
-        <div className="md:hidden space-y-4">
-          {filteredDoctors.map(doctor => (
-            <Card key={doctor.id}><CardContent className="p-4">
-              <div className="flex justify-between items-start mb-3">
-                <div><div className="text-gray-900">{doctor.name}</div><div className="text-sm text-[#667eea]">{doctor.specialty}</div></div>
-                <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded"><Star className="w-4 h-4 text-yellow-500 fill-yellow-500" /><span className="text-sm text-gray-900">{doctor.reviewsCount}</span></div>
-              </div>
-              <div className="space-y-2 mb-4 text-sm">
-                <div className="flex items-center gap-2 text-gray-600"><MapPin className="w-4 h-4" />{doctor.location}</div>
-                <div className="flex items-center gap-2 text-gray-600"><Phone className="w-4 h-4" />{doctor.phone}</div>
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => openUpdateDialog(doctor)} className="flex-1"><Edit className="w-4 h-4 mr-2" /> Edit</Button>
-                <Button size="sm" variant="outline" onClick={() => { setSelectedDoctor(doctor); setDeleteDialogOpen(true); }}><Trash2 className="w-4 h-4" /></Button>
-              </div>
-            </CardContent></Card>
-          ))}
-        </div>
-
-        {filteredDoctors.length === 0 && (
-          <Card><CardContent className="p-12 text-center"><p className="text-gray-600">No doctors found matching your search.</p></CardContent></Card>
+            {doctors.length === 0 && (
+              <Card><CardContent className="p-12 text-center"><p className="text-gray-600">No doctors found matching your search.</p></CardContent></Card>
+            )}
+          </>
         )}
 
         {/* Create Dialog */}

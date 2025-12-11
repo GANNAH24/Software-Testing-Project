@@ -197,6 +197,9 @@ const create = async (doctorData) => {
       qualifications: doctorData.qualifications,
       reviews: doctorData.reviews || 0,
       location: doctorData.location,
+      working_hours_start: doctorData.workingHoursStart || '09:00:00',
+      working_hours_end: doctorData.workingHoursEnd || '17:00:00',
+      phone: doctorData.phone,
       created_at: new Date().toISOString()
     }])
     .select()
