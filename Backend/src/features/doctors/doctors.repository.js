@@ -9,7 +9,10 @@ const logger = require('../../shared/utils/logger.util');
 const findAll = async (filters = {}) => {
   let query = supabase
     .from('doctors')
-    .select('*')
+    .select(`
+      *,
+      reviews:active_doctor_reviews(count)
+    `)
     .is('deleted_at', null);
 
   // Filter by specialty
@@ -39,14 +42,25 @@ const findAll = async (filters = {}) => {
     logger.error('Error finding doctors', { error: error.message });
     throw error;
   }
-  return data;
+
+  // Transform the data to include reviews_count
+  const transformedData = data.map(doctor => ({
+    ...doctor,
+    reviews_count: doctor.reviews?.[0]?.count || 0,
+    reviewsCount: doctor.reviews?.[0]?.count || 0
+  }));
+
+  return transformedData;
 };
 
 const findById = async (doctorId) => {
   // First try to find by doctor_id
   let { data, error } = await supabase
     .from('doctors')
-    .select('*')
+    .select(`
+      *,
+      reviews:active_doctor_reviews(count)
+    `)
     .eq('doctor_id', doctorId)
     .is('deleted_at', null)
     .maybeSingle();
@@ -55,11 +69,14 @@ const findById = async (doctorId) => {
   if (!data && !error && doctorId && doctorId.includes('-')) {
     const result = await supabase
       .from('doctors')
-      .select('*')
+      .select(`
+        *,
+        reviews:active_doctor_reviews(count)
+      `)
       .eq('user_id', doctorId)
       .is('deleted_at', null)
       .maybeSingle();
-    
+
     data = result.data;
     error = result.error;
   }
@@ -68,7 +85,7 @@ const findById = async (doctorId) => {
     logger.error('Error finding doctor', { doctorId, error: error.message, details: error });
     throw error;
   }
-  
+
   // If we found a doctor, fetch the profile data separately
   if (data && data.user_id) {
     const { data: profileData, error: profileError } = await supabase
@@ -76,15 +93,19 @@ const findById = async (doctorId) => {
       .select('full_name')
       .eq('id', data.user_id)
       .single();
-    
+
     if (!profileError && profileData) {
       data.full_name = profileData.full_name;
     }
-    
+
     // Get email from auth.users (accessible through Supabase admin API)
     // For now, we'll get it from the authenticated user or leave it null
+
+    // Add review count
+    data.reviews_count = data.reviews?.[0]?.count || 0;
+    data.reviewsCount = data.reviews?.[0]?.count || 0;
   }
-  
+
   return data;
 };
 
@@ -114,7 +135,10 @@ const findByLocation = async (location) => {
 const advancedSearch = async (filters) => {
   let query = supabase
     .from('doctors')
-    .select('*')
+    .select(`
+      *,
+      reviews:active_doctor_reviews(count)
+    `)
     .is('deleted_at', null);
 
   // Search by name, specialty, or qualifications
@@ -156,7 +180,15 @@ const advancedSearch = async (filters) => {
     logger.error('Error in advanced doctor search', { error: error.message });
     throw error;
   }
-  return data;
+
+  // Transform the data to include reviews_count
+  const transformedData = data.map(doctor => ({
+    ...doctor,
+    reviews_count: doctor.reviews?.[0]?.count || 0,
+    reviewsCount: doctor.reviews?.[0]?.count || 0
+  }));
+
+  return transformedData;
 };
 
 const getDetailedProfile = async (doctorId) => {
@@ -218,7 +250,7 @@ const update = async (doctorId, updates) => {
   if (!existing) {
     throw new Error('Doctor not found');
   }
-  
+
   const { data, error } = await supabase
     .from('doctors')
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -240,7 +272,7 @@ const softDelete = async (doctorId) => {
   if (!existing) {
     throw new Error('Doctor not found');
   }
-  
+
   const { data, error } = await supabase
     .from('doctors')
     .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })

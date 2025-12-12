@@ -12,7 +12,7 @@ const logger = require('../../shared/utils/logger.util');
 const getDoctorReviews = async (doctorId) => {
     try {
         const { data, error } = await supabase
-            .from('reviews')
+            .from('active_doctor_reviews')
             .select(`
         *,
         patients!inner(fullName, patient_id)
@@ -56,7 +56,7 @@ const canReview = async (appointmentId, patientId) => {
 
         // Check if review already exists for this appointment
         const { data: existingReview, error: revError } = await supabase
-            .from('reviews')
+            .from('active_doctor_reviews')
             .select('*')
             .eq('appointment_id', appointmentId)
             .is('deleted_at', null)
@@ -79,7 +79,7 @@ const canReview = async (appointmentId, patientId) => {
 const createReview = async (reviewData) => {
     try {
         const { data, error } = await supabase
-            .from('reviews')
+            .from('active_doctor_reviews')
             .insert([{
                 appointment_id: reviewData.appointmentId,
                 patient_id: reviewData.patientId,
@@ -109,7 +109,7 @@ const createReview = async (reviewData) => {
 const getReviewById = async (reviewId) => {
     try {
         const { data, error } = await supabase
-            .from('reviews')
+            .from('active_doctor_reviews')
             .select('*')
             .eq('review_id', reviewId)
             .is('deleted_at', null)
@@ -133,7 +133,7 @@ const getReviewById = async (reviewId) => {
 const getDoctorAverageRating = async (doctorId) => {
     try {
         const { data, error } = await supabase
-            .from('reviews')
+            .from('active_doctor_reviews')
             .select('rating')
             .eq('doctor_id', doctorId)
             .is('deleted_at', null);

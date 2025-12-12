@@ -12,7 +12,10 @@ const logger = require('../../shared/utils/logger.util');
 const getAllDoctors = async (filters = {}) => {
   let query = supabase
     .from('doctors')
-    .select('*')
+    .select(`
+      *,
+      reviews:active_doctor_reviews(count)
+    `)
     .is('deleted_at', null);
 
   if (filters.specialty) {
@@ -30,7 +33,15 @@ const getAllDoctors = async (filters = {}) => {
     logger.error('Error getting all doctors', { error: error.message });
     throw error;
   }
-  return data;
+
+  // Transform the data to include reviews_count
+  const transformedData = data.map(doctor => ({
+    ...doctor,
+    reviews_count: doctor.reviews?.[0]?.count || 0,
+    reviewsCount: doctor.reviews?.[0]?.count || 0
+  }));
+
+  return transformedData;
 };
 
 /**
