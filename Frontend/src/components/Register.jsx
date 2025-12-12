@@ -53,11 +53,19 @@ export function Register() {
 
   // Validation
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
 
   useEffect(() => {
     // Simulate fetching password requirements
     setPasswordRequirements(MOCK_PASSWORD_REQUIREMENTS);
   }, []);
+
+  // Clear API error when user starts typing
+  useEffect(() => {
+    if (apiError) {
+      setApiError('');
+    }
+  }, [email, password, fullName, phone, dateOfBirth, gender, specialty, qualifications, location]);
 
   const validatePassword = (pwd) => {
     const errors = [];
@@ -79,6 +87,31 @@ export function Register() {
     return errors;
   };
 
+  const getPasswordRequirements = (pwd) => {
+    return [
+      {
+        text: `At least ${passwordRequirements.minLength} characters`,
+        met: pwd.length >= passwordRequirements.minLength
+      },
+      {
+        text: 'One uppercase letter',
+        met: /[A-Z]/.test(pwd)
+      },
+      {
+        text: 'One lowercase letter',
+        met: /[a-z]/.test(pwd)
+      },
+      {
+        text: 'One number',
+        met: /\d/.test(pwd)
+      },
+      {
+        text: 'One special character',
+        met: /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
+      }
+    ];
+  };
+
   const passwordErrors = validatePassword(password);
 
   const validateForm = () => {
@@ -95,6 +128,14 @@ export function Register() {
 
     if (role === 'patient') {
       if (!dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
+      else {
+        const selectedDate = new Date(dateOfBirth);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (selectedDate > today) {
+          newErrors.dateOfBirth = 'Date of birth cannot be in the future';
+        }
+      }
       if (!gender) newErrors.gender = 'Gender is required';
     }
 
@@ -110,6 +151,7 @@ export function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setApiError('');
 
     if (!validateForm()) {
       toast.error('Please fix the errors in the form');
@@ -139,13 +181,28 @@ export function Register() {
           navigate('/login');
         }, 1500);
       } else {
-        const errorMsg = result.error || 'Registration failed';
+        let errorMsg = result.error || 'Registration failed';
+        // Map common errors to user-friendly messages
+        if (errorMsg.toLowerCase().includes('email') && errorMsg.toLowerCase().includes('exist')) {
+          errorMsg = 'User already exists';
+        } else if (errorMsg.toLowerCase().includes('invalid') && errorMsg.toLowerCase().includes('email')) {
+          errorMsg = 'Invalid email format';
+        }
+        setApiError(errorMsg);
         toast.error(errorMsg);
       }
     } catch (err) {
       console.error('Registration error:', err);
-      // Only show error toast if result.success wasn't already handled
-      const msg = err.response?.data?.message || 'Registration failed. Please try again.';
+      let msg = err.message || err.response?.data?.message || 'Registration failed. Please try again.';
+      // Map common errors to user-friendly messages
+      if (msg.toLowerCase().includes('email') && msg.toLowerCase().includes('exist')) {
+        msg = 'User already exists';
+      } else if (msg.toLowerCase().includes('invalid') && msg.toLowerCase().includes('email')) {
+        msg = 'Invalid email format';
+      } else if (msg.toLowerCase().includes('already exists')) {
+        msg = 'User already exists';
+      }
+      setApiError(msg);
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -168,7 +225,18 @@ export function Register() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Role Selection */}
               <div>
-                <Label>I am a</Label>
+                <Label htmlFor="role-selection">Register as</Label>
+                {/* Hidden select for accessibility and testing */}
+                <select
+                  id="role-selection"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="sr-only"
+                  aria-label="Register as"
+                >
+                  <option value="patient">Patient</option>
+                  <option value="doctor">Doctor</option>
+                </select>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   <button
                     type="button"
@@ -262,23 +330,26 @@ export function Register() {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                {password && (
-                  <div className="mt-2 space-y-1">
-                    {passwordErrors.length === 0 ? (
-                      <div className="flex items-center gap-2 text-sm text-green-600">
-                        <CheckCircle2 className="w-4 h-4" />
-                        Password meets all requirements
-                      </div>
-                    ) : (
-                      passwordErrors.map((error, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm text-red-600">
-                          <AlertCircle className="w-4 h-4" />
-                          {error}
-                        </div>
-                      ))
-                    )}
-                  </div>
+                {errors.password && (
+                  <p className="text-sm text-red-600 mt-1">{errors.password}</p>
                 )}
+                <ul className="mt-2 space-y-1">
+                  {getPasswordRequirements(password).map((req, i) => (
+                    <li
+                      key={i}
+                      className={`flex items-center gap-2 text-sm ${
+                        req.met ? 'text-green-600' : 'text-gray-600'
+                      }`}
+                    >
+                      {req.met ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4" />
+                      )}
+                      {req.text}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               {/* Patient-specific Fields */}
@@ -301,7 +372,7 @@ export function Register() {
                   <div>
                     <Label htmlFor="gender">Gender</Label>
                     <Select value={gender} onValueChange={setGender}>
-                      <SelectTrigger className={`mt-2 ${errors.gender ? 'border-red-500' : ''}`}>
+                      <SelectTrigger id="gender" className={`mt-2 ${errors.gender ? 'border-red-500' : ''}`}>
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
                       <SelectContent>
@@ -323,7 +394,7 @@ export function Register() {
                   <div>
                     <Label htmlFor="specialty">Specialty</Label>
                     <Select value={specialty} onValueChange={setSpecialty}>
-                      <SelectTrigger className={`mt-2 ${errors.specialty ? 'border-red-500' : ''}`}>
+                      <SelectTrigger id="specialty" className={`mt-2 ${errors.specialty ? 'border-red-500' : ''}`}>
                         <SelectValue placeholder="Select specialty" />
                       </SelectTrigger>
                       <SelectContent>
@@ -368,7 +439,14 @@ export function Register() {
                       <p className="text-sm text-red-600 mt-1">{errors.location}</p>
                     )}
                   </div>
-                </>
+                </>  
+              )}
+
+              {apiError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{apiError}</AlertDescription>
+                </Alert>
               )}
 
               <Button
@@ -376,7 +454,7 @@ export function Register() {
                 className="w-full bg-[#667eea] hover:bg-[#5568d3]"
                 disabled={loading}
               >
-                {loading ? 'Creating Account...' : 'Create Account'}
+                {loading ? 'Registering...' : 'Create Account'}
               </Button>
             </form>
 
