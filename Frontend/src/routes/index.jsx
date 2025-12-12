@@ -20,8 +20,11 @@ import { AdminDashboard } from '../components/admin/AdminDashboard';
 import { ManageDoctors } from '../components/admin/ManageDoctors';
 import { ManagePatients } from '../components/admin/ManagePatients';
 import { SystemHealth } from '../components/admin/SystemHealth';
-import { MyProfile } from '../components/MyProfile';
+import { MyProfile } from '../pages/MyProfile';
+import { EditProfile } from '../components/EditProfile';
 import { ChangePassword } from '../components/ChangePassword';
+import { ChatList } from '../components/chat/ChatList';
+import { ChatWindow } from '../components/chat/ChatWindow';
 import { PublicLayout } from '../components/layout/PublicLayout';
 import { AppLayout } from '../components/layout/AppLayout';
 import ProtectedRoute from './ProtectedRoute';
@@ -112,8 +115,20 @@ export const router = createBrowserRouter([
         element: <MyProfile />,
       },
       {
+        path: 'edit-profile',
+        element: <EditProfile />,
+      },
+      {
         path: 'change-password',
         element: <ChangePassword />,
+      },
+      {
+        path: 'messages',
+        element: <ChatList />,
+      },
+      {
+        path: 'messages/:conversationId',
+        element: <ChatWindow />,
       },
     ],
   },
@@ -150,8 +165,20 @@ export const router = createBrowserRouter([
         element: <MyProfile />,
       },
       {
+        path: 'edit-profile',
+        element: <EditProfile />,
+      },
+      {
         path: 'change-password',
         element: <ChangePassword />,
+      },
+      {
+        path: 'messages',
+        element: <ChatList />,
+      },
+      {
+        path: 'messages/:conversationId',
+        element: <ChatWindow />,
       },
     ],
   },
@@ -190,6 +217,10 @@ export const router = createBrowserRouter([
       {
         path: 'profile',
         element: <MyProfile />,
+      },
+      {
+        path: 'edit-profile',
+        element: <EditProfile />,
       },
       {
         path: 'change-password',

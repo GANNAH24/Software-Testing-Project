@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Phone, Star, Award, Clock, Languages, ArrowLeft, Calendar } from 'lucide-react';
+import { MapPin, Phone, Star, Award, Clock, Languages, ArrowLeft, Calendar, MessageCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { CalendarBookDialog } from '../components/patient/CalendarBookDialog';
 import { useAuth } from '../App';
 import doctorService from '../shared/services/doctor.service';
+import { messagesService } from '../shared/services/messages.service';
 
 export function DoctorProfile({ navigate, params }) {
   const { user } = useAuth();
@@ -33,6 +34,29 @@ export function DoctorProfile({ navigate, params }) {
     if (!user) { navigate('/login'); } else if (user.role === 'patient') { setBookDialogOpen(true); }
   };
 
+  const handleMessageDoctor = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (user.role !== 'patient') {
+      return;
+    }
+
+    try {
+      // Create or get existing conversation
+      const response = await messagesService.createConversation(user.id, doctor.user_id);
+      const conversation = response?.data || response;
+      
+      // Navigate to chat window
+      navigate(`/patient/messages/${conversation.id}`);
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      // If conversation already exists, navigate to messages list
+      navigate('/patient/messages');
+    }
+  };
+
   if (loading) {
     return (<div className="p-4 md:p-8 max-w-5xl mx-auto"><LoadingSkeleton variant="card" /><div className="mt-6 space-y-4"><LoadingSkeleton variant="form" count={3} /></div></div>);
   }
@@ -53,7 +77,18 @@ export function DoctorProfile({ navigate, params }) {
                 <p className="text-xl text-gray-600 mb-3">{doctor.specialty}</p>
                 <div className="flex items-center gap-2 mb-2"><div className="flex items-center gap-1"><Star className="w-5 h-5 text-yellow-500 fill-yellow-500" /><span className="text-gray-700">{doctor.reviewsCount} reviews</span></div></div>
               </div>
-              {user?.role === 'patient' && (<Button onClick={handleBookAppointment} size="lg" className="bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 whitespace-nowrap"><Calendar className="w-4 h-4 mr-2" />Book Appointment</Button>)}
+              {user?.role === 'patient' && (
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button onClick={handleMessageDoctor} size="lg" variant="outline" className="border-[#667eea] text-[#667eea] hover:bg-[#667eea] hover:text-white">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Message Doctor
+                  </Button>
+                  <Button onClick={handleBookAppointment} size="lg" className="bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 whitespace-nowrap">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Book Appointment
+                  </Button>
+                </div>
+              )}
               {!user && (<Button onClick={handleBookAppointment} size="lg" className="bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 whitespace-nowrap"><Calendar className="w-4 h-4 mr-2" />Book Appointment</Button>)}
             </div>
             <div className="grid sm:grid-cols-2 gap-3">

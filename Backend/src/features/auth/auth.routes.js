@@ -18,6 +18,7 @@ router.get('/password-requirements', authController.getPasswordRequirements);
 // Protected routes (require authentication)
 router.post('/logout', requireAuth(), authController.logout);
 router.get('/me', requireAuth(), authController.getCurrentUser);
+router.put('/profile', requireAuth(), authController.updateProfile);
 router.post('/change-password', requireAuth(), authController.changePassword);
 
 module.exports = router;

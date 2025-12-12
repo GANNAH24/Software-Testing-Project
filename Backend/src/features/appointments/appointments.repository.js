@@ -25,6 +25,7 @@ const findAll = async (filters = {}) => {
       ),
       patient:patient_id (
         patient_id,
+        user_id,
         phone,
         date_of_birth,
         gender,
@@ -71,17 +72,31 @@ const findAll = async (filters = {}) => {
   }
 
   // Format the data to include flattened doctor and patient info
-  return data.map(apt => ({
+  const formatted = data.map(apt => ({
     ...apt,
     doctor_name: apt.doctor?.name ? `Dr. ${apt.doctor.name}` : null,
     doctor_specialty: apt.doctor?.specialty,
     doctor_phone: apt.doctor?.phone,
     doctor_location: apt.doctor?.location,
     patient_name: apt.patient?.profiles?.full_name || `Patient ${apt.patient_id}`,
+    patient_user_id: apt.patient?.user_id,
     patient_phone: apt.patient?.phone,
     patient_gender: apt.patient?.gender,
     patient_dob: apt.patient?.date_of_birth
   }));
+  
+  // Log first appointment to debug
+  if (formatted.length > 0) {
+    logger.info('Sample appointment data', { 
+      sample: {
+        patient_id: formatted[0].patient_id,
+        patient_user_id: formatted[0].patient_user_id,
+        patient_object: formatted[0].patient
+      }
+    });
+  }
+  
+  return formatted;
 };
 
 /**

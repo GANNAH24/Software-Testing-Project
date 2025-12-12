@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Phone, Star, Award, Calendar, ArrowLeft, Clock, Languages } from 'lucide-react';
+import { MapPin, Phone, Star, Award, Calendar, ArrowLeft, Clock, Languages, MessageCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Skeleton } from './ui/skeleton';
 import { CalendarBookDialog } from './patient/CalendarBookDialog';
 import { useAuthContext } from '../shared/contexts/AuthContext';
 import doctorService from '../shared/services/doctor.service';
+import { messagesService } from '../shared/services/messages.service';
 import { toast } from 'sonner';
 
 export function DoctorProfile() {
@@ -44,6 +45,47 @@ export function DoctorProfile() {
       navigate('/login');
     } else if (user.role === 'patient') {
       setBookDialogOpen(true);
+    }
+  };
+
+  const handleMessageDoctor = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (user.role !== 'patient') {
+      toast.error('Only patients can message doctors');
+      return;
+    }
+
+    if (!doctor?.user_id) {
+      toast.error('Doctor information incomplete');
+      return;
+    }
+
+    try {
+      console.log('Creating conversation:', { patientId: user.id, doctorId: doctor.user_id });
+      // Create or get existing conversation
+      const response = await messagesService.createConversation(user.id, doctor.user_id);
+      console.log('API Response:', response);
+      
+      const conversation = response?.data || response;
+      console.log('Conversation:', conversation);
+      
+      if (!conversation || !conversation.id) {
+        console.error('Invalid conversation response:', conversation);
+        toast.error('Failed to create conversation - invalid response');
+        return;
+      }
+      
+      // Navigate to chat window
+      navigate(`/patient/messages/${conversation.id}`);
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      toast.error(`Failed to open chat: ${error.response?.data?.message || error.message}`);
+      // If conversation already exists, navigate to messages list
+      navigate('/patient/messages');
     }
   };
 
@@ -113,7 +155,28 @@ export function DoctorProfile() {
                 </div>
               </div>
 
-              {(user?.role === 'patient' || !user) && (
+              {user?.role === 'patient' && (
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={handleMessageDoctor}
+                    size="lg"
+                    variant="outline"
+                    className="border-[#667eea] text-[#667eea] hover:bg-[#667eea] hover:text-white"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Message Doctor
+                  </Button>
+                  <Button
+                    onClick={handleBookAppointment}
+                    size="lg"
+                    className="bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 whitespace-nowrap"
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Book Appointment
+                  </Button>
+                </div>
+              )}
+              {!user && (
                 <Button
                   onClick={handleBookAppointment}
                   size="lg"
@@ -130,10 +193,12 @@ export function DoctorProfile() {
                 <MapPin className="w-5 h-5 text-gray-400" />
                 <span>{doctor.location || 'Not specified'}</span>
               </div>
-              <div className="flex items-center gap-3 text-gray-700">
-                <Phone className="w-5 h-5 text-gray-400" />
-                <span>{doctor.phone || 'Not specified'}</span>
-              </div>
+              {doctor.phone_number && (
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Phone className="w-5 h-5 text-gray-400" />
+                  <span>{doctor.phone_number}</span>
+                </div>
+              )}
               {doctor.working_hours_start && doctor.working_hours_end && (
                 <div className="flex items-center gap-3 text-gray-700">
                   <Clock className="w-5 h-5 text-gray-400" />

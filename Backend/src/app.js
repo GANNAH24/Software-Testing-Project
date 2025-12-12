@@ -15,6 +15,9 @@ const appointmentsRoutes = require('./features/appointments/appointments.routes'
 const doctorsRoutes = require('./features/doctors/doctors.routes');
 const schedulesRoutes = require('./features/schedules/schedules.routes');
 const patientsRoutes = require('./features/patients/patients.routes');
+const messagesRoutes = require('./features/messages/messages.routes');
+const adminRoutes = require('./features/admin/admin.routes');
+const reviewsRoutes = require('./features/reviews/reviews.routes');
 
 // Create Express app
 const app = express();
@@ -24,16 +27,16 @@ console.log('[STARTUP] Loading app.js with manual CORS middleware');
 // CORS must be first - before any other middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin || '*';
-  
+
   console.log(`[CORS] ${req.method} ${req.path} from origin: ${origin}`);
-  
+
   res.header('Access-Control-Allow-Origin', origin);
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, X-Requested-With, Accept');
   res.header('Access-Control-Expose-Headers', 'Set-Cookie');
   res.header('Access-Control-Max-Age', '86400'); // 24 hours
-  
+
   // Handle preflight with explicit status and end
   if (req.method === 'OPTIONS') {
     console.log(`[CORS] Responding to OPTIONS preflight for ${req.path}`);
@@ -93,6 +96,9 @@ app.use(`${config.API_PREFIX}/${config.API_VERSION}/appointments`, appointmentsR
 app.use(`${config.API_PREFIX}/${config.API_VERSION}/doctors`, doctorsRoutes);
 app.use(`${config.API_PREFIX}/${config.API_VERSION}/schedules`, schedulesRoutes);
 app.use(`${config.API_PREFIX}/${config.API_VERSION}/patients`, patientsRoutes);
+app.use(`${config.API_PREFIX}/${config.API_VERSION}/messages`, messagesRoutes);
+app.use(`${config.API_PREFIX}/${config.API_VERSION}/admin`, adminRoutes);
+app.use(`${config.API_PREFIX}/${config.API_VERSION}/reviews`, reviewsRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

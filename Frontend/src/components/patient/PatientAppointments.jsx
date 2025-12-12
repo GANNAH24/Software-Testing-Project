@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, User, Eye, X, Trash2 } from 'lucide-react';
+import { Calendar, Clock, User, Eye, X, Trash2, Star } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '../ui/pagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { CalendarBookDialog } from './CalendarBookDialog';
 import {
   Dialog,
@@ -18,6 +20,7 @@ import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { useAuthContext } from '../../shared/contexts/AuthContext';
 import appointmentService from '../../shared/services/appointment.service';
+import { ReviewForm } from '../reviews/ReviewForm';
 
 export function PatientAppointments() {
   const navigate = useNavigate();
@@ -30,10 +33,14 @@ export function PatientAppointments() {
   const [bookDialogOpen, setBookDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [appointmentToReview, setAppointmentToReview] = useState(null);
 
   const fetchAppointments = async () => {
     if (!user?.id) return;
-    
+
     try {
       setLoading(true);
       const response = await appointmentService.byPatient(user.id);
@@ -58,29 +65,29 @@ export function PatientAppointments() {
     const handleFocus = () => {
       fetchAppointments();
     };
-    
+
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [user]);
 
   const filterAppointments = (status) => {
     if (status === 'all') return appointments;
-    
+
     const now = new Date();
-    
+
     if (status === 'upcoming') {
       return appointments.filter(a => {
         // Parse the date from the appointment (YYYY-MM-DD format)
         const [year, month, day] = a.date.split('-').map(Number);
         const appointmentDate = new Date(year, month - 1, day);
-        
+
         // Extract hour from time_slot (e.g., "09:00-10:00" -> 9)
         if (a.time_slot) {
           const [startTime] = a.time_slot.split('-');
           const [hours, minutes] = startTime.split(':');
           appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
         }
-        
+
         return appointmentDate > now && (a.status === 'pending' || a.status === 'confirmed' || a.status === 'scheduled');
       });
     }
@@ -89,14 +96,14 @@ export function PatientAppointments() {
         // Parse the date from the appointment (YYYY-MM-DD format)
         const [year, month, day] = a.date.split('-').map(Number);
         const appointmentDate = new Date(year, month - 1, day);
-        
+
         // Extract hour from time_slot (e.g., "09:00-10:00" -> 9)
         if (a.time_slot) {
           const [startTime] = a.time_slot.split('-');
           const [hours, minutes] = startTime.split(':');
           appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
         }
-        
+
         return appointmentDate <= now || a.status === 'completed' || a.status === 'canceled' || a.status === 'cancelled';
       });
     }
@@ -109,7 +116,7 @@ export function PatientAppointments() {
 
     try {
       await appointmentService.cancel(appointmentId);
-      
+
       // Update local state
       setAppointments(appointments.map(apt =>
         (apt.appointment_id || apt.id) === appointmentId
@@ -132,12 +139,12 @@ export function PatientAppointments() {
 
     try {
       await appointmentService.remove(appointmentId);
-      
+
       // Update local state
-      setAppointments(appointments.filter(apt => 
+      setAppointments(appointments.filter(apt =>
         (apt.appointment_id || apt.id) !== appointmentId
       ));
-      
+
       toast.success('Appointment deleted successfully');
       setDeleteDialogOpen(false);
       setSelectedAppointment(null);
@@ -163,6 +170,17 @@ export function PatientAppointments() {
   };
 
   const filteredAppointments = filterAppointments(selectedTab);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedAppointments = filteredAppointments.slice(startIndex, endIndex);
+
+  // Reset to page 1 when tab or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedTab, appointments.length]);
 
   if (loading) {
     return (
@@ -191,6 +209,27 @@ export function PatientAppointments() {
           </TabsList>
 
           <TabsContent value={selectedTab}>
+            {filteredAppointments.length > 0 && (
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredAppointments.length)} of {filteredAppointments.length} appointments
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Items per page:</span>
+                  <Select value={String(itemsPerPage)} onValueChange={(val) => { setItemsPerPage(Number(val)); setCurrentPage(1); }}>
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
             {filteredAppointments.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
@@ -220,7 +259,7 @@ export function PatientAppointments() {
                           </tr>
                         </thead>
                         <tbody>
-                          {filteredAppointments.map((apt) => (
+                          {paginatedAppointments.map((apt) => (
                             <tr key={apt.appointment_id || apt.id} className="border-b border-gray-200 last:border-0">
                               <td className="p-4">
                                 <div>
@@ -246,6 +285,19 @@ export function PatientAppointments() {
                                   >
                                     <Eye className="w-4 h-4" />
                                   </Button>
+                                  {apt.status === 'completed' && (
+                                    <Button
+                                      size="sm"
+                                      className="bg-[#667eea] hover:bg-[#5568d3] text-white"
+                                      onClick={() => {
+                                        setAppointmentToReview(apt);
+                                        setReviewDialogOpen(true);
+                                      }}
+                                    >
+                                      <Star className="w-4 h-4 mr-1" />
+                                      Review
+                                    </Button>
+                                  )}
                                   {(apt.status === 'pending' || apt.status === 'confirmed') && (
                                     <Button
                                       size="sm"
@@ -280,7 +332,7 @@ export function PatientAppointments() {
 
                 {/* Mobile Card View */}
                 <div className="md:hidden space-y-4">
-                  {filteredAppointments.map((apt) => (
+                  {paginatedAppointments.map((apt) => (
                     <Card key={apt.appointment_id || apt.id}>
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start mb-3">
@@ -311,6 +363,19 @@ export function PatientAppointments() {
                           >
                             View Details
                           </Button>
+                          {apt.status === 'completed' && (
+                            <Button
+                              size="sm"
+                              className="bg-[#667eea] hover:bg-[#5568d3] text-white flex-1"
+                              onClick={() => {
+                                setAppointmentToReview(apt);
+                                setReviewDialogOpen(true);
+                              }}
+                            >
+                              <Star className="w-4 h-4 mr-1" />
+                              Review
+                            </Button>
+                          )}
                           {(apt.status === 'pending' || apt.status === 'confirmed') && (
                             <Button
                               size="sm"
@@ -328,6 +393,39 @@ export function PatientAppointments() {
                     </Card>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {filteredAppointments.length > itemsPerPage && (
+              <div className="mt-6">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
               </div>
             )}
           </TabsContent>
@@ -374,11 +472,25 @@ export function PatientAppointments() {
         </Dialog>
 
         {/* Book Appointment Dialog */}
-        <CalendarBookDialog 
-          open={bookDialogOpen} 
+        <CalendarBookDialog
+          open={bookDialogOpen}
           onOpenChange={setBookDialogOpen}
           onSuccess={fetchAppointments}
         />
+
+        {/* Review Dialog */}
+        {appointmentToReview && (
+          <ReviewForm
+            open={reviewDialogOpen}
+            onOpenChange={setReviewDialogOpen}
+            appointmentId={appointmentToReview.appointment_id || appointmentToReview.id}
+            doctorId={appointmentToReview.doctor_id}
+            onSuccess={() => {
+              fetchAppointments();
+              setAppointmentToReview(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );
