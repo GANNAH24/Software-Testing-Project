@@ -4,6 +4,7 @@
  */
 
 const adminService = require('./admin.service');
+const analyticsService = require('./analytics.service');
 const { successResponse } = require('../../shared/utils/response.util');
 const { asyncHandler } = require('../../shared/middleware/error.middleware');
 
@@ -87,16 +88,65 @@ const deleteDoctor = asyncHandler(async (req, res) => {
 });
 
 /**
- * Update patient
+ * Create patient (admin only)
+ */
+const createPatient = asyncHandler(async (req, res) => {
+  const patientData = {
+    fullName: req.body.fullName || req.body.full_name,
+    email: req.body.email,
+    phone: req.body.phone,
+    dateOfBirth: req.body.dateOfBirth || req.body.date_of_birth,
+    gender: req.body.gender
+  };
+  const patient = await adminService.createPatient(patientData);
+  res.status(201).json(successResponse(patient, 'Patient created successfully', 201));
+});
+
+/**
+ * Update patient (admin only)
  */
 const updatePatient = asyncHandler(async (req, res) => {
-  const updates = {};
-  if (req.body.phone) updates.phone = req.body.phone;
-  if (req.body.date_of_birth) updates.date_of_birth = req.body.date_of_birth;
-  if (req.body.gender) updates.gender = req.body.gender;
+  console.log('=== UPDATE PATIENT DEBUG ===');
+  console.log('Patient ID:', req.params.id);
+  console.log('Request body:', req.body);
 
-  const patient = await adminService.updatePatient(req.params.id, updates);
-  res.json(successResponse(patient, 'Patient updated successfully'));
+  const updates = {
+    patient: {},
+    profile: {}
+  };
+
+  // Patient table fields
+  if (req.body.phone) updates.patient.phone = req.body.phone;
+  if (req.body.dateOfBirth || req.body.date_of_birth) {
+    updates.patient.date_of_birth = req.body.dateOfBirth || req.body.date_of_birth;
+  }
+  if (req.body.gender) updates.patient.gender = req.body.gender;
+
+  // Profile table fields (email is in Auth, not profiles!)
+  if (req.body.fullName || req.body.full_name) {
+    updates.profile.full_name = req.body.fullName || req.body.full_name;
+  }
+  // Note: Email cannot be updated here - it's stored in Supabase Auth, not profiles table
+
+  console.log('Updates object:', updates);
+
+  try {
+    const patient = await adminService.updatePatient(req.params.id, updates);
+    console.log('Update successful');
+    res.json(successResponse(patient, 'Patient updated successfully'));
+  } catch (error) {
+    console.error('Update failed:', error.message);
+    console.error('Error stack:', error.stack);
+    throw error;
+  }
+});
+
+/**
+ * Delete patient (admin only)
+ */
+const deletePatient = asyncHandler(async (req, res) => {
+  await adminService.deletePatient(req.params.id);
+  res.json(successResponse(null, 'Patient deleted successfully'));
 });
 
 /**
@@ -129,6 +179,32 @@ const getSystemStats = asyncHandler(async (req, res) => {
   res.json(successResponse(stats));
 });
 
+/**
+ * Get specialty distribution analytics
+ */
+const getSpecialtyAnalytics = asyncHandler(async (req, res) => {
+  const data = await analyticsService.getSpecialtyDistribution();
+  res.json(successResponse(data, 'Specialty analytics retrieved successfully'));
+});
+
+/**
+ * Get top performing doctors
+ */
+const getTopDoctors = asyncHandler(async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  const data = await analyticsService.getTopPerformingDoctors(limit);
+  res.json(successResponse(data, 'Top doctors retrieved successfully'));
+});
+
+/**
+ * Get analytics overview
+ */
+const getAnalyticsOverview = asyncHandler(async (req, res) => {
+  const data = await analyticsService.getAnalyticsOverview();
+  res.json(successResponse(data, 'Analytics overview retrieved successfully'));
+});
+
+
 module.exports = {
   getAllDoctors,
   getAllPatients,
@@ -136,8 +212,13 @@ module.exports = {
   createDoctor,
   updateDoctor,
   deleteDoctor,
+  createPatient,
   updatePatient,
+  deletePatient,
   updateAppointment,
   deleteAppointment,
-  getSystemStats
+  getSystemStats,
+  getSpecialtyAnalytics,
+  getTopDoctors,
+  getAnalyticsOverview
 };

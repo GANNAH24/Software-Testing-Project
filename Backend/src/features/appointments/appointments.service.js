@@ -29,7 +29,7 @@ const getAppointmentById = async (appointmentId) => {
  */
 const getPatientAppointments = async (patientId) => {
   const appointments = await appointmentsRepository.findByPatientId(patientId);
-  
+
   // Return flat array for easier frontend consumption
   return appointments;
 };
@@ -39,7 +39,7 @@ const getPatientAppointments = async (patientId) => {
  */
 const getDoctorAppointments = async (doctorId) => {
   const appointments = await appointmentsRepository.findByDoctorId(doctorId);
-  
+
   // Return flat array for easier frontend consumption
   return appointments;
 };
@@ -66,7 +66,7 @@ const getPastAppointments = async (userId, role) => {
  */
 const createAppointment = async (appointmentData) => {
   const { supabase } = require('../../config/database');
-  
+
   // Validate appointment date is in the future
   let appointmentDate = new Date(appointmentData.date);
 
@@ -124,8 +124,8 @@ const createAppointment = async (appointmentData) => {
 
   // Create appointment
   const appointment = await appointmentsRepository.create(appointmentData);
-  
-  logger.info('Appointment created', { 
+
+  logger.info('Appointment created', {
     appointmentId: appointment.id,
     patientId: appointmentData.patientId,
     doctorId: appointmentData.doctorId
@@ -155,7 +155,7 @@ const createAppointment = async (appointmentData) => {
 
 //   // Create appointment
 //   const appointment = await appointmentsRepository.create(appointmentData);
-  
+
 //   logger.info('Appointment created', { 
 //     appointmentId: appointment.id,
 //     patientId: appointmentData.patientId,
@@ -197,7 +197,7 @@ const updateAppointment = async (appointmentId, updates) => {
 
   // Update appointment
   const appointment = await appointmentsRepository.update(appointmentId, updates);
-  
+
   logger.info('Appointment updated', { appointmentId });
 
   return appointment;
@@ -221,7 +221,7 @@ const cancelAppointment = async (appointmentId, cancelReason) => {
   }
 
   const appointment = await appointmentsRepository.cancel(appointmentId, cancelReason);
-  
+
   logger.info('Appointment cancelled', { appointmentId, reason: cancelReason });
 
   return appointment;
@@ -237,7 +237,7 @@ const deleteAppointment = async (appointmentId) => {
   }
 
   await appointmentsRepository.softDelete(appointmentId);
-  
+
   logger.info('Appointment deleted', { appointmentId });
 
   return { success: true };
@@ -247,6 +247,12 @@ const deleteAppointment = async (appointmentId) => {
  * Complete appointment
  */
 const completeAppointment = async (appointmentId, notes = null) => {
+  // Check if appointment exists
+  const existing = await appointmentsRepository.findById(appointmentId);
+  if (!existing) {
+    throw new Error('Appointment not found');
+  }
+
   const updates = {
     status: 'completed'
   };
@@ -255,7 +261,12 @@ const completeAppointment = async (appointmentId, notes = null) => {
     updates.notes = notes;
   }
 
-  return await updateAppointment(appointmentId, updates);
+  // Directly update without validation checks since we're just marking complete
+  const appointment = await appointmentsRepository.update(appointmentId, updates);
+
+  logger.info('Appointment completed', { appointmentId });
+
+  return appointment;
 };
 
 module.exports = {

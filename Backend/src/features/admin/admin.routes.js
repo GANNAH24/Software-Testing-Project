@@ -22,11 +22,18 @@ router.delete('/doctors/:id', adminController.deleteDoctor);
 
 // Patients management
 router.get('/patients', adminController.getAllPatients);
+router.post('/patients', adminController.createPatient);
 router.put('/patients/:id', adminController.updatePatient);
+router.delete('/patients/:id', adminController.deletePatient);
 
 // Appointments management
 router.get('/appointments', adminController.getAllAppointments);
 router.put('/appointments/:id', adminController.updateAppointment);
 router.delete('/appointments/:id', adminController.deleteAppointment);
+
+// Analytics
+router.get('/analytics/specialties', adminController.getSpecialtyAnalytics);
+router.get('/analytics/top-doctors', adminController.getTopDoctors);
+router.get('/analytics/overview', adminController.getAnalyticsOverview);
 
 module.exports = router;

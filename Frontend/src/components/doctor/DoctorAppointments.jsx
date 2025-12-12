@@ -4,6 +4,8 @@ import { Calendar, Clock, CheckCircle, X, MessageCircle, Phone } from 'lucide-re
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '../ui/pagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
@@ -22,23 +24,25 @@ export function DoctorAppointments() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const fetchAppointments = async () => {
     if (!user?.id) return;
-    
+
     try {
       setLoading(true);
       const response = await appointmentService.byDoctor(user.id);
       console.log('Doctor appointments response:', response);
-      
+
       let data = response?.data || response?.appointments || response;
-      
+
       // Ensure data is always an array
       if (!Array.isArray(data)) {
         console.warn('Appointments data is not an array:', data);
         data = [];
       }
-      
+
       console.log('Setting appointments:', data);
       console.log('Sample appointment data:', data[0]); // Log first appointment to see structure
       setAppointments(data);
@@ -60,7 +64,7 @@ export function DoctorAppointments() {
     const handleFocus = () => {
       fetchAppointments();
     };
-    
+
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [user]);
@@ -71,23 +75,23 @@ export function DoctorAppointments() {
       console.error('Appointments is not an array:', appointments);
       return [];
     }
-    
+
     if (status === 'all') return appointments;
-    
+
     const now = new Date();
-    
+
     if (status === 'upcoming') {
       return appointments.filter(a => {
         // Parse the date and time_slot to create a full datetime
         const appointmentDate = new Date(a.date);
-        
+
         // Extract hour from time_slot (e.g., "09:00-10:00" -> 9)
         if (a.time_slot) {
           const [startTime] = a.time_slot.split('-');
           const [hours, minutes] = startTime.split(':');
           appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
         }
-        
+
         return appointmentDate > now && (a.status === 'pending' || a.status === 'confirmed' || a.status === 'scheduled');
       });
     }
@@ -95,14 +99,14 @@ export function DoctorAppointments() {
       return appointments.filter(a => {
         // Parse the date and time_slot to create a full datetime
         const appointmentDate = new Date(a.date);
-        
+
         // Extract hour from time_slot (e.g., "09:00-10:00" -> 9)
         if (a.time_slot) {
           const [startTime] = a.time_slot.split('-');
           const [hours, minutes] = startTime.split(':');
           appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
         }
-        
+
         return appointmentDate <= now || a.status === 'completed' || a.status === 'canceled' || a.status === 'cancelled';
       });
     }
@@ -143,6 +147,20 @@ export function DoctorAppointments() {
     }
   };
 
+  const handleStatusChange = async (appointmentId, newStatus) => {
+    try {
+      await appointmentService.update(appointmentId, { status: newStatus });
+      setAppointments(appointments.map(apt =>
+        (apt.appointment_id || apt.id) === appointmentId ? { ...apt, status: newStatus } : apt
+      ));
+      toast.success(`Appointment marked as ${newStatus}`);
+      await fetchAppointments(); // Refresh to ensure data consistency
+    } catch (error) {
+      console.error('Failed to update appointment status:', error);
+      toast.error('Failed to update appointment status');
+    }
+  };
+
   const handleMessagePatient = async (patientUserId) => {
     if (!user?.id || !patientUserId) {
       console.error('Missing user ID or patient user ID', { userId: user?.id, patientUserId });
@@ -155,16 +173,16 @@ export function DoctorAppointments() {
       // Create or get existing conversation
       const response = await messagesService.createConversation(patientUserId, user.id);
       console.log('API Response:', response);
-      
+
       const conversation = response?.data || response;
       console.log('Conversation:', conversation);
-      
+
       if (!conversation || !conversation.id) {
         console.error('Invalid conversation response:', conversation);
         toast.error('Failed to create conversation - invalid response');
         return;
       }
-      
+
       // Navigate to chat window
       navigate(`/doctor/messages/${conversation.id}`);
     } catch (error) {
@@ -189,6 +207,17 @@ export function DoctorAppointments() {
 
   const filteredAppointments = filterAppointments(selectedTab);
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedAppointments = filteredAppointments.slice(startIndex, endIndex);
+
+  // Reset to page 1 when tab or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedTab, appointments.length]);
+
   if (loading) {
     return (
       <div className="p-4 sm:p-8">
@@ -212,6 +241,27 @@ export function DoctorAppointments() {
             <TabsTrigger value="past">Past</TabsTrigger>
           </TabsList>
           <TabsContent value={selectedTab}>
+            {filteredAppointments.length > 0 && (
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredAppointments.length)} of {filteredAppointments.length} appointments
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Items per page:</span>
+                  <Select value={String(itemsPerPage)} onValueChange={(val) => { setItemsPerPage(Number(val)); setCurrentPage(1); }}>
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
             {filteredAppointments.length === 0 ? (
               <Card><CardContent className="p-12 text-center">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"><Calendar className="w-8 h-8 text-gray-400" /></div>
@@ -227,8 +277,8 @@ export function DoctorAppointments() {
                       <th className="text-left p-4 text-sm text-gray-600">Date</th>
                       <th className="text-left p-4 text-sm text-gray-600">Time</th>
                       <th className="text-left p-4 text-sm text-gray-600">Status</th>
-                      <th className="text-left p-4 text-sm text-gray-600">Actions</th></tr></thead>
-                    <tbody>{filteredAppointments.map(apt => (
+                    </tr></thead>
+                    <tbody>{paginatedAppointments.map(apt => (
                       <tr key={apt.appointment_id || apt.id} className="border-b border-gray-200 last:border-0">
                         <td className="p-4">
                           <div className="flex items-center justify-between">
@@ -239,9 +289,9 @@ export function DoctorAppointments() {
                                 {apt.patient_phone || apt.patient?.phone || 'N/A'}
                               </div>
                             </div>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               onClick={() => handleMessagePatient(apt.patient_id)}
                               className="text-[#667eea] hover:text-[#667eea] hover:bg-[#667eea]/10"
                               title="Message Patient"
@@ -252,18 +302,25 @@ export function DoctorAppointments() {
                         </td>
                         <td className="p-4 text-gray-900">{new Date(apt.date).toLocaleDateString()}</td>
                         <td className="p-4 text-gray-900">{apt.timeSlot || apt.time_slot}</td>
-                        <td className="p-4"><span className={`inline-flex px-2 py-1 rounded text-xs capitalize ${getStatusColor(apt.status)}`}>{apt.status}</span></td>
-                        <td className="p-4"><div className="flex gap-2">
-                          {(apt.status === 'pending' || apt.status === 'confirmed') && (<>
-                            <Button size="sm" variant="outline" onClick={() => { setSelectedAppointment(apt); setCompleteDialogOpen(true); }}><CheckCircle className="w-4 h-4 mr-1" />Complete</Button>
-                            <Button size="sm" variant="outline" onClick={() => { setSelectedAppointment(apt); setCancelDialogOpen(true); }}><X className="w-4 h-4" /></Button>
-                          </>)}
-                          {apt.status === 'completed' && (<span className="text-sm text-green-600">Completed</span>)}
-                        </div></td>
+                        <td className="p-4">
+                          <Select
+                            value={apt.status}
+                            onValueChange={(newStatus) => handleStatusChange(apt.appointment_id || apt.id, newStatus)}
+                          >
+                            <SelectTrigger className={`w-32 text-xs ${getStatusColor(apt.status)}`}>
+                              <SelectValue>{apt.status}</SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="scheduled">Scheduled</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
                       </tr>))}</tbody>
                   </table>
                 </CardContent></Card></div>
-                <div className="md:hidden space-y-4">{filteredAppointments.map(apt => (
+                <div className="md:hidden space-y-4">{paginatedAppointments.map(apt => (
                   <Card key={apt.appointment_id || apt.id}><CardContent className="p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div>
@@ -274,24 +331,76 @@ export function DoctorAppointments() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => handleMessagePatient(apt.patient_id)}
                           className="text-[#667eea] hover:text-[#667eea] hover:bg-[#667eea]/10 p-2"
                         >
                           <MessageCircle className="w-4 h-4" />
                         </Button>
-                        <span className={`px-2 py-1 rounded text-xs capitalize ${getStatusColor(apt.status)}`}>{apt.status}</span>
+                        <Select
+                          value={apt.status}
+                          onValueChange={(newStatus) => handleStatusChange(apt.appointment_id || apt.id, newStatus)}
+                        >
+                          <SelectTrigger className={`w-32 text-xs ${getStatusColor(apt.status)}`}>
+                            <SelectValue>{apt.status}</SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="scheduled">Scheduled</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     <div className="space-y-2 mb-4"><div className="flex items-center gap-2 text-sm text-gray-600"><Calendar className="w-4 h-4" />{new Date(apt.date).toLocaleDateString()}</div><div className="flex items-center gap-2 text-sm text-gray-600"><Clock className="w-4 h-4" />{apt.time_slot || apt.timeSlot}</div>{apt.notes && (<div className="text-sm text-gray-600"><strong>Notes:</strong> {apt.notes}</div>)}</div>
-                    {(apt.status === 'booked' || apt.status === 'scheduled') && (<div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => { setSelectedAppointment(apt); setCompleteDialogOpen(true); }} className="flex-1"><CheckCircle className="w-4 h-4 mr-1" />Complete</Button>
-                      <Button size="sm" variant="outline" onClick={() => { setSelectedAppointment(apt); setCancelDialogOpen(true); }}><X className="w-4 h-4" /></Button>
-                    </div>)}
+                    <div className="mt-4 flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleMessagePatient(apt.patient_user_id)}
+                        className="flex-1"
+                      >
+                        <MessageCircle className="w-4 h-4 mr-1" />
+                        Message
+                      </Button>
+                    </div>
                   </CardContent></Card>
                 ))}</div>
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {filteredAppointments.length > itemsPerPage && (
+              <div className="mt-6">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
               </div>
             )}
           </TabsContent>
@@ -315,6 +424,6 @@ export function DoctorAppointments() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </div >
   );
 }

@@ -47,35 +47,71 @@ const getAllPatients = async (filters = {}) => {
 
   query = query.order('created_at', { ascending: false });
 
-  const { data, error } = await query;
+  const { data: patients, error } = await query;
   if (error) {
     logger.error('Error getting all patients', { error: error.message });
     throw error;
   }
 
-  // Get profiles for patients to get full_name
-  if (data && data.length > 0) {
-    const userIds = data.map(p => p.user_id).filter(Boolean);
-    if (userIds.length > 0) {
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .in('id', userIds);
+  // Get all profiles first
+  const { data: allProfiles } = await supabase
+    .from('profiles')
+    .select('id, full_name, role');
 
-      if (!profileError && profiles) {
-        // Map profiles to patients
-        data.forEach(patient => {
-          const profile = profiles.find(p => p.id === patient.user_id);
-          if (profile) {
-            patient.full_name = profile.full_name;
-            patient.email = profile.email;
-          }
-        });
-      }
+  if (!allProfiles || allProfiles.length === 0) {
+    return [];
+  }
+
+  // Get emails from Supabase Auth - need to paginate to get ALL users
+  let allAuthUsers = [];
+  let page = 1;
+  const perPage = 1000; // Max per page
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data: { users }, error: authError } = await supabase.auth.admin.listUsers({
+      page,
+      perPage
+    });
+
+    if (authError) {
+      logger.error('Error listing users from auth', { error: authError.message });
+      break;
+    }
+
+    if (users && users.length > 0) {
+      allAuthUsers = allAuthUsers.concat(users);
+      page++;
+      hasMore = users.length === perPage; // Continue if we got a full page
+    } else {
+      hasMore = false;
     }
   }
 
-  return data;
+  // Create a map of profile_id -> email
+  const profileEmailMap = {};
+  allAuthUsers.forEach(user => {
+    profileEmailMap[user.id] = user.email;
+  });
+
+  // Filter patients to only those with matching profiles
+  const validPatients = patients.filter(patient => {
+    return allProfiles.some(profile => profile.id === patient.patient_id);
+  });
+
+  // Attach profile data and emails to valid patients
+  validPatients.forEach(patient => {
+    const profile = allProfiles.find(p => p.id === patient.patient_id);
+    if (profile) {
+      patient.full_name = profile.full_name || 'Unknown';
+      patient.email = profileEmailMap[patient.patient_id] || 'No Email';
+      patient.role = profile.role;
+      // Add camelCase version for frontend
+      patient.dateOfBirth = patient.date_of_birth;
+    }
+  });
+
+  return validPatients;
 };
 
 /**
@@ -174,6 +210,29 @@ const deleteDoctor = async (doctorId) => {
 };
 
 /**
+ * Create patient (admin only)
+ */
+const createPatient = async (patientData) => {
+  const { data, error } = await supabase
+    .from('patients')
+    .insert([{
+      patient_id: patientData.userId,
+      phone: patientData.phone,
+      date_of_birth: patientData.dateOfBirth,
+      gender: patientData.gender,
+      created_at: new Date().toISOString()
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    logger.error('Error creating patient', { error: error.message });
+    throw error;
+  }
+  return data;
+};
+
+/**
  * Update patient (admin only)
  */
 const updatePatient = async (patientId, updates) => {
@@ -186,6 +245,24 @@ const updatePatient = async (patientId, updates) => {
 
   if (error) {
     logger.error('Error updating patient', { patientId, error: error.message });
+    throw error;
+  }
+  return data;
+};
+
+/**
+ * Delete patient (admin only - soft delete)
+ */
+const deletePatient = async (patientId) => {
+  const { data, error } = await supabase
+    .from('patients')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('patient_id', patientId)
+    .select()
+    .single();
+
+  if (error) {
+    logger.error('Error deleting patient', { patientId, error: error.message });
     throw error;
   }
   return data;
@@ -240,14 +317,14 @@ const getSystemStats = async () => {
   // Active doctors (those with appointments in last 30 days)
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
+
   const { data: activeDoctorIds } = await supabase
     .from('appointments')
     .select('doctor_id')
     .gte('date', thirtyDaysAgo.toISOString().split('T')[0]);
-  
-  const uniqueActiveDoctors = activeDoctorIds 
-    ? new Set(activeDoctorIds.map(a => a.doctor_id)).size 
+
+  const uniqueActiveDoctors = activeDoctorIds
+    ? new Set(activeDoctorIds.map(a => a.doctor_id)).size
     : 0;
 
   // Total patients
@@ -282,7 +359,9 @@ module.exports = {
   createDoctor,
   updateDoctor,
   deleteDoctor,
+  createPatient,
   updatePatient,
+  deletePatient,
   updateAppointment,
   deleteAppointment,
   getSystemStats

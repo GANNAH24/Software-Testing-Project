@@ -23,20 +23,20 @@ export function ManageDoctors({ navigate, user }) {
   // State Management
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
+
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  const [formData, setFormData] = useState({ 
-    name: '', 
-    specialty: '', 
-    qualifications: '', 
-    location: '', 
-    phone: '' 
+
+  const [formData, setFormData] = useState({
+    name: '',
+    specialty: '',
+    qualifications: '',
+    location: '',
+    phone: ''
   });
 
   const resetForm = () => setFormData({ name: '', specialty: '', qualifications: '', location: '', phone: '' });
@@ -48,7 +48,7 @@ export function ManageDoctors({ navigate, user }) {
       // Passing searchQuery to backend for server-side filtering
       const response = await adminService.getAllDoctors({ search: searchQuery });
       // Assuming response.data is the array of doctors
-      setDoctors(response.data || []); 
+      setDoctors(response.data || []);
     } catch (error) {
       console.error(error);
       toast.error('Failed to load doctors');
@@ -63,7 +63,7 @@ export function ManageDoctors({ navigate, user }) {
     const timer = setTimeout(() => {
       loadDoctors();
     }, 500);
-    
+
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -76,8 +76,32 @@ export function ManageDoctors({ navigate, user }) {
     }
 
     try {
-      await adminService.createDoctor(formData);
-      toast.success('✅ Doctor created successfully!');
+      const response = await adminService.createDoctor(formData);
+      const doctor = response?.data || response;
+
+      // Show credentials in a success message
+      if (doctor.generatedEmail && doctor.generatedPassword) {
+        toast.success(
+          <div className="space-y-2">
+            <p className="font-bold">✅ Doctor created successfully!</p>
+            <div className="text-sm">
+              <p><strong>Email:</strong> {doctor.generatedEmail}</p>
+              <p><strong>Password:</strong> {doctor.generatedPassword}</p>
+              <p className="text-xs text-gray-600 mt-1">Please save these credentials and share them with the doctor.</p>
+            </div>
+          </div>,
+          { duration: 10000 } // Show for 10 seconds
+        );
+
+        // Also log to console for easy copying
+        console.log('=== New Doctor Credentials ===');
+        console.log('Email:', doctor.generatedEmail);
+        console.log('Password:', doctor.generatedPassword);
+        console.log('==============================');
+      } else {
+        toast.success('✅ Doctor created successfully!');
+      }
+
       loadDoctors(); // Refresh list
       setCreateDialogOpen(false);
       resetForm();
@@ -121,12 +145,12 @@ export function ManageDoctors({ navigate, user }) {
 
   const openUpdateDialog = (doctor) => {
     setSelectedDoctor(doctor);
-    setFormData({ 
-      name: doctor.name, 
-      specialty: doctor.specialty, 
-      qualifications: doctor.qualifications, 
-      location: doctor.location, 
-      phone: doctor.phone 
+    setFormData({
+      name: doctor.name,
+      specialty: doctor.specialty,
+      qualifications: doctor.qualifications,
+      location: doctor.location,
+      phone: doctor.phone
     });
     setUpdateDialogOpen(true);
   };
@@ -134,10 +158,10 @@ export function ManageDoctors({ navigate, user }) {
   return (
     <div className="p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
-        <motion.div 
-          className="flex justify-between items-center mb-6" 
-          initial={{ opacity: 0, y: -20 }} 
-          animate={{ opacity: 1, y: 0 }} 
+        <motion.div
+          className="flex justify-between items-center mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <div>
@@ -152,12 +176,12 @@ export function ManageDoctors({ navigate, user }) {
         </motion.div>
 
         <div className="mb-6">
-          <Input 
-            type="text" 
-            placeholder="Search doctors by name, specialty, or location..." 
-            value={searchQuery} 
-            onChange={(e) => setSearchQuery(e.target.value)} 
-            className="max-w-md" 
+          <Input
+            type="text"
+            placeholder="Search doctors by name, specialty, or location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-md"
           />
         </div>
 
