@@ -35,7 +35,11 @@ export function QuickBookDialog({
         return;
       }
       try {
-        const dateStr = selectedDate.toISOString().split("T")[0];
+        const dateObj =
+          typeof selectedDate === "string"
+            ? new Date(selectedDate)
+            : selectedDate;
+        const dateStr = dateObj.toISOString().split("T")[0];
         const res = await appointmentService.getAvailableSlots(
           doctorId,
           dateStr

@@ -42,4 +42,7 @@ router.patch('/:id/complete', requireDoctor(), appointmentsController.completeAp
 // Delete appointment (patient, doctor, or admin)
 router.delete('/:id', requireAnyRole('patient', 'doctor', 'admin'), appointmentsController.deleteAppointment);
 
+router.post('/book', appointmentsController.bookSlot);
+
+
 module.exports = router;

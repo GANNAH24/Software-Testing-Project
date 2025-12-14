@@ -147,6 +147,14 @@ export function Home() {
         console.log('Doctors API result:', result);
         // Backend successResponse shape: { success, message, data }
         const list = result?.data || result?.doctors || result || [];
+
+        // Normalize IDs and other fields
+        const normalizedDoctors = list.map(d => ({
+          ...d,
+          id: d.doctor_id || d.id,
+          reviewsCount: d.reviewsCount || d.reviews_count || 0,
+        }));
+
         setDoctors(Array.isArray(list) ? list : []);
         setLoadError(null);
       } catch (e) {

@@ -6,6 +6,48 @@
 const appointmentsService = require('./appointments.service');
 const { successResponse, errorResponse } = require('../../shared/utils/response.util');
 const { asyncHandler } = require('../../shared/middleware/error.middleware');
+const schedulesService = require('../schedules/schedules.service');
+const appointmentsRepository = require('./appointments.repository');
+
+
+/**
+ * Book an available slot for a patient
+ */
+const bookSlot = async (req, res) => {
+  try {
+    const { doctorId, date, time_slot, patientId, reason } = req.body;
+
+    // 1️⃣ Check if the slot is still available
+    let availableSlots = await schedulesService.getAvailableSlots(doctorId, date);
+
+    // ✅ Map to time_slot strings
+    availableSlots = availableSlots.map(s => s.time_slot);
+
+    if (!availableSlots.includes(time_slot)) {
+      return res.status(400).json({
+        success: false,
+        message: `Time slot ${time_slot} is not available for this doctor on ${date}`,
+      });
+    }
+
+    // 2️⃣ Create appointment
+    const appointment = await appointmentsRepository.create({
+      doctorId,
+      patientId,
+      date,
+      time_slot: time_slot,
+      reason,
+      status: 'booked',
+    });
+
+    // ✅ Return success
+    res.json({ success: true, appointment });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+  }
+};
+
+
 
 // Get all appointments (with filters)
 const getAllAppointments = asyncHandler(async (req, res) => {
@@ -120,5 +162,6 @@ module.exports = {
   updateAppointment,
   cancelAppointment,
   deleteAppointment,
-  completeAppointment
+  completeAppointment,
+  bookSlot
 };

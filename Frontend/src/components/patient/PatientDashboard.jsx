@@ -18,7 +18,8 @@ export function PatientDashboard() {
       
       try {
         const response = await appointmentService.byPatient(user.id);
-        const appointments = response?.data || response?.appointments || response || [];
+        const appointments = response.data.data || [];
+        // response?.data || response?.appointments || response || [];
         
         const upcoming = appointments.filter(apt => apt.status === 'pending' || apt.status === 'confirmed' || apt.status === "booked" || apt.status === "scheduled").length;
         const past = appointments.filter(apt => apt.status === 'completed' || apt.status === 'canceled' || apt.status === 'cancelled').length;

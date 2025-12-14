@@ -2,9 +2,35 @@
  * Schedules Service
  * Business logic for doctor schedules
  */
-
 const schedulesRepository = require('./schedules.repository');
+const appointmentsRepository = require('../appointments/appointments.repository'); 
 const logger = require('../../shared/utils/logger.util');
+
+//get available slots for a doctor on a specific date
+const getAvailableSlots = async (doctorId, date) => {
+
+    console.log('doctorId:', doctorId);
+    console.log('date:', date);
+  // 1️⃣ Get all schedules for this doctor on this date
+  const schedules = await schedulesRepository.getDailySchedule(doctorId, date);
+  console.log('SCHEDULES:', schedules);
+
+  // 2️⃣ Get all appointments already booked for this doctor on this date
+  const appointments = await appointmentsRepository.findByDoctorIdAndDate(doctorId, date);
+  console.log('APPOINTMENTS:', appointments);
+
+  // 3️⃣ Map booked time slots
+  const bookedSlots = appointments.map(a => a.time_slot);
+  console.log('BOOKED SLOTS:', bookedSlots);
+  
+  // 4️⃣ Filter schedules: only available schedules that are not booked
+  const availableSlots = schedules.filter(
+    s => s.is_available && !bookedSlots.includes(s.time_slot)
+  );
+
+  return availableSlots;
+};
+
 
 /**
  * Get all schedules for a doctor
@@ -346,5 +372,6 @@ module.exports = {
     deleteSchedule,
     getWeeklySchedule,
     getDailySchedule,
-    blockTime
+    blockTime,
+    getAvailableSlots
 };

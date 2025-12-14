@@ -42,8 +42,8 @@ export function DoctorAppointments() {
         console.log('Setting appointments:', data);
         setAppointments(data);
       } catch (error) {
-        console.error('Failed to fetch appointments:', error);
-        toast.error('Failed to load appointments');
+        console.error('Failed to fetch doctor appointments:', error);
+        toast.error('Failed to load doctors appointments');
         setAppointments([]); // Ensure it's always an array even on error
       } finally {
         setLoading(false);

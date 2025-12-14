@@ -46,6 +46,7 @@ export function FindDoctors() {
       try {
         setLoading(true);
         const res = await doctorService.list();
+        console.log("Fetched doctors:", res?.data); 
         setDoctors(res?.data || []);
       } catch (err) {
         console.error(err);
@@ -55,6 +56,41 @@ export function FindDoctors() {
     };
     fetchDoctors();
   }, []);
+
+
+  useEffect(() => {
+  const fetchDoctorsWithSlots = async () => {
+    try {
+      setLoading(true);
+      const res = await doctorService.list();
+      const doctorsData = res?.data || [];
+
+      // fetch slots for each doctor (for today as example)
+      const today = new Date().toISOString().split("T")[0];
+      const doctorsWithSlots = await Promise.all(
+        doctorsData.map(async (doc) => {
+          try {
+            const slotsRes = await scheduleService.availableSlots(doc.doctor_id, today);
+            const slots = slotsRes?.data?.availableSlots || [];
+            return { ...doc, availableSlots: slots.length };
+          } catch (err) {
+            return { ...doc, availableSlots: 0 };
+          }
+        })
+      );
+
+      console.log("Doctors with slots:", doctorsWithSlots);
+      setDoctors(doctorsWithSlots);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchDoctorsWithSlots();
+}, []); 
+
 
   const filteredDoctors = doctors.filter((d) => {
     const matchesSearch =
@@ -192,7 +228,7 @@ export function FindDoctors() {
           open={bookDialogOpen}
           onOpenChange={setBookDialogOpen}
           doctorName={selectedDoctor.name}
-          doctorId={selectedDoctor?.doctor_id || selectedDoctor?.id}
+          doctorId={selectedDoctor?.doctor_id || selectedDoctor?.user_id}
           specialty={selectedDoctor.specialty}
         />
       )}

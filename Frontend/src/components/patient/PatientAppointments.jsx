@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, User, Eye, X, Trash2 } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Card, CardContent } from '../ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { CalendarBookDialog } from './CalendarBookDialog';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Calendar, Clock, User, Eye, X, Trash2 } from "lucide-react";
+import { Button } from "../ui/button";
+import { Card, CardContent } from "../ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { CalendarBookDialog } from "./CalendarBookDialog";
 import {
   Dialog,
   DialogContent,
@@ -12,64 +12,66 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../ui/dialog';
-import { Textarea } from '../ui/textarea';
-import { Label } from '../ui/label';
-import { toast } from 'sonner';
-import { useAuthContext } from '../../shared/contexts/AuthContext';
-import appointmentService from '../../shared/services/appointment.service';
+} from "../ui/dialog";
+import { Textarea } from "../ui/textarea";
+import { Label } from "../ui/label";
+import { toast } from "sonner";
+import { useAuthContext } from "../../shared/contexts/AuthContext";
+import appointmentService from "../../shared/services/appointment.service";
 
 export function PatientAppointments() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState('all');
+  const [selectedTab, setSelectedTab] = useState("all");
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bookDialogOpen, setBookDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
+  const normalize = (status) => status?.toLowerCase();
+
+  // useEffect(() => {
+  //   const fetchAppointments = async () => {
+  //     try {
+  //       let url = "http://localhost:3000/api/v1/appointments";
+
+  //       if (selectedTab === "upcoming") {
+  //         url = "http://localhost:3000/api/v1/appointments/upcoming";
+  //       } else if (selectedTab === "past") {
+  //         url = "http://localhost:3000/api/v1/appointments/past";
+  //       }
+
+  //       const res = await fetch(url, {
+  //         headers: {
+  //           Authorization: `Bearer ${user.session.access_token}`,
+  //         },
+  //       });
+
+  //       const result = await res.json();
+  //       setAppointments(result.data);
+  //     } catch (err) {
+  //       console.error("Fetch error:", err);
+  //     }
+  //   };
+
+  //   fetchAppointments();
+  // }, [selectedTab]); // ✅ refetch when tab changes
 
   useEffect(() => {
+    console.log("USER:", user);
+    if (!user?.id) return;
+
     const fetchAppointments = async () => {
-      try {
-        let url = "http://localhost:3000/api/v1/appointments";
-
-        if (selectedTab === "upcoming") {
-          url = "http://localhost:3000/api/v1/appointments/upcoming";
-        } else if (selectedTab === "past") {
-          url = "http://localhost:3000/api/v1/appointments/past";
-        }
-
-        const res = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${user.session.access_token}`,
-          },
-        });
-
-        const result = await res.json();
-        setAppointments(result.data);
-      } catch (err) {
-        console.error("Fetch error:", err);
-      }
-    };
-
-    fetchAppointments();
-  }, [selectedTab]); // ✅ refetch when tab changes
-
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      if (!user?.id) return;
-      
       try {
         setLoading(true);
         const response = await appointmentService.byPatient(user.id);
-        const data = response?.data || response?.appointments || response || [];
-        setAppointments(data);
+        console.log("RESPONSE:", response); // log entire response
+        setAppointments(response.data || []);
       } catch (error) {
-        console.error('Failed to fetch appointments:', error);
-        toast.error('Failed to load appointments');
+        console.error("Failed to fetch patient appointments:", error.response || error);
+        toast.error("Failed to load patient appointments");
       } finally {
         setLoading(false);
       }
@@ -77,76 +79,85 @@ export function PatientAppointments() {
 
     fetchAppointments();
   }, [user]);
+  // removed selectedTab
 
   const filterAppointments = (status) => {
-    if (status === 'all') return appointments;
-    if (status === 'upcoming') {
-      return appointments.filter(a => a.status === 'pending' || a.status === 'confirmed' ||  a.status === "booked" ||
-          a.status === "scheduled");
-    }
-    if (status === 'past') {
-      return appointments.filter(a => a.status === 'completed' || a.status === 'canceled' || a.status === 'cancelled');
-    }
-    return appointments;
+    const appts = Array.isArray(appointments) ? appointments : [];
+    if (status === "all") return appts;
+    if (status === "upcoming") return appts.filter(a => {
+      const s = normalize(a.status);
+      return s === "pending" || s === "confirmed" || s === "booked" || s === "scheduled";
+    });
+    if (status === "past") return appts.filter(a => {
+      const s = normalize(a.status);
+      return s === "completed" || s === "canceled" || s === "cancelled";
+    });
+    return appts;
   };
 
   const handleCancel = async () => {
-    const appointmentId = selectedAppointment?.appointment_id || selectedAppointment?.id;
+    const appointmentId =
+      selectedAppointment?.appointment_id || selectedAppointment?.id;
     if (!appointmentId) return;
 
     try {
       await appointmentService.cancel(appointmentId);
-      
-      // Update local state
-      setAppointments(appointments.map(apt =>
-        (apt.appointment_id || apt.id) === appointmentId
-          ? { ...apt, status: 'canceled' }
-          : apt
-      ));
 
-      toast.success('✅ Appointment canceled successfully');
+      // Update local state
+      setAppointments(
+        appointments.map((apt) =>
+          (apt.appointment_id || apt.id) === appointmentId
+            ? { ...apt, status: "canceled" }
+            : apt
+        )
+      );
+
+      toast.success("✅ Appointment canceled successfully");
       setCancelDialogOpen(false);
       setSelectedAppointment(null);
     } catch (error) {
-      console.error('Failed to cancel appointment:', error);
-      toast.error('Failed to cancel appointment');
+      console.error("Failed to cancel appointment:", error);
+      toast.error("Failed to cancel appointment");
     }
   };
 
   const handleDelete = async () => {
-    const appointmentId = selectedAppointment?.appointment_id || selectedAppointment?.id;
+    const appointmentId =
+      selectedAppointment?.appointment_id || selectedAppointment?.id;
     if (!appointmentId) return;
 
     try {
       await appointmentService.remove(appointmentId);
-      
+
       // Update local state
-      setAppointments(appointments.filter(apt => 
-        (apt.appointment_id || apt.id) !== appointmentId
-      ));
-      
-      toast.success('Appointment deleted successfully');
+      setAppointments(
+        appointments.filter(
+          (apt) => (apt.appointment_id || apt.id) !== appointmentId
+        )
+      );
+
+      toast.success("Appointment deleted successfully");
       setDeleteDialogOpen(false);
       setSelectedAppointment(null);
     } catch (error) {
-      console.error('Failed to delete appointment:', error);
-      toast.error('Failed to delete appointment');
+      console.error("Failed to delete appointment:", error);
+      toast.error("Failed to delete appointment");
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending':
+      case "pending":
       case "booked":
       case "scheduled":
-        return "bg-blue-100 text-blue-800";        
-      case 'confirmed':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'canceled':
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return "bg-blue-100 text-blue-800";
+      case "confirmed":
+        return "bg-blue-100 text-blue-800";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "canceled":
+      case "cancelled":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -223,17 +234,31 @@ export function PatientAppointments() {
                         </thead>
                         <tbody>
                           {filteredAppointments.map((apt) => (
-                            <tr key={apt.appointment_id || apt.id} className="border-b border-gray-200 last:border-0">
+                            <tr
+                              key={apt.appointment_id || apt.id}
+                              className="border-b border-gray-200 last:border-0"
+                            >
                               <td className="p-4">
                                 <div>
-                                  <div className="text-gray-900">{apt.doctor_name || apt.doctor?.fullName || apt.doctor?.full_name || 'Dr. Unknown'}</div>
-                                  <div className="text-sm text-gray-600">{apt.doctor_specialty || apt.doctor?.specialty || 'General'}</div>
+                                  <div className="text-gray-900">
+                                    {apt.doctor_name ||
+                                      apt.doctor?.fullName ||
+                                      apt.doctor?.full_name ||
+                                      "Dr. Unknown"}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    {apt.doctor_specialty ||
+                                      apt.doctor?.specialty ||
+                                      "General"}
+                                  </div>
                                 </div>
                               </td>
                               <td className="p-4 text-gray-900">
                                 {new Date(apt.date).toLocaleDateString()}
                               </td>
-                              <td className="p-4 text-gray-900">{apt.time_slot || apt.timeSlot}</td>
+                              <td className="p-4 text-gray-900">
+                                {apt.time_slot || apt.timeSlot}
+                              </td>
                               <td className="p-4">
                                 <span
                                   className={`inline-flex px-2 py-1 rounded text-xs capitalize ${getStatusColor(
@@ -248,11 +273,15 @@ export function PatientAppointments() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => navigate(`/doctor/${apt.doctor_id}`)}
+                                    onClick={() =>
+                                      navigate(`/doctor/${apt.doctor_id}`)
+                                    }
                                   >
                                     <Eye className="w-4 h-4" />
                                   </Button>
-                                  {(apt.status === 'pending' || apt.status === 'confirmed' || apt.status === "booked" ||
+                                  {(apt.status === "pending" ||
+                                    apt.status === "confirmed" ||
+                                    apt.status === "booked" ||
                                     apt.status === "scheduled") && (
                                     <Button
                                       size="sm"
@@ -292,8 +321,14 @@ export function PatientAppointments() {
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <div className="text-gray-900">{apt.doctor?.fullName || apt.doctor?.full_name || 'Dr. Unknown'}</div>
-                            <div className="text-sm text-gray-600">{apt.doctor?.specialty || 'General'}</div>
+                            <div className="text-gray-900">
+                              {apt.doctor?.fullName ||
+                                apt.doctor?.full_name ||
+                                "Dr. Unknown"}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {apt.doctor?.specialty || "General"}
+                            </div>
                           </div>
                           <span
                             className={`px-2 py-1 rounded text-xs capitalize ${getStatusColor(
@@ -317,12 +352,16 @@ export function PatientAppointments() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => navigate(`/patient/appointments/${apt.id}`)}
+                            onClick={() =>
+                              navigate(`/patient/appointments/${apt.id}`)
+                            }
                             className="flex-1"
                           >
                             View Details
                           </Button>
-                          {(apt.status === 'pending' || apt.status === 'confirmed' || apt.status === "booked" ||
+                          {(apt.status === "pending" ||
+                            apt.status === "confirmed" ||
+                            apt.status === "booked" ||
                             apt.status === "scheduled") && (
                             <Button
                               size="sm"
@@ -351,7 +390,11 @@ export function PatientAppointments() {
             <DialogHeader>
               <DialogTitle>Cancel Appointment?</DialogTitle>
               <DialogDescription>
-                Are you sure you want to cancel this appointment with {selectedAppointment?.doctor?.fullName || selectedAppointment?.doctor?.full_name || 'the doctor'}?
+                Are you sure you want to cancel this appointment with{" "}
+                {selectedAppointment?.doctor?.fullName ||
+                  selectedAppointment?.doctor?.full_name ||
+                  "the doctor"}
+                ?
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

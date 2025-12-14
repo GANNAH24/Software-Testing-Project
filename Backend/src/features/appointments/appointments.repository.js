@@ -18,8 +18,7 @@ const findAll = async (filters = {}) => {
       doctor:doctor_id (
         doctor_id,
         user_id,
-        first_name,
-        last_name,
+        name,
         specialty,
         phone,
         location
@@ -27,12 +26,15 @@ const findAll = async (filters = {}) => {
       patient:patient_id (
         patient_id,
         user_id,
-        first_name,
-        last_name,
-        phone
+        phone,
+        profile:profiles (
+          id,
+          full_name
+        )
       )
-    `
+      `
     )
+
     .is("deleted_at", null); // Exclude soft-deleted
 
   if (filters.patientId) {
@@ -70,14 +72,16 @@ const findAll = async (filters = {}) => {
   }
 
   // Format the data to include flattened doctor and patient info
-  return data.map(apt => ({
+  return data.map((apt) => ({
     ...apt,
-    doctor_name: apt.doctor ? `Dr. ${apt.doctor.first_name} ${apt.doctor.last_name}` : null,
+    doctor_name: apt.doctor ? `Dr. ${apt.doctor.name}` : null,
     doctor_specialty: apt.doctor?.specialty,
     doctor_phone: apt.doctor?.phone,
     doctor_location: apt.doctor?.location,
-    patient_name: apt.patient ? `${apt.patient.first_name} ${apt.patient.last_name}` : null,
-    patient_phone: apt.patient?.phone
+    patient_name: apt.profile?.full_name || null,
+    patient_patient_id: apt.patient?.patient_id,
+    patient_user_id: apt.patient?.user_id,
+    patient_phone: apt.patient?.phone,
   }));
 };
 
@@ -87,7 +91,27 @@ const findAll = async (filters = {}) => {
 const findById = async (appointmentId) => {
   const { data, error } = await supabase
     .from("appointments")
-    .select("*")
+    .select(`
+      *,
+      doctor:doctor_id (
+        doctor_id,
+        user_id,
+        name,
+        specialty,
+        phone,
+        location
+      ),
+      patient:patient_id (
+        patient_id,
+        user_id,
+        phone,
+        profile:profiles (
+          id,
+          full_name
+        )
+      )
+    `)
+
     .eq("appointment_id", appointmentId)
     .is("deleted_at", null)
     .single();
@@ -123,9 +147,34 @@ const findByDoctorId = async (doctorId) => {
 const findUpcoming = async (userId, role) => {
   const now = new Date().toISOString();
 
-  let query = supabase.from("appointments").select("*").is("deleted_at", null)
-                     .gte("date", now)
-                     .in("status", ['scheduled', 'booked', 'confirmed']); // explicitly list the statuses
+  let query = supabase
+    .from("appointments")
+    .select(
+          `
+      *,
+      doctor:doctor_id (
+        doctor_id,
+        user_id,
+        name,
+        specialty,
+        phone,
+        location
+      ),
+      patient:patient_id (
+        patient_id,
+        user_id,
+        phone,
+        profile:profiles (
+          id,
+          full_name
+        )
+      )
+    `
+    )
+
+    .is("deleted_at", null)
+    .gte("date", now)
+    .in("status", ["scheduled", "booked", "confirmed"]); // explicitly list the statuses
 
   if (role === "patient") {
     query = query.eq("patient_id", userId);
@@ -133,12 +182,23 @@ const findUpcoming = async (userId, role) => {
     query = query.eq("doctor_id", userId);
   }
 
-  query = query.order("date", { ascending: true }).order("time_slot", { ascending: true });
+  query = query
+    .order("date", { ascending: true })
+    .order("time_slot", { ascending: true });
 
   const { data, error } = await query;
   if (error) throw error;
 
-  return data;
+  return data.map((apt) => ({
+    ...apt,
+    doctor_name: apt.doctor ? `Dr. ${apt.doctor.name}` : null,
+    doctor_specialty: apt.doctor?.specialty,
+    doctor_phone: apt.doctor?.phone,
+    doctor_location: apt.doctor?.location,
+    patient_name: apt.profile?.full_name || null,
+    patient_phone: apt.patient?.phone,
+    patient_user_id: apt.patient?.user_id,
+  }));
 };
 /**
  * Get past appointments
@@ -168,8 +228,8 @@ const create = async (appointmentData) => {
       {
         patient_id: appointmentData.patientId,
         doctor_id: appointmentData.doctorId,
-        date: appointmentData.date,              // ✅ fixed key
-        time_slot: appointmentData.time_slot,     // ✅ fixed key
+        date: appointmentData.date, // ✅ fixed key
+        time_slot: appointmentData.time_slot, // ✅ fixed key
         reason: appointmentData.reason,
         status: appointmentData.status || "scheduled",
         notes: appointmentData.notes || null,
@@ -190,6 +250,9 @@ const create = async (appointmentData) => {
   return data;
 };
 
+const findByDoctorIdAndDate = async (doctorId, date) => {
+  return await findAll({ doctorId, startDate: date, endDate: date });
+};
 
 /**
  * Update appointment
@@ -257,59 +320,47 @@ const cancel = async (appointmentId, cancelReason = null) => {
 /**
  * Check for conflicting appointments
  */
-const findConflicts = async (doctorId, date, excludeAppointmentId = null) => {
-  // Convert to Date if time is included
-  const appointmentTime = new Date(date);
-  if (isNaN(appointmentTime.getTime())) {
-    throw new Error("Invalid date format in findConflicts()");
-  }
-
-  const oneHourBefore = new Date(appointmentTime.getTime() - 60 * 60 * 1000).toISOString();
-  const oneHourAfter = new Date(appointmentTime.getTime() + 60 * 60 * 1000).toISOString();
-
+const findConflicts = async (doctorId, date, time_slot, excludeAppointmentId = null) => {
   let query = supabase
     .from("appointments")
-    .select("appointment_id, date, status")
+    .select("appointment_id, date, time_slot, status")
     .eq("doctor_id", doctorId)
-    .eq("status", "scheduled")
+    .eq("date", date)
+    .eq("time_slot", time_slot)
     .is("deleted_at", null)
-    .gte("date", oneHourBefore)
-    .lte("date", oneHourAfter);
+    .in("status", ["scheduled", "booked", "confirmed"]);
 
   if (excludeAppointmentId) {
     query = query.neq("appointment_id", excludeAppointmentId);
   }
-
   const { data, error } = await query;
-
-  if (error) {
-    logger.error("Error finding conflicts", {
-      doctorId,
-      date,
-      error: error.message,
-    });
-    throw error;
-  }
-
+  if (error) throw error;
   return data;
 };
+
 
 /**
  * Find appointments needing reminders within a window
  */
 const findDueReminders = async (startISO, endISO, type) => {
-  const reminderColumn = type === '24h' ? 'reminder_24h_sent_at' : 'reminder_2h_sent_at';
+  const reminderColumn =
+    type === "24h" ? "reminder_24h_sent_at" : "reminder_2h_sent_at";
   const { data, error } = await supabase
-    .from('appointments')
-    .select('*')
-    .eq('status', 'scheduled')
-    .is('deleted_at', null)
+    .from("appointments")
+    .select("*")
+    .eq("status", "scheduled")
+    .is("deleted_at", null)
     .is(reminderColumn, null)
-    .gte('date', startISO)
-    .lt('date', endISO);
+    .gte("date", startISO)
+    .lt("date", endISO);
 
   if (error) {
-    logger.error('Error fetching due reminders', { startISO, endISO, type, error: error.message });
+    logger.error("Error fetching due reminders", {
+      startISO,
+      endISO,
+      type,
+      error: error.message,
+    });
     throw error;
   }
   return data;
@@ -317,7 +368,7 @@ const findDueReminders = async (startISO, endISO, type) => {
 
 const markReminderSent = async (appointmentId, type) => {
   const updates = {};
-  if (type === '24h') updates.reminder_24h_sent_at = new Date().toISOString();
+  if (type === "24h") updates.reminder_24h_sent_at = new Date().toISOString();
   else updates.reminder_2h_sent_at = new Date().toISOString();
   return await update(appointmentId, updates);
 };
@@ -336,4 +387,5 @@ module.exports = {
   findConflicts,
   findDueReminders,
   markReminderSent,
+  findByDoctorIdAndDate
 };

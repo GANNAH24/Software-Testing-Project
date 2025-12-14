@@ -25,4 +25,7 @@ router.put('/:id', requireDoctor(), schedulesController.updateSchedule);
 // Delete schedule
 router.delete('/:id', requireDoctor(), schedulesController.deleteSchedule);
 
+router.get('/available', schedulesController.getAvailableSlots);
+
+
 module.exports = router;

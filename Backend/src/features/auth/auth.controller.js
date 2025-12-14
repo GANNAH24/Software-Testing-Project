@@ -14,12 +14,12 @@ const { asyncHandler } = require('../../shared/middleware/error.middleware');
  * POST /api/v1/auth/register
  */
 const register = asyncHandler(async (req, res) => {
-  const { email, password, role, fullName, specialty, phoneNumber, ...additionalData } = req.body;
+  const { email, password, role, fullName, specialty, phone, ...additionalData } = req.body;
 
   const data = {
     fullName,
     specialty,
-    phoneNumber,
+    phone,
     ...additionalData
   };
 

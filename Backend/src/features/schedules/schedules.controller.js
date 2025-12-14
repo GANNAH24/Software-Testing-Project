@@ -146,6 +146,21 @@ const deleteSchedule = asyncHandler(async (req, res) => {
     res.json(successResponse(null, 'Schedule deleted successfully'));
 });
 
+const getAvailableSlots = async (req, res) => {
+  try {
+    const { doctorId, date } = req.query; // query parameters
+    if (!doctorId || !date) {
+      return res.status(400).json({ success: false, message: 'doctorId and date are required' });
+    }
+
+    const slots = await schedulesService.getAvailableSlots(doctorId, date);
+    res.json({ success: true, slots });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+  }
+};
+
+
 module.exports = {
     createSchedule,
     getWeeklySchedule,
@@ -153,5 +168,6 @@ module.exports = {
     blockTime,
     getAllSchedules,
     updateSchedule,
-    deleteSchedule
+    deleteSchedule,
+    getAvailableSlots
 };

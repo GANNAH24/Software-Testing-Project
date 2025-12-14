@@ -121,7 +121,8 @@ const createAppointment = async (appointmentData) => {
   // ✅ Use 'date' instead of 'appointmentDate'
   const conflicts = await appointmentsRepository.findConflicts(
     appointmentData.doctorId,
-    appointmentData.date
+    appointmentData.date,
+    appointmentData.time_slot
   );
 
   if (conflicts && conflicts.length > 0) {
@@ -130,6 +131,9 @@ const createAppointment = async (appointmentData) => {
     );
   }
 
+
+
+  
   // Create appointment
   const appointment = await appointmentsRepository.create(appointmentData);
 

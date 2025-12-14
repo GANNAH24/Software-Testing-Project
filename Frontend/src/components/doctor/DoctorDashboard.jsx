@@ -73,7 +73,7 @@ export function DoctorDashboard() {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome, Dr. {doctorProfile?.first_name || doctorProfile?.firstName || (user?.fullName || user?.full_name || 'Doctor').split(' ')[0]}!
+            Welcome, Dr. {doctorProfile?.name || doctorProfile?.firstName || (user?.fullName || user?.full_name || 'Doctor').split(' ')[0]}!
           </h1>
           <p className="text-gray-600">Manage your schedule and appointments</p>
         </div>

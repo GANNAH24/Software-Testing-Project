@@ -168,7 +168,7 @@ const getDailySchedule = async (doctorId, date) => {
         .from('doctor_schedules')
         .select('*')
         .eq('doctor_id', doctorId)
-        .eq('date', date)
+        .eq('date', date.split('T')[0])
         .order('time_slot', { ascending: true });
 
     if (error) {
