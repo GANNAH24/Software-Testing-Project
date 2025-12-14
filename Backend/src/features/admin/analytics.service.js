@@ -20,10 +20,7 @@ const getSpecialtyDistribution = async () => {
             percentage: total > 0 ? ((item.value / total) * 100).toFixed(1) : 0
         }));
 
-        return {
-            data: withPercentages,
-            total
-        };
+        return withPercentages;
     } catch (error) {
         logger.error('Error in getSpecialtyDistribution service', { error: error.message });
         throw error;
@@ -37,10 +34,7 @@ const getTopPerformingDoctors = async (limit = 10) => {
     try {
         const topDoctors = await analyticsRepository.getTopDoctors(limit);
 
-        return {
-            data: topDoctors,
-            count: topDoctors.length
-        };
+        return topDoctors;
     } catch (error) {
         logger.error('Error in getTopPerformingDoctors service', { error: error.message });
         throw error;

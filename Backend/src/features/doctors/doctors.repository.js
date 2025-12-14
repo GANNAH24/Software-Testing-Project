@@ -180,10 +180,27 @@ const getDetailedProfile = async (doctorId) => {
     }
   }
 
-  // Return doctor data with email
+  // Get review statistics
+  const { data: reviews, error: reviewError } = await supabase
+    .from('doctor_reviews')
+    .select('rating')
+    .eq('doctor_id', doctorId);
+
+  let average_rating = 0;
+  let total_reviews = 0;
+
+  if (!reviewError && reviews && reviews.length > 0) {
+    total_reviews = reviews.length;
+    const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
+    average_rating = (sum / total_reviews).toFixed(1);
+  }
+
+  // Return doctor data with email and review stats
   return {
     ...doctor,
-    email: userEmail
+    email: userEmail,
+    average_rating: parseFloat(average_rating),
+    total_reviews
   };
 };
 

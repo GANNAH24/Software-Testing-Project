@@ -27,14 +27,14 @@ router.get('/', appointmentsController.getAllAppointments);
 // Patient appointments
 router.get('/patient/:patientId', appointmentsController.getPatientAppointments);
 
-// Doctor appointments with ID
-router.get('/doctor/:doctorId', appointmentsController.getDoctorAppointments);
-
 // Create appointment (patients only)
 router.post('/', requirePatient(), appointmentsController.createAppointment);
 
-// Get specific appointment
-router.get('/:id', appointmentsController.getAppointmentById);
+// Doctor appointments with ID (must come before /:id)
+router.get('/doctor/:doctorId', appointmentsController.getDoctorAppointments);
+
+// Get specific appointment (requires authentication)
+router.get('/:id', requireAnyRole('patient', 'doctor'), appointmentsController.getAppointmentById);
 
 // Update appointment (patient or doctor)
 router.put('/:id', requireAnyRole('patient', 'doctor'), appointmentsController.updateAppointment);

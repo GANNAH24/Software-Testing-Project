@@ -50,7 +50,9 @@ const advancedSearchDoctors = async (filters) => {
 const getDetailedDoctorProfile = async (doctorId) => {
   const doctor = await doctorsRepository.getDetailedProfile(doctorId);
   if (!doctor) {
-    throw new Error('Doctor not found');
+    const error = new Error('Doctor not found');
+    error.statusCode = 404;
+    throw error;
   }
   return doctor;
 };
@@ -87,7 +89,7 @@ const searchDoctors = async (searchTerm, specialty = null) => {
   const filters = {};
   if (searchTerm) filters.search = searchTerm;
   if (specialty) filters.specialty = specialty;
-  return await doctorsRepository.findAll(filters);
+  return await doctorsRepository.advancedSearch(filters);
 };
 
 module.exports = {

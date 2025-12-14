@@ -36,8 +36,9 @@ const createSchedule = asyncHandler(async (req, res) => {
     const scheduleData = {
         doctorId: doctor.doctor_id || doctor.id || doctor.doctorId,
         date: req.body.date,
-        timeSlot: req.body.time_slot,
-        isAvailable: req.body.is_available
+        timeSlot: req.body.timeSlot || req.body.time_slot,
+        isAvailable: req.body.isAvailable !== undefined ? req.body.isAvailable : req.body.is_available,
+        repeatWeekly: req.body.repeatWeekly || req.body.repeat_weekly || false
     };
 
     const schedule = await schedulesService.createSchedule(scheduleData);
@@ -73,7 +74,7 @@ const blockTime = asyncHandler(async (req, res) => {
     const schedule = await schedulesService.blockTime(
         doctor.doctor_id || doctor.id || doctor.doctorId,
         req.body.date,
-        req.body.time_slot
+        req.body.timeSlot || req.body.time_slot
     );
     res.status(201).json(successResponse(schedule, 'Time blocked successfully', 201));
 });
@@ -122,7 +123,7 @@ const updateSchedule = asyncHandler(async (req, res) => {
     // Build updates mapping from request body
     const updates = {};
     if (req.body.date) updates.date = req.body.date;
-    if (req.body.time_slot) updates.timeSlot = req.body.time_slot;
+    if (req.body.timeSlot || req.body.time_slot) updates.timeSlot = req.body.timeSlot || req.body.time_slot;
     if (req.body.is_available !== undefined) updates.isAvailable = req.body.is_available;
     if (req.body.notes) updates.notes = req.body.notes;
 
