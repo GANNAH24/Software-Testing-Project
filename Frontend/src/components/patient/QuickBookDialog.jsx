@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { Calendar, Clock } from "lucide-react";
-import { Button } from "../ui/button";
+import { useState, useEffect } from 'react';
+import { Clock } from 'lucide-react';
+import { Button } from '../ui/button';
 import {
   Dialog,
   DialogContent,
@@ -8,77 +8,189 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
-import { Label } from "../ui/label";
-import { Textarea } from "../ui/textarea";
-import { toast } from "sonner";
-import appointmentService from "../../shared/services/appointment.service";
+} from '../ui/dialog';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import { Calendar } from '../ui/calendar';
+import { toast } from 'sonner';
+import scheduleService from '../../shared/services/schedule.service';
+import appointmentService from '../../shared/services/appointment.service';
 
 export function QuickBookDialog({
   open,
   onOpenChange,
   doctorName,
   doctorId,
-  specialty,
+  specialty = 'Cardiology',
+  onSuccess,
 }) {
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState();
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [booking, setBooking] = useState(false);
+  const [datesWithSlots, setDatesWithSlots] = useState([]);
 
-  // Fetch available slots when date changes
+  // Load dates with available slots when dialog opens
   useEffect(() => {
-    const fetchSlots = async () => {
-      if (!selectedDate) {
-        setAvailableSlots([]);
-        return;
-      }
+    if (!doctorId || !open) {
+      setDatesWithSlots([]);
+      return;
+    }
+
+    const loadDatesWithSlots = async () => {
       try {
-        const dateStr = selectedDate.toISOString().split("T")[0];
-        const res = await appointmentService.getAvailableSlots(
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const startDate = `${year}-${month}-${day}`;
+
+        const result = await scheduleService.byDoctor(doctorId, {
+          startDate,
+        });
+
+        const schedules = result?.data?.data || result?.data || [];
+        const availableSchedules = Array.isArray(schedules)
+          ? schedules.filter(s => s.is_available === true)
+          : [];
+
+        const uniqueDates = [...new Set(availableSchedules.map(s => s.date))];
+
+        const checkPromises = uniqueDates.map(async date => {
+          try {
+            const slotsResult = await scheduleService.availableSlots(
+              doctorId,
+              date
+            );
+            const slots = slotsResult?.data?.availableSlots || [];
+            if (slots.length === 0) return null;
+
+            const [y, m, d] = date.split('-').map(Number);
+            const checkDate = new Date(y, m - 1, d);
+            const isToday =
+              checkDate.toDateString() === today.toDateString();
+
+            if (isToday) {
+              const now = new Date();
+              const futureSlots = slots.filter(slot => {
+                const [startTime] = slot.split('-');
+                const [h, min] = startTime.split(':');
+                const slotDateTime = new Date(checkDate);
+                slotDateTime.setHours(parseInt(h), parseInt(min), 0, 0);
+                return slotDateTime > now;
+              });
+              return futureSlots.length > 0 ? date : null;
+            }
+
+            return date;
+          } catch {
+            return null;
+          }
+        });
+
+        const results = await Promise.all(checkPromises);
+        setDatesWithSlots(results.filter(Boolean));
+      } catch (err) {
+        console.error('Error loading dates with slots:', err);
+        setDatesWithSlots([]);
+      }
+    };
+
+    loadDatesWithSlots();
+  }, [doctorId, open]);
+
+  // Load available slots when date is selected
+  useEffect(() => {
+    if (!doctorId || !selectedDate) {
+      setAvailableSlots([]);
+      return;
+    }
+
+    const loadAvailableSlots = async () => {
+      setLoadingSlots(true);
+      try {
+        const y = selectedDate.getFullYear();
+        const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const d = String(selectedDate.getDate()).padStart(2, '0');
+        const dateStr = `${y}-${m}-${d}`;
+
+        const result = await scheduleService.availableSlots(
           doctorId,
           dateStr
         );
-        console.log("Available slots for", dateStr, res?.data);
-        setAvailableSlots(res?.data || []);
+
+        let slots =
+          result?.data?.availableSlots || result?.availableSlots || [];
+
+        const today = new Date();
+        const isToday =
+          selectedDate.toDateString() === today.toDateString();
+
+        if (isToday) {
+          const now = new Date();
+          slots = slots.filter(slot => {
+            const [startTime] = slot.split('-');
+            const [h, min] = startTime.split(':');
+            const slotDateTime = new Date(selectedDate);
+            slotDateTime.setHours(parseInt(h), parseInt(min), 0, 0);
+            return slotDateTime > now;
+          });
+        }
+
+        setAvailableSlots(slots);
       } catch (err) {
-        console.error(err);
-        toast.error("Failed to fetch available slots");
+        console.error('Error loading available slots:', err);
+        setAvailableSlots([]);
+      } finally {
+        setLoadingSlots(false);
       }
     };
-    if (selectedDate) fetchSlots();
-  }, [selectedDate, doctorId]);
+
+    loadAvailableSlots();
+  }, [doctorId, selectedDate]);
 
   const handleConfirmBooking = async () => {
     if (!selectedDate || !selectedSlot) {
-      toast.error("❌ Please select a date and time slot");
+      toast.error('Please select a date and time slot');
       return;
     }
-    setLoading(true);
+
+    if (!doctorId) {
+      toast.error('Doctor information is missing');
+      return;
+    }
+
+    setBooking(true);
     try {
       await appointmentService.create({
         doctor_id: doctorId,
-        date: selectedDate.toISOString().split("T")[0],
+        date: selectedDate.toISOString().split('T')[0],
         time_slot: selectedSlot,
-        reason: notes || "General consultation",
-        status: "scheduled",
+        reason: notes || 'General consultation',
+        status: 'scheduled',
       });
 
       toast.success(
         `✅ Appointment booked with ${doctorName} on ${selectedDate.toLocaleDateString()} at ${selectedSlot}!`
       );
 
-      // Reset form
-      setSelectedDate(null);
+      setSelectedDate(undefined);
       setSelectedSlot(null);
-      setNotes("");
+      setNotes('');
+      setAvailableSlots([]);
       onOpenChange(false);
+
+      if (onSuccess) onSuccess();
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to book appointment");
+      console.error('Error booking appointment:', err);
+      toast.error(
+        err.response?.data?.error ||
+          'Failed to book appointment. Please try again.'
+      );
     } finally {
-      setLoading(false);
+      setBooking(false);
     }
   };
 
@@ -93,104 +205,99 @@ export function QuickBookDialog({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Date selection */}
           <div>
             <Label className="mb-3 block">Select Date</Label>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => {
-                setSelectedDate(date);
-                setSelectedSlot(null);
-              }}
-              disabled={(date) => date < new Date()}
-              className="rounded-md border p-2"
-            />
+            <div className="flex justify-center">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={date => {
+                  setSelectedDate(date);
+                  setSelectedSlot(null);
+                }}
+                disabled={date => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  return date < today;
+                }}
+                modifiers={{
+                  hasSlots: date => {
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const d = String(date.getDate()).padStart(2, '0');
+                    return datesWithSlots.includes(`${y}-${m}-${d}`);
+                  },
+                }}
+                modifiersClassNames={{
+                  hasSlots:
+                    'bg-green-100 text-green-900 font-semibold hover:bg-green-200',
+                }}
+                className="rounded-md border"
+              />
+            </div>
           </div>
 
-          {/* Time slot selection */}
           {selectedDate && (
             <div>
-              <Label className="mb-3 block">Select Time Slot</Label>
-              {availableSlots.length > 0 ? (
+              <Label className="mb-3 block">Available Time Slots</Label>
+
+              {loadingSlots ? (
+                <div className="text-center py-8 text-gray-500">
+                  Loading available slots...
+                </div>
+              ) : availableSlots.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No available slots for this date
+                </div>
+              ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {availableSlots.map((slot) => (
+                  {availableSlots.map(slot => (
                     <button
                       key={slot}
                       onClick={() => setSelectedSlot(slot)}
                       className={`p-3 rounded-lg border-2 transition-all ${
                         selectedSlot === slot
-                          ? "border-[#667eea] bg-[#667eea]/10"
-                          : "border-gray-200 hover:border-[#667eea]/50"
+                          ? 'border-[#667eea] bg-[#667eea]/10'
+                          : 'border-gray-200 hover:border-[#667eea]/50'
                       }`}
                     >
                       <div className="flex items-center justify-center gap-2">
                         <Clock className="w-4 h-4 text-[#667eea]" />
-                        <span className="text-sm text-gray-900">{slot}</span>
+                        <span className="text-sm">{slot}</span>
                       </div>
                     </button>
                   ))}
-                </div>
-              ) : (
-                <div className="text-gray-500 py-4">
-                  No available slots for this date
                 </div>
               )}
             </div>
           )}
 
-          {/* Notes */}
           <div>
             <Label htmlFor="notes">Notes (Optional)</Label>
             <Textarea
               id="notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={e => setNotes(e.target.value)}
               rows={3}
               className="mt-2"
             />
           </div>
-
-          {/* Booking Summary */}
-          {selectedDate && selectedSlot && (
-            <div className="bg-[#667eea]/10 border border-[#667eea]/20 rounded-lg p-4">
-              <div className="text-sm text-gray-900 mb-2">
-                📋 Booking Summary
-              </div>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Doctor:</span>
-                  <span className="text-gray-900">{doctorName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Specialty:</span>
-                  <span className="text-gray-900">{specialty}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Date:</span>
-                  <span className="text-gray-900">
-                    {selectedDate.toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Time:</span>
-                  <span className="text-gray-900">{selectedSlot}</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={booking}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleConfirmBooking}
-            disabled={!selectedDate || !selectedSlot || loading}
+            disabled={!selectedDate || !selectedSlot || booking}
             className="bg-[#667eea] hover:bg-[#5568d3]"
           >
-            Confirm Booking
+            {booking ? 'Booking...' : 'Confirm Booking'}
           </Button>
         </DialogFooter>
       </DialogContent>

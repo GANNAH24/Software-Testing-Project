@@ -8,6 +8,7 @@ export function CalendarBookDialog({
   open,
   onOpenChange,
   preSelectedDoctorId,
+  onSuccess,
 }) {
   const [selectedDoctorId, setSelectedDoctorId] = useState(preSelectedDoctorId || '');
   const [selectedDate, setSelectedDate] = useState();
@@ -17,6 +18,7 @@ export function CalendarBookDialog({
   const [loading, setLoading] = useState(false);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [datesWithSlots, setDatesWithSlots] = useState([]);
 
   useEffect(() => {
     if (!open) return;
@@ -28,8 +30,87 @@ export function CalendarBookDialog({
         console.error(err);
       }
     };
-    loadDoctors();
+    if (open) {
+      loadDoctors();
+      // Reset dates when dialog opens to force fresh check
+      setDatesWithSlots([]);
+    }
   }, [open]);
+
+  // Load dates with available slots when doctor is selected
+  useEffect(() => {
+    if (!selectedDoctorId) {
+      setDatesWithSlots([]);
+      return;
+    }
+
+    const loadDatesWithSlots = async () => {
+      try {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const startDate = `${year}-${month}-${day}`;
+        
+        // Get schedules for the next 60 days
+        const result = await scheduleService.byDoctor(selectedDoctorId, { 
+          startDate: startDate
+        });
+        
+        // Extract schedules array from response
+        const schedules = result?.data?.data || result?.data || [];
+        
+        // Filter only schedules marked as available
+        const availableSchedules = Array.isArray(schedules) 
+          ? schedules.filter(s => s.is_available === true)
+          : [];
+        
+        // Get unique dates
+        const uniqueDates = [...new Set(availableSchedules.map(s => s.date))];
+        
+        // Check each date for actual available slots (not booked)
+        const checkPromises = uniqueDates.map(async (date) => {
+          try {
+            const slotsResult = await scheduleService.availableSlots(selectedDoctorId, date);
+            const slots = slotsResult?.data?.availableSlots || [];
+            
+            if (slots.length === 0) return null;
+            
+            // Filter out past time slots if this is today
+            const [checkYear, checkMonth, checkDay] = date.split('-').map(Number);
+            const checkDate = new Date(checkYear, checkMonth - 1, checkDay);
+            const isToday = checkDate.toDateString() === today.toDateString();
+            
+            if (isToday) {
+              const now = new Date();
+              const futureSlots = slots.filter(slot => {
+                const [startTime] = slot.split('-');
+                const [hours, minutes] = startTime.split(':');
+                const slotDateTime = new Date(checkDate);
+                slotDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                return slotDateTime > now;
+              });
+              return futureSlots.length > 0 ? date : null;
+            }
+            
+            return date;
+          } catch (err) {
+            return null;
+          }
+        });
+        
+        const results = await Promise.all(checkPromises);
+        const datesWithActualSlots = results.filter(date => date !== null);
+        
+        setDatesWithSlots(datesWithActualSlots);
+      } catch (err) {
+        console.error('Error loading dates with slots:', err);
+        setDatesWithSlots([]);
+      }
+    };
+
+    loadDatesWithSlots();
+  }, [selectedDoctorId]);
 
   // Load available slots when doctor and date are selected
   useEffect(() => {
@@ -41,21 +122,65 @@ export function CalendarBookDialog({
 
       setLoadingSlots(true);
       try {
-        const dateStr = selectedDate.toISOString().split('T')[0];
+        // Format date in local timezone to avoid UTC conversion issues
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        
         const result = await scheduleService.availableSlots(selectedDoctorId, dateStr);
-        const slots = result?.data?.availableSlots || result?.availableSlots || [];
-        setAvailableSlots(Array.isArray(slots) ? slots : []);
+        let slots = result?.data?.availableSlots || result?.availableSlots || [];
+        slots = Array.isArray(slots) ? slots : [];
+        
+        // Filter out past time slots if selected date is today
+        const today = new Date();
+        const isToday = selectedDate.toDateString() === today.toDateString();
+        
+        if (isToday) {
+          const now = new Date();
+          slots = slots.filter(slot => {
+            // Extract start time from slot (e.g., "09:00-10:00" -> "09:00")
+            const [startTime] = slot.split('-');
+            const [hours, minutes] = startTime.split(':');
+            
+            // Create a date object for the slot time
+            const slotDateTime = new Date(selectedDate);
+            slotDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            
+            // Only show slots that are in the future
+            return slotDateTime > now;
+          });
+        }
+        
+        setAvailableSlots(slots);
       } catch (err) {
         console.error('Error loading available slots:', err);
-        // Fallback to default slots if API fails
-        setAvailableSlots([
+        // Fallback to default slots if API fails, filtered for today
+        let defaultSlots = [
           '09:00-10:00',
           '10:00-11:00',
           '11:00-12:00',
           '14:00-15:00',
           '15:00-16:00',
           '16:00-17:00',
-        ]);
+        ];
+        
+        // Filter out past slots if today
+        const today = new Date();
+        const isToday = selectedDate.toDateString() === today.toDateString();
+        
+        if (isToday) {
+          const now = new Date();
+          defaultSlots = defaultSlots.filter(slot => {
+            const [startTime] = slot.split('-');
+            const [hours, minutes] = startTime.split(':');
+            const slotDateTime = new Date(selectedDate);
+            slotDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            return slotDateTime > now;
+          });
+        }
+        
+        setAvailableSlots(defaultSlots);
       } finally {
         setLoadingSlots(false);
       }
@@ -78,9 +203,15 @@ export function CalendarBookDialog({
 
     setLoading(true);
     try {
+      // Format date in local timezone
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      
       const appointmentData = {
         doctor_id: selectedDoctorId,
-        date: selectedDate.toISOString().split('T')[0],
+        date: dateStr,
         time_slot: selectedSlot,
         reason: notes || 'General consultation',
         status: 'scheduled'
@@ -95,6 +226,12 @@ export function CalendarBookDialog({
       setSelectedDate(undefined);
       setSelectedSlot(null);
       setNotes('');
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+      
       onOpenChange(false);
     } catch (err) {
       console.error('Error booking appointment:', err);
@@ -168,6 +305,18 @@ export function CalendarBookDialog({
                     disabled={(date) => 
                       date < new Date() || date < new Date(new Date().setHours(0, 0, 0, 0))
                     }
+                    modifiers={{
+                      hasSlots: (date) => {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const dateStr = `${year}-${month}-${day}`;
+                        return datesWithSlots.includes(dateStr);
+                      }
+                    }}
+                    modifiersClassNames={{
+                      hasSlots: 'bg-green-100 text-green-900 font-semibold hover:bg-green-200'
+                    }}
                     className="rounded-md"
                   />
                 </div>

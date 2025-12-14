@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { toast } from 'sonner';
 import { useAuthContext } from '../shared/contexts/AuthContext';
+import { authService } from '../shared/services/auth.service';
 
 export function ChangePassword() {
   const navigate = useNavigate();
@@ -36,14 +37,26 @@ export function ChangePassword() {
   const passwordErrors = validatePassword(newPassword);
   const passwordsMatch = newPassword && confirmPassword && newPassword === confirmPassword;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     if (!currentPassword) { setError('Please enter your current password'); return; }
     if (passwordErrors.length > 0) { setError('New password does not meet requirements'); return; }
     if (!passwordsMatch) { setError('New passwords do not match'); return; }
+    
     setLoading(true);
-    setTimeout(() => { toast.success('Password changed successfully!'); setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); setLoading(false); }, 1000);
+    try {
+      await authService.changePassword(currentPassword, newPassword);
+      toast.success('Password changed successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      console.error('Password change error:', err);
+      setError(err.response?.data?.error || err.message || 'Failed to change password');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!user) {

@@ -31,6 +31,12 @@ const findAllByDoctor = async (doctorId, filters = {}) => {
     if (filters.endDate) {
         query = query.lte('date', filters.endDate);
     }
+    
+    // If no specific date or date range specified, only show future schedules by default
+    if (!filters.date && !filters.startDate && !filters.endDate && !filters.includePast) {
+        const today = new Date().toISOString().split('T')[0];
+        query = query.gte('date', today);
+    }
 
     // Filter by availability
     if (filters.isAvailable !== undefined) {

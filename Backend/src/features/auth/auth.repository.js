@@ -161,11 +161,54 @@ const updateProfile = async (userId, updates) => {
   return data;
 };
 
+/**
+ * Update doctor-specific data
+ */
+const updateDoctorData = async (userId, updates) => {
+  const { data, error } = await supabase
+    .from('doctors')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString()
+    })
+    .eq('user_id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    logger.error('Error updating doctor data', { userId, error: error.message });
+    throw error;
+  }
+
+  return data;
+};
+
+/**
+ * Update patient-specific data
+ */
+const updatePatientData = async (userId, updates) => {
+  const { data, error } = await supabase
+    .from('patients')
+    .update(updates)
+    .eq('patient_id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    logger.error('Error updating patient data', { userId, error: error.message });
+    throw error;
+  }
+
+  return data;
+};
+
 module.exports = {
   findProfileById,
   findProfileByEmail,
   createPatient,
   createDoctor,
   getRoleSpecificData,
-  updateProfile
+  updateProfile,
+  updateDoctorData,
+  updatePatientData
 };

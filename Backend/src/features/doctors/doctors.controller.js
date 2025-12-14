@@ -58,7 +58,10 @@ const createDoctor = asyncHandler(async (req, res) => {
     specialty: req.body.specialty,
     qualifications: req.body.qualifications,
     reviews: req.body.reviews || 0,
-    location: req.body.location
+    location: req.body.location,
+    workingHoursStart: req.body.working_hours_start || '09:00:00',
+    workingHoursEnd: req.body.working_hours_end || '17:00:00',
+    phone: req.body.phone
   };
   const doctor = await doctorsService.createDoctor(doctorData);
   res.status(201).json(successResponse(doctor, 'Doctor created successfully', 201));
@@ -71,6 +74,9 @@ const updateDoctor = asyncHandler(async (req, res) => {
   if (req.body.qualifications) updates.qualifications = req.body.qualifications;
   if (req.body.reviews !== undefined) updates.reviews = req.body.reviews;
   if (req.body.location) updates.location = req.body.location;
+  if (req.body.working_hours_start) updates.working_hours_start = req.body.working_hours_start;
+  if (req.body.working_hours_end) updates.working_hours_end = req.body.working_hours_end;
+  if (req.body.phone) updates.phone = req.body.phone;
 
   const doctor = await doctorsService.updateDoctor(req.params.id, updates);
   res.json(successResponse(doctor, 'Doctor updated successfully'));

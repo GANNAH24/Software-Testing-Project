@@ -34,22 +34,35 @@ export function DoctorDashboard() {
         const appointmentResponse = await appointmentService.byDoctor(user.id);
         const appointments = appointmentResponse?.data || appointmentResponse?.appointments || appointmentResponse || [];
         
-        // Calculate stats
-        const today = new Date().toISOString().split('T')[0];
+      // Calculate stats
+      const now = new Date();
+      // Use local date to avoid timezone issues
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const today = `${year}-${month}-${day}`;
+      
+      // Today's available slots from schedules
+      const todaySlots = schedules.filter(s => s.date === today && s.is_available);
         
-        // Today's available slots from schedules
-        const todaySlots = schedules.filter(s => s.date === today && s.is_available);
-        
-        // Upcoming appointments (confirmed or pending)
+        // Upcoming appointments (confirmed, pending, or scheduled)
         const upcoming = appointments.filter(apt => 
-          apt.status === 'confirmed' || apt.status === 'pending' || apt.status === 'scheduled' || apt.status === 'booked'
+          apt.status === 'pending' || apt.status === 'confirmed' || apt.status === 'scheduled'
         );
         
         // Today's appointments
         const todayAppts = appointments.filter(apt => apt.date === today);
+        
         const todayPatientsCount = todayAppts.filter(apt => 
-          apt.status === 'confirmed' || apt.status === 'pending' || apt.status === 'scheduled' || apt.status === 'booked'
+          apt.status === 'confirmed' || apt.status === 'pending' || apt.status === 'scheduled'
         ).length;
+        
+        // Sort today's appointments by time slot
+        const sortedTodayAppts = todayAppts.sort((a, b) => {
+          const timeA = a.time_slot ? a.time_slot.split('-')[0] : '00:00';
+          const timeB = b.time_slot ? b.time_slot.split('-')[0] : '00:00';
+          return timeA.localeCompare(timeB);
+        });
         
         setStats({
           todaySlots: todaySlots.length,
@@ -57,7 +70,7 @@ export function DoctorDashboard() {
           todayPatients: todayPatientsCount
         });
         
-        setTodaySchedule(todayAppts);
+        setTodaySchedule(sortedTodayAppts);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {

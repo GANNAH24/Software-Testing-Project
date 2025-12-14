@@ -13,6 +13,7 @@ router.use(requireAuth());
 
 // Core schedule endpoints
 router.get('/', schedulesController.getAllSchedules); // Get all schedules (public with auth)
+router.get('/available-slots', schedulesController.getAvailableSlots); // Get available slots for booking
 router.post('/', requireDoctor(), schedulesController.createSchedule);
 router.get('/weekly', requireDoctor(), schedulesController.getWeeklySchedule);
 router.get('/daily', requireDoctor(), schedulesController.getDailySchedule);

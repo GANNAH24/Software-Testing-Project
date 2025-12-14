@@ -79,6 +79,15 @@ const PatientsController = {
   async getAppointments(req, res) {
     try {
       const patientId = req.params.id;
+      
+      // Authorization: Ensure the authenticated user matches the requested patient
+      if (req.user && req.user.id !== patientId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: You can only view your own appointments'
+        });
+      }
+      
       const data = await PatientsService.getAppointments(patientId);
       return res.status(200).json({
         success: true,

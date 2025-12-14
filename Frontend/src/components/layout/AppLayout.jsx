@@ -1,16 +1,35 @@
-import { Menu, X, User, LogOut, LayoutDashboard, Calendar, Users, Stethoscope, Settings, Activity, Search } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, X, User, LogOut, LayoutDashboard, Calendar, Users, Stethoscope, Settings, Activity, Search, MessageCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { HeartbeatLogo } from '../HeartbeatLogo';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { useAuthContext } from '../../shared/contexts/AuthContext';
+import { messagesService } from '../../shared/services/messages.service';
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user, logout } = useAuthContext();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!user?.id) return;
+      try {
+        const response = await messagesService.getUnreadCount();
+        setUnreadCount(response?.data?.count || response?.count || 0);
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   const handleLogout = async () => {
     await logout();
@@ -22,12 +41,14 @@ export function AppLayout() {
     if (user.role === 'patient') return [
       { icon: LayoutDashboard, label: 'Dashboard', route: '/patient/dashboard' },
       { icon: Search, label: 'Find Doctors', route: '/patient/find-doctors' },
-      { icon: Calendar, label: 'My Appointments', route: '/patient/appointments' }
+      { icon: Calendar, label: 'My Appointments', route: '/patient/appointments' },
+      { icon: MessageCircle, label: 'Messages', route: '/patient/messages', badge: unreadCount }
     ];
     if (user.role === 'doctor') return [
       { icon: LayoutDashboard, label: 'Dashboard', route: '/doctor/dashboard' },
       { icon: Calendar, label: 'Manage Schedule', route: '/doctor/schedule' },
-      { icon: Users, label: 'My Bookings', route: '/doctor/appointments' }
+      { icon: Users, label: 'My Bookings', route: '/doctor/appointments' },
+      { icon: MessageCircle, label: 'Messages', route: '/doctor/messages', badge: unreadCount }
     ];
     if (user.role === 'admin') return [
       { icon: LayoutDashboard, label: 'Dashboard', route: '/admin/dashboard' },
@@ -47,7 +68,12 @@ export function AppLayout() {
           {navItems.map(item => (
             <Link key={item.route} to={item.route} onClick={() => setMobileSidebarOpen(false)} className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-[#667eea]/10 hover:text-[#667eea] rounded-lg transition-colors">
               <item.icon className="w-5 h-5" />
-              <span>{item.label}</span>
+              <span className="flex-1">{item.label}</span>
+              {item.badge > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-medium text-white bg-red-500 rounded-full">
+                  {item.badge > 99 ? '99+' : item.badge}
+                </span>
+              )}
             </Link>
           ))}
         </nav>

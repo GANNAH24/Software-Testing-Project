@@ -4,13 +4,33 @@
  */
 
 const schedulesRepository = require('./schedules.repository');
+const doctorsRepository = require('../doctors/doctors.repository');
 const logger = require('../../shared/utils/logger.util');
 
 /**
  * Get all schedules for a doctor
  */
 const getDoctorSchedules = async (doctorId, filters = {}) => {
-    return await schedulesRepository.findAllByDoctor(doctorId, filters);
+    const schedules = await schedulesRepository.findAllByDoctor(doctorId, filters);
+    
+    // Get doctor's working hours to filter schedules
+    const doctor = await doctorsRepository.findById(doctorId);
+    if (!doctor || !doctor.working_hours_start || !doctor.working_hours_end) {
+        return schedules; // Return all if no working hours set
+    }
+    
+    // Filter schedules to only show those within working hours
+    const workingStart = doctor.working_hours_start.slice(0, 5); // "09:00:00" -> "09:00"
+    const workingEnd = doctor.working_hours_end.slice(0, 5);
+    
+    return schedules.filter(schedule => {
+        if (!schedule.time_slot) return true; // Keep if no time slot
+        
+        const [slotStart] = schedule.time_slot.split('-');
+        const slotTime = slotStart.trim();
+        
+        return slotTime >= workingStart && slotTime < workingEnd;
+    });
 };
 
 /**
@@ -38,8 +58,7 @@ const createSchedule = async (scheduleData) => {
     const hasConflicts = await schedulesRepository.checkConflicts(
         scheduleData.doctorId,
         scheduleData.date,
-        scheduleData.timeSlot,
-        scheduleData.endTime
+        scheduleData.timeSlot
     );
 
     if (hasConflicts) {
@@ -89,6 +108,27 @@ const updateSchedule = async (scheduleId, updates) => {
     const existing = await schedulesRepository.findById(scheduleId);
     if (!existing) {
         throw new Error('Schedule not found');
+    }
+
+    // If toggling availability to false, check 24-hour policy
+    if (updates.hasOwnProperty('isAvailable') && updates.isAvailable === false && existing.is_available === true) {
+        const scheduleDate = new Date(existing.date);
+        const timeSlot = existing.time_slot || existing.timeSlot;
+        if (timeSlot) {
+            const [startTime] = timeSlot.split('-');
+            const [hours, minutes] = startTime.split(':');
+            const scheduleDateTime = new Date(scheduleDate);
+            scheduleDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+            const now = new Date();
+            const hoursDifference = (scheduleDateTime - now) / (1000 * 60 * 60);
+
+            if (hoursDifference < 24) {
+                const error = new Error('Cannot make time slot unavailable less than 24 hours before scheduled time');
+                error.statusCode = 400;
+                throw error;
+            }
+        }
     }
 
     // If updating time slot, check for conflicts
@@ -183,6 +223,22 @@ const blockTime = async (doctorId, date, timeSlot, reason = null) => {
     // 2. For any existing schedule that overlaps the requested timeSlot and is_available === true,
     //    update it to is_available = false (override availability).
     // 3. If no existing schedule has exactly the same timeSlot, create a new blocked schedule record.
+
+    // Check if the time slot is within 24 hours
+    const scheduleDate = new Date(date);
+    const [startTime] = timeSlot.split('-');
+    const [hours, minutes] = startTime.split(':');
+    const scheduleDateTime = new Date(scheduleDate);
+    scheduleDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+    const now = new Date();
+    const hoursDifference = (scheduleDateTime - now) / (1000 * 60 * 60);
+
+    if (hoursDifference < 24) {
+        const error = new Error('Cannot block time slot less than 24 hours before scheduled time');
+        error.statusCode = 400;
+        throw error;
+    }
 
     // Helper to parse 'HH:MM' from 'HH:MM:SS' or 'HH:MM'
     const fmt = (t) => t.toString().slice(0, 5);

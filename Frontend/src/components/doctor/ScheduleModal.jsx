@@ -1,16 +1,11 @@
 import { useState, useEffect } from 'react';
 import { 
-  Calendar, 
-  ChevronLeft, 
-  ChevronRight, 
-  ChevronsLeft, // Added for Year navigation
-  ChevronsRight, // Added for Year navigation
   X, 
   Clock 
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Checkbox } from '../ui/checkbox';
+import { Calendar } from '../ui/calendar';
 import { toast } from 'sonner';
 import scheduleService from '../../shared/services/schedule.service';
 
@@ -22,16 +17,15 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
  */
 export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
   const [step, setStep] = useState(1);
-  const [selectedDates, setSelectedDates] = useState(new Set());
+  const [selectedDates, setSelectedDates] = useState([]);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(false);
 
   // Reset state when modal closes
   useEffect(() => {
     if (!open) {
       setStep(1);
-      setSelectedDates(new Set());
+      setSelectedDates([]);
       setSelectedTimeSlots([]);
     }
   }, [open]);
@@ -78,75 +72,25 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
     return `${formatHour(start)} - ${formatHour(end)}`;
   };
 
-  const getDaysInMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
+  const handleDateSelect = (date) => {
+    if (!date) return;
     
-    // Adjust starting day so Monday = 0, Sunday = 6 (standard for many calendars)
-    // Or keep standard JS where Sunday = 0.
-    // Based on your image: MON is first.
-    let startingDayOfWeek = firstDay.getDay(); 
-    // Convert Sunday(0) to 6, Mon(1) to 0, etc.
-    startingDayOfWeek = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
+    const dateStr = date.toISOString().split('T')[0];
+    const index = selectedDates.findIndex(d => d.toISOString().split('T')[0] === dateStr);
     
-    const days = [];
-    
-    // Previous month's trailing days
-    const prevMonthLastDay = new Date(year, month, 0).getDate();
-    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-      const prevDate = new Date(year, month - 1, prevMonthLastDay - i);
-      days.push({ date: prevDate, isCurrentMonth: false });
-    }
-    
-    // Current month's days
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push({ date: new Date(year, month, i), isCurrentMonth: true });
-    }
-    
-    // Next month's leading days
-    const remainingDays = 7 - (days.length % 7);
-    if (remainingDays < 7) {
-      for (let i = 1; i <= remainingDays; i++) {
-        days.push({ date: new Date(year, month + 1, i), isCurrentMonth: false });
-      }
-    }
-    return days;
-  };
-
-  const handleDateClick = (dateObj) => {
-    if (!dateObj || !dateObj.date || !dateObj.isCurrentMonth) return;
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (dateObj.date < today) {
-      toast.error('Cannot select past dates');
-      return;
-    }
-
-    const dateStr = dateObj.date.toISOString().split('T')[0];
-    const newSelected = new Set(selectedDates);
-    if (newSelected.has(dateStr)) {
-      newSelected.delete(dateStr);
+    if (index > -1) {
+      // Remove if already selected
+      setSelectedDates(selectedDates.filter((_, i) => i !== index));
     } else {
-      newSelected.add(dateStr);
+      // Add to selection
+      setSelectedDates([...selectedDates, date]);
     }
-    setSelectedDates(newSelected);
   };
 
-  const isDateSelected = (dateObj) => {
-    if (!dateObj || !dateObj.date) return false;
-    const dateStr = dateObj.date.toISOString().split('T')[0];
-    return selectedDates.has(dateStr);
-  };
-
-  const isPastDate = (dateObj) => {
-    if (!dateObj || !dateObj.date) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return dateObj.date < today;
+  const isDateSelected = (date) => {
+    if (!date) return false;
+    const dateStr = date.toISOString().split('T')[0];
+    return selectedDates.some(d => d.toISOString().split('T')[0] === dateStr);
   };
 
   const toggleTimeSlot = (slot) => {
@@ -158,7 +102,7 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
   };
 
   const handleContinueToStep2 = () => {
-    if (selectedDates.size === 0) {
+    if (selectedDates.length === 0) {
       toast.error('Please select at least one date');
       return;
     }
@@ -178,9 +122,9 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
     try {
       setLoading(true);
       const schedulePromises = [];
-      selectedDates.forEach(dateStr => {
+      selectedDates.forEach(date => {
+        const dateStr = date.toISOString().split('T')[0];
         selectedTimeSlots.forEach(timeSlot => {
-          const date = new Date(dateStr);
           const dayOfWeek = DAYS_OF_WEEK[date.getDay()];
           schedulePromises.push(
             scheduleService.create({
@@ -193,7 +137,7 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
         });
       });
       await Promise.all(schedulePromises);
-      toast.success(`Created ${selectedDates.size * selectedTimeSlots.length} schedule slot(s) successfully!`);
+      toast.success(`Created ${selectedDates.length * selectedTimeSlots.length} schedule slot(s) successfully!`);
       onSuccess();
       onOpenChange(false);
     } catch (error) {
@@ -203,29 +147,6 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
       setLoading(false);
     }
   };
-
-  const prevYear = () => {
-    const newDate = new Date(currentMonth);
-    newDate.setFullYear(currentMonth.getFullYear() - 1);
-    setCurrentMonth(newDate);
-  };
-
-  const nextYear = () => {
-    const newDate = new Date(currentMonth);
-    newDate.setFullYear(currentMonth.getFullYear() + 1);
-    setCurrentMonth(newDate);
-  };
-
-  const previousMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
-  };
-
-  const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const days = getDaysInMonth(currentMonth);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -244,102 +165,23 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
 
         {/* Step 1: Calendar Date Selection */}
         {step === 1 && (
-          <div className="py-6 px-4">
-            
-            {/* --- UPDATED HEADER LAYOUT --- */}
-            <div className="flex items-center justify-between mb-8 px-2 text-[#667eea]">
-              {/* Left Controls (Prev Year / Prev Month) */}
-              <div className="flex items-center gap-4">
-                 <button 
-                  onClick={prevYear} 
-                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                  title="Previous Year"
-                 >
-                   <ChevronsLeft className="w-5 h-5" />
-                 </button>
-                 <button 
-                  onClick={previousMonth} 
-                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                  title="Previous Month"
-                 >
-                   <ChevronLeft className="w-5 h-5" />
-                 </button>
-              </div>
-
-              {/* Center Title */}
-              <h3 className="text-xl md:text-2xl font-bold">
-                {monthName}
-              </h3>
-
-              {/* Right Controls (Next Month / Next Year) */}
-              <div className="flex items-center gap-4">
-                 <button 
-                  onClick={nextMonth} 
-                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                  title="Next Month"
-                 >
-                   <ChevronRight className="w-5 h-5" />
-                 </button>
-                 <button 
-                  onClick={nextYear} 
-                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                  title="Next Year"
-                 >
-                   <ChevronsRight className="w-5 h-5" />
-                 </button>
-              </div>
+          <div className="space-y-6">
+            <div>
+              <Calendar
+                mode="multiple"
+                selected={selectedDates}
+                onSelect={(dates) => setSelectedDates(dates || [])}
+                disabled={(date) => 
+                  date < new Date() || date < new Date(new Date().setHours(0, 0, 0, 0))
+                }
+                className="rounded-md border"
+              />
             </div>
 
-            {/* Calendar Grid */}
-            <div className="bg-white rounded-2xl p-4 md:p-8">
-              {/* Day Headers */}
-              <div className="grid grid-cols-7 mb-4">
-                {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
-                  <div key={day} className="text-center">
-                    <span className="text-sm font-bold text-gray-900 uppercase tracking-wider">
-                      {day}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Calendar Days */}
-              <div className="grid grid-cols-7 gap-1 md:gap-3">
-                {days.map((dateObj, index) => {
-                  const isPast = isPastDate(dateObj);
-                  const isSelected = isDateSelected(dateObj);
-                  const isCurrentMonth = dateObj.isCurrentMonth;
-                  
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => handleDateClick(dateObj)}
-                      disabled={!isCurrentMonth || isPast}
-                      className={`
-                        relative h-12 md:h-16 flex items-center justify-center
-                        rounded-lg md:rounded-xl text-lg font-semibold
-                        transition-all duration-200
-                        ${!isCurrentMonth ? 'text-gray-300' : 'text-gray-700'}
-                        ${isPast && isCurrentMonth ? 'text-gray-400 cursor-not-allowed' : ''}
-                        ${isSelected 
-                          ? 'bg-[#667eea] text-white shadow-md' 
-                          : isCurrentMonth && !isPast 
-                            ? 'hover:bg-gray-100 hover:text-[#667eea]' 
-                            : ''
-                        }
-                      `}
-                    >
-                      {dateObj.date?.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {selectedDates.size > 0 && (
-              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
+            {selectedDates.length > 0 && (
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
                 <p className="text-sm font-semibold text-[#667eea] text-center">
-                  ✓ {selectedDates.size} date{selectedDates.size > 1 ? 's' : ''} selected
+                  ✓ {selectedDates.length} date{selectedDates.length > 1 ? 's' : ''} selected
                 </p>
               </div>
             )}
@@ -424,9 +266,9 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
                 {selectedTimeSlots.length > 0 && (
                   <div className="mt-6 p-3 bg-blue-50 rounded-lg">
                     <p className="text-sm font-medium text-blue-900">
-                      {selectedTimeSlots.length} time slot(s) selected for {selectedDates.size} date(s) = 
+                      {selectedTimeSlots.length} time slot(s) selected for {selectedDates.length} date(s) = 
                       <span className="ml-1 font-bold">
-                        {selectedTimeSlots.length * selectedDates.size} total schedule(s)
+                        {selectedTimeSlots.length * selectedDates.length} total schedule(s)
                       </span>
                     </p>
                   </div>
@@ -447,7 +289,7 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
               </Button>
               <Button
                 onClick={handleContinueToStep2}
-                disabled={selectedDates.size === 0}
+                disabled={selectedDates.length === 0}
                 className="bg-[#667eea] hover:bg-[#5568d3]"
               >
                 Continue to Time Slots

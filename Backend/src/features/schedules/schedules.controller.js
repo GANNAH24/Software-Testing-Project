@@ -36,8 +36,9 @@ const createSchedule = asyncHandler(async (req, res) => {
     const scheduleData = {
         doctorId: doctor.doctor_id || doctor.id || doctor.doctorId,
         date: req.body.date,
-        timeSlot: req.body.time_slot,
-        isAvailable: req.body.is_available
+        timeSlot: req.body.timeSlot || req.body.time_slot,
+        isAvailable: req.body.isAvailable !== undefined ? req.body.isAvailable : req.body.is_available,
+        repeatWeekly: req.body.repeatWeekly || req.body.repeat_weekly || false
     };
 
     const schedule = await schedulesService.createSchedule(scheduleData);
@@ -73,7 +74,7 @@ const blockTime = asyncHandler(async (req, res) => {
     const schedule = await schedulesService.blockTime(
         doctor.doctor_id || doctor.id || doctor.doctorId,
         req.body.date,
-        req.body.time_slot
+        req.body.timeSlot || req.body.time_slot
     );
     res.status(201).json(successResponse(schedule, 'Time blocked successfully', 201));
 });
@@ -83,7 +84,7 @@ const blockTime = asyncHandler(async (req, res) => {
  * GET /api/v1/schedules
  */
 const getAllSchedules = asyncHandler(async (req, res) => {
-    let { doctorId, date, isAvailable } = req.query;
+    let { doctorId, date, isAvailable, startDate, endDate } = req.query;
     
     // If no doctorId provided but user is a doctor, use their doctor ID
     if (!doctorId && req.user && req.user.role === 'doctor') {
@@ -94,6 +95,8 @@ const getAllSchedules = asyncHandler(async (req, res) => {
     const filters = {};
     if (doctorId) filters.doctorId = doctorId;
     if (date) filters.date = date;
+    if (startDate) filters.startDate = startDate;
+    if (endDate) filters.endDate = endDate;
     if (isAvailable !== undefined) filters.isAvailable = isAvailable === 'true';
     
     // If doctorId provided or derived, get schedules for that doctor
@@ -120,7 +123,7 @@ const updateSchedule = asyncHandler(async (req, res) => {
     // Build updates mapping from request body
     const updates = {};
     if (req.body.date) updates.date = req.body.date;
-    if (req.body.time_slot) updates.timeSlot = req.body.time_slot;
+    if (req.body.timeSlot || req.body.time_slot) updates.timeSlot = req.body.timeSlot || req.body.time_slot;
     if (req.body.is_available !== undefined) updates.isAvailable = req.body.is_available;
     if (req.body.notes) updates.notes = req.body.notes;
 
@@ -146,12 +149,63 @@ const deleteSchedule = asyncHandler(async (req, res) => {
     res.json(successResponse(null, 'Schedule deleted successfully'));
 });
 
+/**
+ * Get available time slots for a doctor on a specific date
+ * GET /api/v1/schedules/available-slots?doctor_id=X&date=YYYY-MM-DD
+ */
+const getAvailableSlots = asyncHandler(async (req, res) => {
+    const { doctor_id, date } = req.query;
+    
+    if (!doctor_id || !date) {
+        return res.status(400).json(errorResponse('doctor_id and date are required', 400));
+    }
+    
+    // Ensure the requested date is not in the past
+    const requestedDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (requestedDate < today) {
+        return res.json(successResponse({ availableSlots: [] }));
+    }
+    
+    // Get only available schedules for the doctor on the specified date
+    const schedules = await schedulesService.getDoctorSchedules(doctor_id, {
+        date,
+        isAvailable: true
+    });
+    
+    // Extract time slots from schedules and filter out past times if today
+    const isToday = requestedDate.toDateString() === today.toDateString();
+    const now = new Date();
+    
+    let availableSlots = schedules
+        .filter(s => s.is_available && s.time_slot)
+        .map(s => s.time_slot);
+    
+    // If today, filter out past time slots
+    if (isToday) {
+        availableSlots = availableSlots.filter(slot => {
+            const [startTime] = slot.split('-');
+            const [hours, minutes] = startTime.split(':');
+            const slotDateTime = new Date(requestedDate);
+            slotDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            return slotDateTime > now;
+        });
+    }
+    
+    availableSlots.sort();
+    
+    res.json(successResponse({ availableSlots }));
+});
+
 module.exports = {
     createSchedule,
     getWeeklySchedule,
     getDailySchedule,
     blockTime,
     getAllSchedules,
+    getAvailableSlots,
     updateSchedule,
     deleteSchedule
 };
