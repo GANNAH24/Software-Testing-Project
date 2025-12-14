@@ -13,6 +13,7 @@
 const request = require('supertest');
 const app = require('../../src/app');
 const { supabase } = require('../../src/config/database');
+const { cleanupTestUser } = require('../helpers/cleanup-helper');
 
 describe('Authentication API Integration Tests', () => {
   let testUserId;
@@ -21,8 +22,7 @@ describe('Authentication API Integration Tests', () => {
   // Cleanup after each test
   afterEach(async () => {
     if (testUserId) {
-      // Clean up test data
-      await supabase.from('profiles').delete().eq('id', testUserId);
+      await cleanupTestUser(testUserId);
       testUserId = null;
     }
   });
@@ -318,6 +318,10 @@ describe('Authentication API Integration Tests', () => {
           password: 'SecurePass123!'
         });
 
+      if (!loginResponse.body || !loginResponse.body.success || !loginResponse.body.data) {
+        throw new Error(`Login failed in session test: ${JSON.stringify(loginResponse.body)}`);
+      }
+      
       testUserId = loginResponse.body.data.user.id;
       authToken = loginResponse.body.data.token;
     });
@@ -387,6 +391,10 @@ describe('Authentication API Integration Tests', () => {
           password: 'SecurePass123!'
         });
 
+      if (!loginResponse.body || !loginResponse.body.success || !loginResponse.body.data) {
+        throw new Error(`Login failed in logout test: ${JSON.stringify(loginResponse.body)}`);
+      }
+      
       testUserId = loginResponse.body.data.user.id;
       authToken = loginResponse.body.data.token;
     });

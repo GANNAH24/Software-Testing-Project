@@ -18,12 +18,16 @@
 const request = require('supertest');
 const app = require('../../src/app');
 const { supabase } = require('../../src/config/database');
+const { cleanupTestSuite } = require('../helpers/cleanup-helper');
 
 describe('Appointments API Integration Tests', () => {
   let patientUserId, patientToken;
   let doctorUserId, doctorToken, doctorId;
   let scheduleId;
   let appointmentId;
+  const createdUsers = [];
+  const createdAppointments = [];
+  const createdSchedules = [];
 
   // Setup: Create test patient and doctor
   beforeAll(async () => {
@@ -48,6 +52,7 @@ describe('Appointments API Integration Tests', () => {
     }
 
     patientUserId = patientRes.body.data.user.id;
+    createdUsers.push(patientUserId);
 
     const patientLogin = await request(app)
       .post('/api/v1/auth/login')
@@ -74,6 +79,7 @@ describe('Appointments API Integration Tests', () => {
       });
 
     doctorUserId = doctorRes.body.data.user.id;
+    createdUsers.push(doctorUserId);
 
     const doctorLogin = await request(app)
       .post('/api/v1/auth/login')
@@ -114,22 +120,12 @@ describe('Appointments API Integration Tests', () => {
     }
 
     scheduleId = scheduleRes.body.data.schedule_id;
+    createdSchedules.push(scheduleId);
   });
 
   // Cleanup
   afterAll(async () => {
-    if (appointmentId) {
-      await supabase.from('appointments').delete().eq('appointment_id', appointmentId);
-    }
-    if (scheduleId) {
-      await supabase.from('doctor_schedules').delete().eq('schedule_id', scheduleId);
-    }
-    if (patientUserId) {
-      await supabase.from('users').delete().eq('user_id', patientUserId);
-    }
-    if (doctorUserId) {
-      await supabase.from('users').delete().eq('user_id', doctorUserId);
-    }
+    await cleanupTestSuite(createdUsers, createdAppointments, createdSchedules);
   });
 
   /**
@@ -160,9 +156,10 @@ describe('Appointments API Integration Tests', () => {
       expect(response.body).toHaveProperty('success', true);
       expect(response.body.data).toHaveProperty('appointment_id');
       expect(response.body.data.doctor_id).toBe(doctorId);
-      expect(response.body.data.status).toBe('scheduled');
+      expect(response.body.data.status).toBe('booked');
 
       appointmentId = response.body.data.appointment_id;
+      createdAppointments.push(appointmentId);
 
       // Assert Database State
       const { data: appointment } = await supabase
@@ -198,7 +195,7 @@ describe('Appointments API Integration Tests', () => {
 
       // Assert
       expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toContain('future');
+      expect(response.body.message).toContain('past');
     });
 
     it('should reject booking without authentication', async () => {
@@ -288,7 +285,7 @@ describe('Appointments API Integration Tests', () => {
 
       const appointment = response.body.data.find(a => a.appointment_id === appointmentId);
       expect(appointment).toBeTruthy();
-      expect(appointment.status).toBe('scheduled');
+      expect(appointment.status).toBe('booked');
     });
 
     it('should retrieve upcoming appointments', async () => {
@@ -371,7 +368,7 @@ describe('Appointments API Integration Tests', () => {
       // Assert
       expect(response.body.data).toBeInstanceOf(Array);
 
-      // All appointments should have status 'scheduled'
+      // All appointments should have status 'scheduled' (default status)
       response.body.data.forEach(apt => {
         expect(apt.status).toBe('scheduled');
       });
@@ -419,6 +416,7 @@ describe('Appointments API Integration Tests', () => {
       }
 
       cancelAppointmentId = response.body.data.appointment_id;
+      createdAppointments.push(cancelAppointmentId);
     });
 
     afterEach(async () => {

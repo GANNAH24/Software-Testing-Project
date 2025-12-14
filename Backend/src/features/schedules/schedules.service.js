@@ -58,8 +58,7 @@ const createSchedule = async (scheduleData) => {
     const hasConflicts = await schedulesRepository.checkConflicts(
         scheduleData.doctorId,
         scheduleData.date,
-        scheduleData.timeSlot,
-        scheduleData.endTime
+        scheduleData.timeSlot
     );
 
     if (hasConflicts) {

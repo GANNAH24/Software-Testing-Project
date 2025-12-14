@@ -45,8 +45,8 @@ const canReview = async (appointmentId, patientId) => {
 const createReview = async (reviewData) => {
     try {
         // Validate rating
-        if (reviewData.rating < 0 || reviewData.rating > 5) {
-            throw new Error('Rating must be between 0 and 5');
+        if (reviewData.rating < 1 || reviewData.rating > 5) {
+            throw new Error('Rating must be between 1 and 5');
         }
 
         // Check if patient can review this appointment
