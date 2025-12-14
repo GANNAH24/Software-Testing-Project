@@ -156,7 +156,7 @@ describe('Appointments API Integration Tests', () => {
       expect(response.body).toHaveProperty('success', true);
       expect(response.body.data).toHaveProperty('appointment_id');
       expect(response.body.data.doctor_id).toBe(doctorId);
-      expect(response.body.data.status).toBe('booked');
+      expect(response.body.data.status).toBe('scheduled');
 
       appointmentId = response.body.data.appointment_id;
       createdAppointments.push(appointmentId);
@@ -285,7 +285,7 @@ describe('Appointments API Integration Tests', () => {
 
       const appointment = response.body.data.find(a => a.appointment_id === appointmentId);
       expect(appointment).toBeTruthy();
-      expect(appointment.status).toBe('booked');
+      expect(appointment.status).toBe('scheduled');
     });
 
     it('should retrieve upcoming appointments', async () => {
@@ -361,7 +361,7 @@ describe('Appointments API Integration Tests', () => {
     it('should filter appointments by status', async () => {
       // Act
       const response = await request(app)
-        .get('/api/v1/appointments/doctor?status=booked')
+        .get('/api/v1/appointments/doctor?status=scheduled')
         .set('Authorization', `Bearer ${doctorToken}`)
         .expect(200);
 

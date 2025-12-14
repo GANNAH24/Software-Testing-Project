@@ -3,8 +3,8 @@
  * Business logic for doctors
  */
 
-const doctorsRepository = require('./doctors.repository');
-const logger = require('../../shared/utils/logger.util');
+const doctorsRepository = require("./doctors.repository");
+const logger = require("../../shared/utils/logger.util");
 
 const getAllDoctors = async (filters) => {
   return await doctorsRepository.findAll(filters);
@@ -13,15 +13,18 @@ const getAllDoctors = async (filters) => {
 const getDoctorById = async (doctorId) => {
   const doctor = await doctorsRepository.findById(doctorId);
   if (!doctor) {
-    throw new Error('Doctor not found');
+    const error = new Error("Doctor not found");
+    error.statusCode = 404;
+    throw error;
   }
+
   return doctor;
 };
 
 const getDoctorByUserId = async (userId) => {
   const doctor = await doctorsRepository.findByUserId(userId);
   if (!doctor) {
-    throw new Error('Doctor profile not found');
+    throw new Error("Doctor profile not found");
   }
   return doctor;
 };
@@ -41,7 +44,7 @@ const advancedSearchDoctors = async (filters) => {
     specialty: filters.specialty?.trim() || null,
     location: filters.location?.trim() || null,
     minReviews: filters.minReviews ? parseInt(filters.minReviews) : null,
-    sortBy: filters.sortBy || 'reviews'
+    sortBy: filters.sortBy || "reviews",
   };
 
   return await doctorsRepository.advancedSearch(searchFilters);
@@ -50,7 +53,7 @@ const advancedSearchDoctors = async (filters) => {
 const getDetailedDoctorProfile = async (doctorId) => {
   const doctor = await doctorsRepository.getDetailedProfile(doctorId);
   if (!doctor) {
-    const error = new Error('Doctor not found');
+    const error = new Error("Doctor not found");
     error.statusCode = 404;
     throw error;
   }
@@ -59,37 +62,46 @@ const getDetailedDoctorProfile = async (doctorId) => {
 
 const createDoctor = async (doctorData) => {
   const doctor = await doctorsRepository.create(doctorData);
-  logger.info('Doctor created', { doctorId: doctor.id });
+  logger.info("Doctor created", { doctorId: doctor.id });
   return doctor;
 };
 
 const updateDoctor = async (doctorId, updates) => {
   const existing = await doctorsRepository.findById(doctorId);
   if (!existing) {
-    throw new Error('Doctor not found');
+    throw new Error("Doctor not found");
   }
 
   const doctor = await doctorsRepository.update(doctorId, updates);
-  logger.info('Doctor updated', { doctorId });
+  logger.info("Doctor updated", { doctorId });
   return doctor;
 };
 
 const deleteDoctor = async (doctorId) => {
   const existing = await doctorsRepository.findById(doctorId);
   if (!existing) {
-    throw new Error('Doctor not found');
+    throw new Error("Doctor not found");
   }
 
   await doctorsRepository.softDelete(doctorId);
-  logger.info('Doctor deleted', { doctorId });
+  logger.info("Doctor deleted", { doctorId });
   return { success: true };
 };
 
 const searchDoctors = async (searchTerm, specialty = null) => {
+  // If no search criteria provided, return empty array
+  if (!searchTerm && !specialty) {
+    return [];
+  }
+
   const filters = {};
   if (searchTerm) filters.search = searchTerm;
   if (specialty) filters.specialty = specialty;
-  return await doctorsRepository.advancedSearch(filters);
+
+  const doctors = await doctorsRepository.advancedSearch(filters);
+
+  // IMPORTANT: if search was requested but no matches → return empty array
+  return doctors || [];
 };
 
 module.exports = {
@@ -105,5 +117,5 @@ module.exports = {
   createDoctor,
   updateDoctor,
   deleteDoctor,
-  searchDoctors
+  searchDoctors,
 };

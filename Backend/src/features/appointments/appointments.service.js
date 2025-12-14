@@ -103,7 +103,7 @@ const createAppointment = async (appointmentData) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   if (appointmentDate < today) {
-    const error = new Error('Appointment date must be in the future');
+    const error = new Error('Appointment date must be in the future not the past');
     error.statusCode = 400;
     throw error;
   }
@@ -209,7 +209,7 @@ const updateAppointment = async (appointmentId, updates) => {
     const now = new Date();
 
     if (appointmentDate <= now) {
-      throw new Error("Appointment date must be in the future");
+      throw new Error("Appointment date must be in the future not in the past");
     }
 
     const conflicts = await appointmentsRepository.findConflicts(
