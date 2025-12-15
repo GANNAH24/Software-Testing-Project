@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Phone, Star, Award, Calendar, ArrowLeft, Clock, Languages, MessageCircle } from 'lucide-react';
+import { MapPin, Phone, Star, Award, Calendar, ArrowLeft, Clock, Languages, MessageCircle, Map } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Skeleton } from './ui/skeleton';
@@ -46,6 +46,12 @@ export function DoctorProfile() {
     } else if (user.role === 'patient') {
       setBookDialogOpen(true);
     }
+  };
+
+  const handleGetDirections = () => {
+    if (!doctor?.location) return;
+    const query = encodeURIComponent(doctor.location);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
   };
 
   const handleMessageDoctor = async () => {
@@ -161,7 +167,7 @@ export function DoctorProfile() {
                     onClick={handleMessageDoctor}
                     size="lg"
                     variant="outline"
-                    className="border-[#667eea] text-[#667eea] hover:bg-[#667eea] hover:text-white"
+                    className="border-[#667eea] text-[#667eea] hover:bg-[#667eea] hover:text-white transition-colors"
                   >
                     <MessageCircle className="w-4 h-4 mr-2" />
                     Message Doctor
@@ -169,7 +175,7 @@ export function DoctorProfile() {
                   <Button
                     onClick={handleBookAppointment}
                     size="lg"
-                    className="bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 whitespace-nowrap"
+                    className="bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white hover:opacity-90 border-0"
                   >
                     <Calendar className="w-4 h-4 mr-2" />
                     Book Appointment
@@ -192,6 +198,14 @@ export function DoctorProfile() {
               <div className="flex items-center gap-3 text-gray-700">
                 <MapPin className="w-5 h-5 text-gray-400" />
                 <span>{doctor.location || 'Not specified'}</span>
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  className="h-auto p-0 text-[#667eea]" 
+                  onClick={handleGetDirections}
+                >
+                  Get Directions
+                </Button>
               </div>
               {doctor.phone_number && (
                 <div className="flex items-center gap-3 text-gray-700">
@@ -275,9 +289,20 @@ export function DoctorProfile() {
               </div>
               <div className="flex items-center gap-3 text-gray-700">
                 <MapPin className="w-5 h-5 text-[#667eea]" />
-                <div>
+                <div className="flex-1">
                   <p className="text-gray-500 text-sm">Location</p>
-                  <p className="font-medium text-gray-900">{doctor.location || 'Not specified'}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-900">{doctor.location || 'Not specified'}</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleGetDirections}
+                      className="h-7 text-xs flex items-center gap-1"
+                    >
+                      <Map className="w-3 h-3" />
+                      Map
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -286,25 +311,7 @@ export function DoctorProfile() {
       </div>
 
       {/* CTA Card */}
-      {(user?.role === 'patient' || !user) && (
-        <Card className="p-6 md:p-8 mt-6 bg-gradient-to-r from-[#667eea] to-[#764ba2] border-0">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-white">
-            <div>
-              <h3 className="text-xl md:text-2xl font-bold mb-2">Ready to book an appointment?</h3>
-              <p className="text-white/90">
-                Schedule your visit with {doctor.first_name || 'the doctor'}
-              </p>
-            </div>
-            <Button
-              onClick={handleBookAppointment}
-              size="lg"
-              className="bg-white text-[#667eea] hover:bg-gray-100 whitespace-nowrap font-semibold"
-            >
-              Book Appointment
-            </Button>
-          </div>
-        </Card>
-      )}
+      {/* CTA Card Removed */}
 
       <CalendarBookDialog
         open={bookDialogOpen}
