@@ -43,11 +43,42 @@ const findAll = async (filters = {}) => {
     throw error;
   }
 
-  // Transform the data to include reviews_count
+  // Fetch available slot counts
+  const doctorIds = data.map(d => d.doctor_id);
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  
+  const { data: scheduleData } = await supabase
+      .from('doctor_schedules')
+      .select('doctor_id, date, time_slot')
+      .in('doctor_id', doctorIds)
+      .eq('is_available', true)
+      .gte('date', todayStr);
+
+  const slotCounts = {};
+  if (scheduleData) {
+      scheduleData.forEach(s => {
+          // If schedule is for today, check if time has passed
+          if (s.date === todayStr && s.time_slot) {
+              const [startTime] = s.time_slot.split('-');
+              const [hours, minutes] = startTime.split(':');
+              const slotTime = new Date(now);
+              slotTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+              
+              if (slotTime <= now) {
+                  return; // Skip past slots
+              }
+          }
+          slotCounts[s.doctor_id] = (slotCounts[s.doctor_id] || 0) + 1;
+      });
+  }
+
+  // Transform the data to include reviews_count and availableSlots
   const transformedData = data.map(doctor => ({
     ...doctor,
     reviews_count: doctor.reviews?.[0]?.count || 0,
-    reviewsCount: doctor.reviews?.[0]?.count || 0
+    reviewsCount: doctor.reviews?.[0]?.count || 0,
+    availableSlots: slotCounts[doctor.doctor_id] || 0
   }));
 
   return transformedData;
@@ -115,9 +146,9 @@ const findByUserId = async (userId) => {
     .select('*')
     .eq('user_id', userId)
     .is('deleted_at', null)
-    .single();
+    .maybeSingle(); // Changed from single() to maybeSingle() to avoid error on not found
 
-  if (error && error.code !== 'PGRST116') {
+  if (error) {
     logger.error('Error finding doctor by user ID', { userId, error: error.message });
     throw error;
   }
@@ -181,11 +212,42 @@ const advancedSearch = async (filters) => {
     throw error;
   }
 
-  // Transform the data to include reviews_count
+  // Fetch available slot counts
+  const doctorIds = data.map(d => d.doctor_id);
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  
+  const { data: scheduleData } = await supabase
+      .from('doctor_schedules')
+      .select('doctor_id, date, time_slot')
+      .in('doctor_id', doctorIds)
+      .eq('is_available', true)
+      .gte('date', todayStr);
+
+  const slotCounts = {};
+  if (scheduleData) {
+      scheduleData.forEach(s => {
+          // If schedule is for today, check if time has passed
+          if (s.date === todayStr && s.time_slot) {
+              const [startTime] = s.time_slot.split('-');
+              const [hours, minutes] = startTime.split(':');
+              const slotTime = new Date(now);
+              slotTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+              
+              if (slotTime <= now) {
+                  return; // Skip past slots
+              }
+          }
+          slotCounts[s.doctor_id] = (slotCounts[s.doctor_id] || 0) + 1;
+      });
+  }
+
+  // Transform the data to include reviews_count and availableSlots
   const transformedData = data.map(doctor => ({
     ...doctor,
     reviews_count: doctor.reviews?.[0]?.count || 0,
-    reviewsCount: doctor.reviews?.[0]?.count || 0
+    reviewsCount: doctor.reviews?.[0]?.count || 0,
+    availableSlots: slotCounts[doctor.doctor_id] || 0
   }));
 
   return transformedData;
@@ -248,7 +310,7 @@ const create = async (doctorData) => {
       location: doctorData.location,
       working_hours_start: doctorData.workingHoursStart || '09:00:00',
       working_hours_end: doctorData.workingHoursEnd || '17:00:00',
-      phone: doctorData.phone,
+      phone: doctorData.phone || null,
       created_at: new Date().toISOString()
     }])
     .select()

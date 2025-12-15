@@ -161,7 +161,7 @@ export function FindDoctors() {
                 <div className="flex items-center gap-2 mb-4">
                   <Calendar className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-gray-600">
-                    {doctor.availableSlots || 0} slots available
+                    {doctor.availableSlots || 0} slots available today
                   </span>
                 </div>
 

@@ -14,15 +14,19 @@ const { asyncHandler } = require('../../shared/middleware/error.middleware');
 // Ensure a doctors row exists for the authenticated user; create a minimal one if missing
 const ensureDoctorForUser = async (user) => {
     try {
-        return await doctorsService.getDoctorByUserId(user.id);
+        const doctor = await doctorsService.getDoctorByUserId(user.id);
+        if (doctor) return doctor;
+        
+        // If no doctor found, throw error to trigger catch block for creation
+        throw new Error('Doctor not found');
     } catch (err) {
         // create a minimal doctor profile automatically
         const doctorData = {
             userId: user.id,
-            name: user.fullName || user.email || 'Unnamed Doctor',
-            specialty: 'Not specified',
-            qualifications: 'Not specified',
-            location: 'Not specified'
+            name: user.full_name || user.email || 'Unnamed Doctor', // Use full_name from Supabase user metadata
+            specialty: 'General Practitioner', // Default specialty
+            qualifications: 'MD', // Default qualification
+            location: 'General Hospital' // Default location
         };
 
         return await doctorsService.createDoctor(doctorData);

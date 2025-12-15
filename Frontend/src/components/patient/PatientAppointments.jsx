@@ -297,13 +297,14 @@ export function PatientAppointments() {
                               </td>
                               <td className="p-4">
                                 <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => navigate(`/doctor/${apt.doctor_id}`)}
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => navigate(`/patient/appointments/${apt.appointment_id || apt.id}`)}
+                                      title="View Details"
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                    </Button>
                                   {apt.status === 'completed' && (
                                     <Button
                                       size="sm"
@@ -378,12 +379,12 @@ export function PatientAppointments() {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => navigate(`/patient/appointments/${apt.id}`)}
-                            className="flex-1"
-                          >
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => navigate(`/patient/appointments/${apt.appointment_id || apt.id}`)}
+                                      className="flex-1"
+                                    >
                             View Details
                           </Button>
                           {apt.status === 'completed' && (

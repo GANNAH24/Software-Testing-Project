@@ -55,7 +55,7 @@ export function Contact({ navigate }) {
     {
       emoji: '📍',
       title: 'Visit Us',
-      details: '123 Healthcare Ave, New York, NY 10001',
+      details: 'German International University',
       subtitle: 'Main Office Location'
     },
     {

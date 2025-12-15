@@ -9,8 +9,10 @@ const { testConnection } = require("./src/config/database");
 const logger = require("./src/shared/utils/logger.util");
 const { startReminderScheduler } = require('./src/shared/jobs/reminder.job');
 const { initializeSocket } = require('./src/config/socket');
+const seedAdmin = require('./src/scripts/seed-admin');
 
 // Test database connection before starting server
+// Forced restart to apply seeding fix
 const startServer = async () => {
   try {
     // Test database connection
@@ -21,6 +23,9 @@ const startServer = async () => {
       logger.error("Failed to connect to database. Exiting...");
       process.exit(1);
     }
+
+    // Seed admin user if credentials exist in env
+    await seedAdmin();
 
     // Start Express server
     const server = app.listen(config.PORT, () => {

@@ -159,15 +159,16 @@ export function Login() {
               </p>
             </div>
 
-            {/* Demo Credentials Helper */}
+            {/* Demo Credentials Helper
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-900 mb-2">Demo Credentials:</p>
               <div className="text-xs space-y-1 text-blue-800">
                 <p><strong>Patient:</strong> patient@test.com / Patient123!</p>
                 <p><strong>Doctor:</strong> doctor@test.com / Doctor123!</p>
                 <p><strong>Admin:</strong> admin@test.com / Admin123!</p>
-              </div>
-            </div>
+              </div> 
+            </div>*/}
+            
           </CardContent>
         </Card>
       </div>

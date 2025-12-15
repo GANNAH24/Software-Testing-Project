@@ -11,26 +11,34 @@ const logger = require('../../shared/utils/logger.util');
  * Get all schedules for a doctor
  */
 const getDoctorSchedules = async (doctorId, filters = {}) => {
-    const schedules = await schedulesRepository.findAllByDoctor(doctorId, filters);
-    
-    // Get doctor's working hours to filter schedules
-    const doctor = await doctorsRepository.findById(doctorId);
-    if (!doctor || !doctor.working_hours_start || !doctor.working_hours_end) {
-        return schedules; // Return all if no working hours set
+    try {
+        const schedules = await schedulesRepository.findAllByDoctor(doctorId, filters);
+        
+        // Get doctor's working hours to filter schedules
+        // Note: ensuring doctorId is valid is important
+        if (!doctorId) return schedules;
+
+        const doctor = await doctorsRepository.findById(doctorId);
+        if (!doctor || !doctor.working_hours_start || !doctor.working_hours_end) {
+            return schedules; // Return all if no working hours set
+        }
+        
+        // Filter schedules to only show those within working hours
+        const workingStart = doctor.working_hours_start.slice(0, 5); // "09:00:00" -> "09:00"
+        const workingEnd = doctor.working_hours_end.slice(0, 5);
+        
+        return schedules.filter(schedule => {
+            if (!schedule.time_slot) return true; // Keep if no time slot
+            
+            const [slotStart] = schedule.time_slot.split('-');
+            const slotTime = slotStart.trim();
+            
+            return slotTime >= workingStart && slotTime < workingEnd;
+        });
+    } catch (error) {
+        logger.error('Error in getDoctorSchedules service', { doctorId, error: error.message, stack: error.stack });
+        throw error;
     }
-    
-    // Filter schedules to only show those within working hours
-    const workingStart = doctor.working_hours_start.slice(0, 5); // "09:00:00" -> "09:00"
-    const workingEnd = doctor.working_hours_end.slice(0, 5);
-    
-    return schedules.filter(schedule => {
-        if (!schedule.time_slot) return true; // Keep if no time slot
-        
-        const [slotStart] = schedule.time_slot.split('-');
-        const slotTime = slotStart.trim();
-        
-        return slotTime >= workingStart && slotTime < workingEnd;
-    });
 };
 
 /**
