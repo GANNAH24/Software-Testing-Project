@@ -1,4 +1,14 @@
 import { useState, useEffect } from 'react';
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
+import { Calendar } from '../ui/calendar';
+import { toast } from 'sonner';
+import { Clock } from 'lucide-react';
+
 import { QuickBookDialog } from './QuickBookDialog';
 import doctorService from '../../shared/services/doctor.service';
 import appointmentService from '../../shared/services/appointment.service';

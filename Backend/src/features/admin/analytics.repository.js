@@ -47,7 +47,7 @@ const getTopDoctors = async (limit = 10) => {
         const { data, error } = await supabase
             .from('appointments')
             .select('doctor_id, doctors!inner(name, specialty)')
-            .eq('status', 'completed');
+            .in('status', ['completed', 'confirmed']);
 
         if (error) {
             logger.error('Error getting top doctors', { error: error.message });
@@ -60,7 +60,6 @@ const getTopDoctors = async (limit = 10) => {
             const doctorId = appointment.doctor_id;
             const doctorName = appointment.doctors?.name || 'Unknown';
             const doctorSpecialty = appointment.doctors?.specialty || 'General';
-
             if (!doctorCounts[doctorId]) {
                 doctorCounts[doctorId] = {
                     doctor_id: doctorId,

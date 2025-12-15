@@ -24,7 +24,7 @@ const getDoctorById = async (doctorId) => {
 const getDoctorByUserId = async (userId) => {
   const doctor = await doctorsRepository.findByUserId(userId);
   if (!doctor) {
-    throw new Error("Doctor profile not found");
+     return null; // Return null instead of throwing so controller can create one
   }
   return doctor;
 };

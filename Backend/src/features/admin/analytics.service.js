@@ -27,6 +27,8 @@ const getSpecialtyDistribution = async () => {
     }
 };
 
+const reviewsRepository = require('../reviews/reviews.repository');
+
 /**
  * Get top performing doctors
  */
@@ -34,7 +36,16 @@ const getTopPerformingDoctors = async (limit = 10) => {
     try {
         const topDoctors = await analyticsRepository.getTopDoctors(limit);
 
-        return topDoctors;
+        // Enhance with average ratings
+        const doctorsWithRatings = await Promise.all(topDoctors.map(async (doctor) => {
+            const ratingData = await reviewsRepository.getDoctorAverageRating(doctor.doctor_id);
+            return {
+                ...doctor,
+                rating: ratingData.averageRating
+            };
+        }));
+
+        return doctorsWithRatings;
     } catch (error) {
         logger.error('Error in getTopPerformingDoctors service', { error: error.message });
         throw error;

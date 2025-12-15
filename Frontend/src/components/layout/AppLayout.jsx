@@ -54,7 +54,7 @@ export function AppLayout() {
       { icon: LayoutDashboard, label: 'Dashboard', route: '/admin/dashboard' },
       { icon: Stethoscope, label: 'Manage Doctors', route: '/admin/doctors' },
       { icon: Users, label: 'Manage Patients', route: '/admin/patients' },
-      { icon: Activity, label: 'System Health', route: '/admin/system-health' }
+      { icon: Activity, label: 'Analytics', route: '/admin/analytics' }
     ];
     return [];
   };

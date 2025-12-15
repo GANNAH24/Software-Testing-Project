@@ -19,7 +19,7 @@ import { DoctorAppointments } from '../components/doctor/DoctorAppointments';
 import { AdminDashboard } from '../components/admin/AdminDashboard';
 import { ManageDoctors } from '../components/admin/ManageDoctors';
 import { ManagePatients } from '../components/admin/ManagePatients';
-import { SystemHealth } from '../components/admin/SystemHealth';
+import { Analytics } from '../components/admin/Analytics';
 import { MyProfile } from '../pages/MyProfile';
 import { EditProfile } from '../components/EditProfile';
 import { ChangePassword } from '../components/ChangePassword';
@@ -211,8 +211,8 @@ export const router = createBrowserRouter([
         element: <ManagePatients />,
       },
       {
-        path: 'system-health',
-        element: <SystemHealth />,
+        path: 'analytics',
+        element: <Analytics />,
       },
       {
         path: 'profile',

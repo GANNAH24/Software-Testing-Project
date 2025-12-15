@@ -146,14 +146,15 @@ const remove = async (scheduleId) => {
  * Get weekly schedule
  */
 const getWeeklySchedule = async (doctorId, weekStart) => {
-    const weekEnd = new Date(weekStart);
+    const startDate = new Date(weekStart);
+    const weekEnd = new Date(startDate);
     weekEnd.setDate(weekEnd.getDate() + 7);
 
     const { data, error } = await supabase
         .from('doctor_schedules')
         .select('*')
         .eq('doctor_id', doctorId)
-        .gte('date', weekStart.toISOString())
+        .gte('date', startDate.toISOString())
         .lt('date', weekEnd.toISOString())
         .order('date', { ascending: true })
         .order('time_slot', { ascending: true });
