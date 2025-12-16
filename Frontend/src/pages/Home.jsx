@@ -1,0 +1,45 @@
+import { useState, useEffect } from 'react';
+import { Search, MapPin, Star, ChevronRight, Stethoscope, Users, Calendar, Shield } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { DoctorCard } from '../components/DoctorCard';
+import { specialties } from '../lib/mockData';
+import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import doctorService from '../shared/services/doctor.service';
+
+export function Home({ navigate }) {
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSpecialty, setSelectedSpecialty] = useState('');
+  const [doctors, setDoctors] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const doctorsPerPage = 6;
+
+  useEffect(() => {
+    const loadDoctors = async () => {
+      try {
+        const result = await doctorService.list();
+        const list = result?.data || result || [];
+        setDoctors(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error('Error loading doctors:', err);
+        setDoctors([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDoctors();
+  }, []);
+  const handleSearch = (e) => { e.preventDefault(); navigate(`/search?q=${encodeURIComponent(searchQuery)}&specialty=${selectedSpecialty}`); };
+  const filteredDoctors = doctors.filter(doc => { const matchesSearch = !searchQuery || doc.name.toLowerCase().includes(searchQuery.toLowerCase()) || doc.specialty.toLowerCase().includes(searchQuery.toLowerCase()); const matchesSpecialty = !selectedSpecialty || doc.specialty === selectedSpecialty; return matchesSearch && matchesSpecialty; });
+  const totalPages = Math.ceil(filteredDoctors.length / doctorsPerPage);
+  const paginatedDoctors = filteredDoctors.slice((currentPage - 1) * doctorsPerPage, currentPage * doctorsPerPage);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <section className="bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white py-16 px-4"><div className="max-w-6xl mx-auto"><div className="text-center mb-12"><h1 className="text-4xl md:text-5xl mb-4">Find Your Perfect Doctor</h1><p className="text-xl text-white/90">Connect with qualified healthcare professionals in your area</p></div><form onSubmit={handleSearch} className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-4 md:p-6"><div className="grid md:grid-cols-3 gap-4"><div className="md:col-span-1 relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" placeholder="Doctor name or specialty" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#667eea] text-gray-900" /></div><div className="md:col-span-1 relative"><Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><select value={selectedSpecialty} onChange={(e) => setSelectedSpecialty(e.target.value)} className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#667eea] text-gray-900 appearance-none bg-white"><option value="">All Specialties</option>{specialties.map(spec => (<option key={spec} value={spec}>{spec}</option>))}</select></div><div className="flex gap-2"><Button type="submit" className="flex-1 bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 py-3">Search</Button><Button type="button" onClick={() => navigate('/search')} variant="outline" className="px-4 text-gray-700 border-gray-300">Advanced</Button></div></div></form></div></section>
+      <section className="py-16 px-4 bg-white"><div className="max-w-6xl mx-auto"><div className="grid md:grid-cols-4 gap-8"><div className="text-center"><div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center mx-auto mb-4"><Users className="w-8 h-8 text-white" /></div><h3 className="text-gray-900 mb-2">Verified Doctors</h3><p className="text-gray-600 text-sm">All healthcare professionals are verified and licensed</p></div><div className="text-center"><div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center mx-auto mb-4"><Calendar className="w-8 h-8 text-white" /></div><h3 className="text-gray-900 mb-2">Easy Booking</h3><p className="text-gray-600 text-sm">Book appointments online in just a few clicks</p></div><div className="text-center"><div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center mx-auto mb-4"><Shield className="w-8 h-8 text-white" /></div><h3 className="text-gray-900 mb-2">Secure & Private</h3><p className="text-gray-600 text-sm">Your health data is encrypted and protected</p></div><div className="text-center"><div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center mx-auto mb-4"><Star className="w-8 h-8 text-white" /></div><h3 className="text-gray-900 mb-2">Trusted Reviews</h3><p className="text-gray-600 text-sm">Read authentic patient reviews and ratings</p></div></div></div></section>
+      <section className="py-16 px-4"><div className="max-w-6xl mx-auto"><div className="flex items-center justify-between mb-8"><div><h2 className="text-3xl text-gray-900 mb-2">Featured Doctors</h2><p className="text-gray-600">Browse our top-rated healthcare professionals</p></div><Button variant="outline" onClick={() => navigate('/search')} className="hidden md:flex items-center gap-2">View All<ChevronRight className="w-4 h-4" /></Button></div>{loading ? (<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">{[...Array(6)].map((_, i) => (<LoadingSkeleton key={i} variant="card" />))}</div>) : paginatedDoctors.length > 0 ? (<><div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">{paginatedDoctors.map(doctor => (<DoctorCard key={doctor.doctor_id || doctor.id} doctor={doctor} onClick={() => navigate(`/doctor/${doctor.doctor_id || doctor.id}`)} />))}</div>{totalPages > 1 && (<div className="flex items-center justify-center gap-2 mt-8"><Button variant="outline" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button><div className="flex items-center gap-2">{[...Array(totalPages)].map((_, i) => (<button key={i} onClick={() => setCurrentPage(i + 1)} className={`w-10 h-10 rounded-lg transition-colors ${currentPage === i + 1 ? 'bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>{i + 1}</button>))}</div><Button variant="outline" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button></div>)}</>) : (<div className="text-center py-16 bg-white rounded-lg border border-gray-200"><Search className="w-16 h-16 text-gray-300 mx-auto mb-4" /><h3 className="text-xl text-gray-900 mb-2">No doctors found</h3><p className="text-gray-600 mb-6">Try adjusting your search criteria</p><Button onClick={() => { setSearchQuery(''); setSelectedSpecialty(''); }}>Clear Filters</Button></div>)}</div></section>
+      <section className="py-16 px-4 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white"><div className="max-w-4xl mx-auto text-center"><h2 className="text-3xl md:text-4xl mb-4">Ready to Get Started?</h2><p className="text-xl mb-8 text-white/90">Join thousands of patients who trust Se7ety Healthcare</p><Button onClick={() => navigate('/register')} size="lg" className="bg-white text-[#667eea] hover:bg-gray-100">Create an Account</Button></div></section>
+    </div>
+  );
+}

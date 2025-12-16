@@ -1,40 +1,84 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const supabase = require('./src/supabase');
+/**
+ * Server Entry Point
+ * Starts the layered monolith application
+ */
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const app = require("./src/app");
+const config = require("./src/config/environment");
+const { testConnection } = require("./src/config/database");
+const logger = require("./src/shared/utils/logger.util");
+const { startReminderScheduler } = require('./src/shared/jobs/reminder.job');
+const { initializeSocket } = require('./src/config/socket');
+const seedAdmin = require('./src/scripts/seed-admin');
 
-const patientRoutes = require('./src/routes/patientRoutes');
-app.use('/api/patient', patientRoutes);
-
-app.get('/', (req, res) => {
-  res.json({ ok: true, message: 'Backend is running' });
-});
-
-// Simple connectivity check: fetch current timestamp from Postgres via RPC or a lightweight query
-app.get('/health/supabase', async (req, res) => {
+// Test database connection before starting server
+// Forced restart to apply seeding fix
+const startServer = async () => {
   try {
-    // This selects 1 from the built-in pg function now() via a dummy query on any table-less way using RPC isn't available by default.
-    // We'll instead call the auth schema with a very cheap request: list schemas via the REST (not available). So use a trivial select on a never-existing table will error.
-    // Better approach: use "select 1" via the SQL endpoint is not available in client. So we'll do a no-op: get auth settings via admin (not in client either).
-    // Therefore, we'll call a table the user likely has; if not, we just verify the client can make a request by fetching the current user with no auth (should succeed 401 but proves reachability).
+    // Test database connection
+    logger.info("Testing database connection...");
+    const dbConnected = await testConnection();
 
-    // We'll perform a cheap storage buckets list which works without auth only if public. As fallback, just do a fetch on a RPC function name that probably doesn't exist and catch.
-    const { data, error } = await supabase.from('pg_catalog.pg_tables').select('schemaname').limit(1);
-    if (error) {
-      // Even if the query errors (likely due to table not existing), reaching here shows client initialized; report partial health.
-      return res.status(200).json({ ok: true, supabaseReachable: true, note: 'Supabase client initialized. Create a real table and update this check.' , error: error.message });
+    if (!dbConnected) {
+      logger.error("Failed to connect to database. Exiting...");
+      process.exit(1);
     }
-    return res.json({ ok: true, supabaseReachable: true, sample: data });
-  } catch (e) {
-    return res.status(500).json({ ok: false, error: e.message });
-  }
-});
 
-const port = process.env.PORT || 3001;
-app.listen(port, () => {
-  console.log(`Server listening on http://localhost:${port}`);
-});
+    // Seed admin user if credentials exist in env
+    await seedAdmin();
+
+    // Start Express server
+    const server = app.listen(config.PORT, () => {
+      logger.info("=".repeat(60));
+      logger.info(`🏥 Se7ety Healthcare API - Layered Monolith`);
+      logger.info("=".repeat(60));
+      logger.info(`✅ Server running on http://localhost:${config.PORT}`);
+      logger.info(`📋 Environment: ${config.NODE_ENV}`);
+      logger.info(`🔗 API Base: ${config.API_PREFIX}/${config.API_VERSION}`);
+      logger.info("=".repeat(60));
+      logger.info(`📍 Health Check: http://localhost:${config.PORT}/health`);
+      logger.info(
+        `📍 API Root: http://localhost:${config.PORT}${config.API_PREFIX}/${config.API_VERSION}`
+      );
+      logger.info("=".repeat(60));
+      logger.info(`🔐 Auth: ${config.API_PREFIX}/${config.API_VERSION}/auth`);
+      logger.info(
+        `📅 Appointments: ${config.API_PREFIX}/${config.API_VERSION}/appointments`
+      );
+      logger.info(
+        `👨‍⚕️ Doctors: ${config.API_PREFIX}/${config.API_VERSION}/doctors`
+      );
+      logger.info("=".repeat(60));
+
+      // Initialize Socket.IO for real-time chat
+      initializeSocket(server);
+      logger.info('💬 Socket.IO initialized for real-time chat');
+
+      // Start background reminder scheduler after server is up
+      startReminderScheduler();
+    });
+
+    // Graceful shutdown
+    process.on("SIGTERM", () => {
+      logger.info("SIGTERM received, shutting down gracefully...");
+      server.close(() => {
+        logger.info("Server closed");
+        process.exit(0);
+      });
+    });
+
+    process.on("SIGINT", () => {
+      logger.info("SIGINT received, shutting down gracefully...");
+      server.close(() => {
+        logger.info("Server closed");
+        process.exit(0);
+      });
+    });
+  } catch (error) {
+    logger.error("Failed to start server", { error: error.message });
+    process.exit(1);
+  }
+};
+
+// Start the server
+startServer();
