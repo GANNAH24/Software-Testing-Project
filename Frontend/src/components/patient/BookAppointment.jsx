@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, Clock, User, FileText, CheckCircle2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -7,33 +8,74 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../ui/textarea';
 import { Card, CardContent } from '../ui/card';
 import { toast } from 'sonner';
+import doctorService from '../../shared/services/doctor.service';
+import appointmentService from '../../shared/services/appointment.service';
+import scheduleService from '../../shared/services/schedule.service';
+import { useAuthContext } from '../../shared/contexts/AuthContext';
 
-
-
-const MOCK_DOCTORS = [
-  { id: '1', name: 'Dr. Sarah Johnson', specialty: 'Cardiology' },
-  { id: '2', name: 'Dr. Michael Chen', specialty: 'Pediatrics' },
-  { id: '3', name: 'Dr. Emily Rodriguez', specialty: 'Dermatology' }
-];
-
-const TIME_SLOTS = [
-  '09:00-10:00',
-  '10:00-11:00',
-  '11:00-12:00',
-  '14:00-15:00',
-  '15:00-16:00',
-  '16:00-17:00'
-];
-
-export function BookAppointment({ navigate, user }) {
+export function BookAppointment() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuthContext();
+  
   const [step, setStep] = useState(1);
+  const [doctors, setDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [availableSlots, setAvailableSlots] = useState([]);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
+  
+  // Check if doctor ID was passed from Find Doctors page
+  useEffect(() => {
+    if (location.state?.doctorId) {
+      setSelectedDoctor(location.state.doctorId);
+    }
+  }, [location.state]);
+  
+  // Fetch doctors list
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const response = await doctorService.list();
+        const list = response?.data || response?.doctors || response || [];
+        setDoctors(Array.isArray(list) ? list : []);
+      } catch (error) {
+        console.error('Failed to fetch doctors:', error);
+        toast.error('Failed to load doctors');
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+    fetchDoctors();
+  }, []);
+  
+  // Fetch available slots when doctor and date are selected
+  useEffect(() => {
+    if (selectedDoctor && selectedDate) {
+      fetchAvailableSlots();
+    }
+  }, [selectedDoctor, selectedDate]);
+  
+  const fetchAvailableSlots = async () => {
+    setLoadingSlots(true);
+    try {
+      const response = await scheduleService.availableSlots(selectedDoctor, selectedDate);
+      const slots = response?.data || response?.slots || response || [];
+      setAvailableSlots(Array.isArray(slots) ? slots : []);
+    } catch (error) {
+      console.error('Failed to fetch slots:', error);
+      toast.error('Failed to load available time slots');
+      setAvailableSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
 
   const validateStep = (currentStep) => {
     /** @type {{[key: string]: string}} */
@@ -59,19 +101,33 @@ export function BookAppointment({ navigate, user }) {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateStep(step)) return;
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const appointmentData = {
+        doctor_id: selectedDoctor,
+        patient_id: user?.id,
+        date: selectedDate,
+        time_slot: selectedTimeSlot,
+        notes: notes || '',
+        status: 'pending'
+      };
+      
+      await appointmentService.create(appointmentData);
       setSuccess(true);
-      setLoading(false);
       toast.success('Appointment booked successfully!');
-    }, 1000);
+    } catch (error) {
+      console.error('Failed to book appointment:', error);
+      toast.error(error.response?.data?.message || 'Failed to book appointment. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (success) {
-    const doctor = MOCK_DOCTORS.find(d => d.id === selectedDoctor);
+    const doctor = doctors.find(d => d.id === selectedDoctor);
     return (
       <div className="p-4 sm:p-8 max-w-2xl mx-auto">
         <Card>
@@ -84,7 +140,7 @@ export function BookAppointment({ navigate, user }) {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Doctor:</span>
-                  <span className="text-gray-900">{doctor?.name}</span>
+                  <span className="text-gray-900">{doctor?.name || doctor?.full_name || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Date:</span>
@@ -103,10 +159,10 @@ export function BookAppointment({ navigate, user }) {
               </div>
             </div>
             <div className="flex gap-4">
-              <Button onClick={() => navigate('patient-appointments')} className="flex-1 bg-[#667eea] hover:bg-[#5568d3]">
+              <Button onClick={() => navigate('/patient/appointments')} className="flex-1 bg-[#667eea] hover:bg-[#5568d3]">
                 View My Appointments
               </Button>
-              <Button onClick={() => window.location.reload()} variant="outline" className="flex-1">
+              <Button onClick={() => navigate('/patient/book-appointment')} variant="outline" className="flex-1">
                 Book Another
               </Button>
             </div>
@@ -166,10 +222,10 @@ export function BookAppointment({ navigate, user }) {
                   <div className="space-y-3">
                     {MOCK_DOCTORS.map((doctor) => (
                       <button
-                        key={doctor.id}
-                        onClick={() => setSelectedDoctor(doctor.id)}
+                        key={doctor.doctor_id || doctor.id}
+                        onClick={() => setSelectedDoctor(doctor.doctor_id || doctor.id)}
                         className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${
-                          selectedDoctor === doctor.id
+                          selectedDoctor === (doctor.doctor_id || doctor.id)
                             ? 'border-[#667eea] bg-[#667eea]/10'
                             : 'border-gray-200 hover:border-gray-300'
                         }`}

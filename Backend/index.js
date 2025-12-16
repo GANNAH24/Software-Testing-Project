@@ -8,8 +8,11 @@ const config = require("./src/config/environment");
 const { testConnection } = require("./src/config/database");
 const logger = require("./src/shared/utils/logger.util");
 const { startReminderScheduler } = require('./src/shared/jobs/reminder.job');
+const { initializeSocket } = require('./src/config/socket');
+const seedAdmin = require('./src/scripts/seed-admin');
 
 // Test database connection before starting server
+// Forced restart to apply seeding fix
 const startServer = async () => {
   try {
     // Test database connection
@@ -20,6 +23,9 @@ const startServer = async () => {
       logger.error("Failed to connect to database. Exiting...");
       process.exit(1);
     }
+
+    // Seed admin user if credentials exist in env
+    await seedAdmin();
 
     // Start Express server
     const server = app.listen(config.PORT, () => {
@@ -43,6 +49,10 @@ const startServer = async () => {
         `👨‍⚕️ Doctors: ${config.API_PREFIX}/${config.API_VERSION}/doctors`
       );
       logger.info("=".repeat(60));
+
+      // Initialize Socket.IO for real-time chat
+      initializeSocket(server);
+      logger.info('💬 Socket.IO initialized for real-time chat');
 
       // Start background reminder scheduler after server is up
       startReminderScheduler();

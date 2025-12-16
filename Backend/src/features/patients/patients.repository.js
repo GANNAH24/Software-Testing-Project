@@ -28,9 +28,15 @@ const PatientsRepository = {
     try {
       const { data, error } = await supabase
         .from('patients')
-        .select('*')
+        .select(`
+          *,
+          profiles:profiles (
+            full_name
+          )
+        `)
         .eq('patient_id', patientId)
-        .single();
+        .maybeSingle();
+
 
       if (error) {
         console.error('[DEBUG] Supabase error in getPatientById:', error);
@@ -41,6 +47,28 @@ const PatientsRepository = {
       return data;
     } catch (err) {
       console.error('[DEBUG] Exception in getPatientById:', err.message);
+      throw err;
+    }
+  },
+
+  async getPatientByUserId(userId) {
+    console.log('[DEBUG] getPatientByUserId called with userId:', userId);
+    try {
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('patient_id', userId)
+        .maybeSingle(); // Use maybeSingle() instead of single() to handle not found gracefully
+
+      if (error) {
+        console.error('[DEBUG] Supabase error in getPatientByUserId:', error);
+        throw error;
+      }
+
+      console.log('[DEBUG] getPatientByUserId returned data:', data);
+      return data; // Will be null if not found
+    } catch (err) {
+      console.error('[DEBUG] Exception in getPatientByUserId:', err.message);
       throw err;
     }
   },

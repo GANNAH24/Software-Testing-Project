@@ -115,17 +115,47 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Update user profile
+ * PUT /api/v1/auth/profile
+ */
+const updateProfile = asyncHandler(async (req, res) => {
+  const updates = req.body;
+
+  if (!updates || Object.keys(updates).length === 0) {
+    return res.status(400).json(errorResponse('No updates provided', null, 400));
+  }
+
+  const result = await authService.updateUserProfile(req.user.id, updates);
+
+  res.json(successResponse({
+    profile: result.profile,
+    roleData: result.roleData
+  }, 'Profile updated successfully'));
+});
+
+/**
  * Change password
  * POST /api/v1/auth/change-password
  */
 const changePassword = asyncHandler(async (req, res) => {
+  console.error('============================================');
+  console.error('🔥 CHANGE PASSWORD ENDPOINT HIT 🔥');
+  console.error('============================================');
+  console.error('User ID:', req.user?.id);
+  console.error('Has oldPassword:', !!req.body.oldPassword);
+  console.error('Has newPassword:', !!req.body.newPassword);
+  console.error('Request body:', req.body);
+  
   const { oldPassword, newPassword } = req.body;
 
   if (!oldPassword || !newPassword) {
+    console.error('❌ Missing password fields');
     return res.status(400).json(errorResponse('Old password and new password are required', null, 400));
   }
 
+  console.error('🔧 Calling authService.changePassword');
   await authService.changePassword(req.user.id, oldPassword, newPassword);
+  console.error('✅ Password changed successfully');
 
   res.json(successResponse(null, 'Password changed successfully'));
 });
@@ -176,6 +206,7 @@ module.exports = {
   login,
   logout,
   getCurrentUser,
+  updateProfile,
   changePassword,
   forgotPassword,
   resetPassword,

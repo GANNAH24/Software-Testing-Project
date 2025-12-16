@@ -1,14 +1,39 @@
 import { User, Mail, Phone, Calendar, MapPin, Award, Camera, Upload } from 'lucide-react';
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
+import { useAuthContext } from '../shared/contexts/AuthContext';
 
-
-
-export function MyProfile({ navigate, user }) {
+export function MyProfile() {
+  const navigate = useNavigate();
+  const { user, loading } = useAuthContext();
   const [profilePicture, setProfilePicture] = useState(null);
   const fileInputRef = useRef(null);
+  
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return (
+      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-gray-600">Unable to load profile information.</p>
+            <Button onClick={() => navigate('/login')} className="mt-4">Go to Login</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
@@ -54,7 +79,7 @@ export function MyProfile({ navigate, user }) {
                 />
               ) : (
                 <div className="w-24 h-24 bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-full flex items-center justify-center text-white text-3xl border-4 border-white shadow-lg">
-                  {user.fullName?.charAt(0) || 'U'}
+                  {(user.fullName || user.full_name || user.email || 'U').charAt(0).toUpperCase()}
                 </div>
               )}
               <button
@@ -72,8 +97,8 @@ export function MyProfile({ navigate, user }) {
               />
             </div>
             <div className="text-center sm:text-left">
-              <h2 className="text-gray-900 mb-1">{user.fullName}</h2>
-              <p className="text-gray-600 capitalize mb-3">{user.role}</p>
+              <h2 className="text-gray-900 mb-1">{user.fullName || user.full_name || 'User'}</h2>
+              <p className="text-gray-600 capitalize mb-3">{user.role || 'user'}</p>
               <Button
                 onClick={handleUploadClick}
                 variant="outline"

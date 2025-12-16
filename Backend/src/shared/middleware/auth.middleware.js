@@ -13,16 +13,20 @@ const logger = require('../utils/logger.util');
  */
 const verifyToken = async (req, res, next) => {
   try {
+    console.log('[AUTH MIDDLEWARE] Verifying token for:', req.method, req.path);
     const authHeader = req.headers.authorization;
     let token = null;
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7);
+      console.log('[AUTH MIDDLEWARE] Token found in Authorization header');
     } else if (req.cookies && req.cookies[config.COOKIE_NAME]) {
       token = req.cookies[config.COOKIE_NAME];
+      console.log('[AUTH MIDDLEWARE] Token found in cookie');
     }
 
     if (!token) {
+      console.log('[AUTH MIDDLEWARE] No token provided');
       return res.status(401).json(unauthorizedResponse('No token provided'));
     }
 
@@ -30,9 +34,12 @@ const verifyToken = async (req, res, next) => {
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
+      console.log('[AUTH MIDDLEWARE] Token verification failed:', error?.message);
       logger.warn('Invalid token attempt', { error: error?.message });
       return res.status(401).json(unauthorizedResponse('Invalid or expired token'));
     }
+    
+    console.log('[AUTH MIDDLEWARE] Token verified for user:', user.id);
 
     // Get user profile with role
     const { data: profile, error: profileError } = await supabase

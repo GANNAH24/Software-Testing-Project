@@ -23,6 +23,7 @@ const register = async (email, password, role, additionalData = {}) => {
   if (!passwordValidation.isValid) {
     const error = new Error('Password does not meet requirements');
     error.passwordErrors = passwordValidation.errors;
+    error.statusCode = 400;
     throw error;
   }
 
@@ -40,7 +41,9 @@ const register = async (email, password, role, additionalData = {}) => {
   // Check if user already exists
   const existingProfile = await authRepository.findProfileByEmail(email);
   if (existingProfile) {
-    throw new Error('User with this email already exists');
+    const error = new Error('User with this email already exists');
+    error.statusCode = 400;
+    throw error;
   }
 
   try {
@@ -84,7 +87,9 @@ const register = async (email, password, role, additionalData = {}) => {
     } else if (role === 'doctor') {
       // Validate required doctor fields
       if (!additionalData.specialty || !additionalData.location) {
-        throw new Error('Doctors must provide specialty and location');
+        const error = new Error('Doctors must provide specialty and location');
+        error.statusCode = 400;
+        throw error;
       }
       await authRepository.createDoctor(userId, additionalData);
     }
@@ -140,6 +145,16 @@ const login = async (email, password) => {
     };
   } catch (error) {
     logger.error('Login error', { email, error: error.message });
+
+    // Add appropriate status codes
+    if (error.message && (error.message.includes('Invalid login') || error.message.includes('credentials'))) {
+      error.statusCode = 401;
+    } else if (error.message && error.message.includes('not found')) {
+      error.statusCode = 401;
+    } else if (!error.statusCode) {
+      error.statusCode = 400;
+    }
+
     throw error;
   }
 };
@@ -178,6 +193,83 @@ const getCurrentUser = async (userId) => {
 };
 
 /**
+ * Update user profile
+ */
+const updateUserProfile = async (userId, updates) => {
+  // Get current profile to check role
+  const currentProfile = await authRepository.findProfileById(userId);
+  if (!currentProfile) {
+    throw new Error('User not found');
+  }
+
+  // Profiles table only has: id, email, full_name, role
+  const profileFields = ['full_name'];
+  
+  // Patients table has: patient_id, date_of_birth, gender, phone
+  const patientFields = ['date_of_birth', 'gender', 'phone', 'phone_number'];
+  
+  // Doctors table actually has: user_id, name, specialty, qualifications, reviews, location
+  // NOT: bio, years_of_experience, consultation_fee, phone_number
+  const doctorFields = ['name', 'specialty', 'qualifications', 'location'];
+
+  // Split updates into different table updates
+  const profileUpdates = {};
+  const roleUpdates = {};
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (value !== undefined && value !== null && value !== '') {
+      if (profileFields.includes(key)) {
+        profileUpdates[key] = value;
+        // For doctors, also update name field in doctors table when full_name changes
+        if (currentProfile.role === 'doctor' && key === 'full_name') {
+          roleUpdates['name'] = value;
+        }
+      } else if (currentProfile.role === 'patient' && patientFields.includes(key)) {
+        // Map phone_number to phone for patients table
+        const mappedKey = key === 'phone_number' ? 'phone' : key;
+        roleUpdates[mappedKey] = value;
+      } else if (currentProfile.role === 'doctor' && doctorFields.includes(key)) {
+        roleUpdates[key] = value;
+      }
+    }
+  }
+
+  if (Object.keys(profileUpdates).length === 0 && Object.keys(roleUpdates).length === 0) {
+    throw new Error('No valid fields to update');
+  }
+
+  // Update profile table if there are profile updates
+  if (Object.keys(profileUpdates).length > 0) {
+    await authRepository.updateProfile(userId, profileUpdates);
+  }
+
+  // Update role-specific table
+  if (Object.keys(roleUpdates).length > 0) {
+    if (currentProfile.role === 'patient') {
+      await authRepository.updatePatientData(userId, roleUpdates);
+    } else if (currentProfile.role === 'doctor') {
+      await authRepository.updateDoctorData(userId, roleUpdates);
+    }
+  }
+
+  // Get updated profile and role data
+  const updatedProfile = await authRepository.findProfileById(userId);
+  const roleData = await authRepository.getRoleSpecificData(userId, currentProfile.role);
+
+  logger.info('Profile updated successfully', { 
+    userId, 
+    profileFields: Object.keys(profileUpdates),
+    roleFields: Object.keys(roleUpdates),
+    role: currentProfile.role
+  });
+
+  return {
+    profile: updatedProfile,
+    roleData
+  };
+};
+
+/**
  * Change password
  */
 const changePassword = async (userId, oldPassword, newPassword) => {
@@ -189,12 +281,54 @@ const changePassword = async (userId, oldPassword, newPassword) => {
     throw error;
   }
 
+  // Check if old and new passwords are the same
+  if (oldPassword === newPassword) {
+    throw new Error('New password must be different from the old password');
+  }
+
   try {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword
+    // Get user's email from Supabase Auth to verify old password
+    const { data: { user }, error: getUserError } = await supabase.auth.admin.getUserById(userId);
+    
+    if (getUserError || !user) {
+      logger.error('Failed to get user for password change', { userId, error: getUserError?.message });
+      throw new Error('User not found');
+    }
+
+    const userEmail = user.email;
+    if (!userEmail) {
+      throw new Error('User email not found');
+    }
+
+    // Create a temporary Supabase client to verify the old password
+    const { createClient } = require('@supabase/supabase-js');
+    const tempClient = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY
+    );
+
+    // Verify old password by attempting sign in with temp client
+    const { error: signInError } = await tempClient.auth.signInWithPassword({
+      email: userEmail,
+      password: oldPassword
     });
 
-    if (error) throw error;
+    if (signInError) {
+      logger.warn('Old password verification failed', { userId, error: signInError.message });
+      throw new Error('Current password is incorrect');
+    }
+
+    // Old password is correct, now update to new password
+    // Use service role key to update password directly
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      userId,
+      { password: newPassword }
+    );
+
+    if (updateError) {
+      logger.error('Password update failed', { userId, error: updateError.message });
+      throw updateError;
+    }
 
     logger.info('Password changed successfully', { userId });
     return { success: true };
@@ -208,6 +342,14 @@ const changePassword = async (userId, oldPassword, newPassword) => {
  * Request password reset
  */
 const forgotPassword = async (email) => {
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    const error = new Error('Invalid email format');
+    error.statusCode = 400;
+    throw error;
+  }
+
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password`
@@ -254,6 +396,7 @@ module.exports = {
   login,
   logout,
   getCurrentUser,
+  updateUserProfile,
   changePassword,
   forgotPassword,
   resetPassword

@@ -190,9 +190,9 @@ export function AboutUs({ navigate }) {
           <p className="text-xl opacity-90 mb-8">
             Experience the future of healthcare access today.
           </p>
-          <div className="flex gap-4 justify-center flex-wrap">
+          {/* <div className="flex gap-4 justify-center flex-wrap">
             <motion.button
-              onClick={() => navigate('register')}
+              onClick={() => navigate('/register')}
               className="bg-white text-[#667eea] px-8 py-3 rounded-lg hover:bg-gray-100 transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -200,14 +200,16 @@ export function AboutUs({ navigate }) {
               Get Started
             </motion.button>
             <motion.button
-              onClick={() => navigate('contact')}
+              onClick={() => navigate('/contact')}
               className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg hover:bg-white/10 transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
+              
+
               Contact Us
             </motion.button>
-          </div>
+          </div> */}
         </div>
       </motion.section>
     </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Alert, AlertDescription } from './ui/alert';
 import { toast } from 'sonner';
-import { authService } from '../shared/services/auth.service';
+import { useAuthContext } from '../shared/contexts/AuthContext';
 
 
 const MOCK_PASSWORD_REQUIREMENTS = {
@@ -27,11 +28,13 @@ const SPECIALTIES = [
   'Internal Medicine'
 ];
 
-export function Register({ navigate, onRegister }) {
+export function Register() {
   const [role, setRole] = useState('patient');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [passwordRequirements, setPasswordRequirements] = useState(MOCK_PASSWORD_REQUIREMENTS);
+  const { register: registerUser } = useAuthContext();
+  const navigate = useNavigate();
 
   // Common fields
   const [email, setEmail] = useState('');
@@ -50,11 +53,19 @@ export function Register({ navigate, onRegister }) {
 
   // Validation
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
 
   useEffect(() => {
     // Simulate fetching password requirements
     setPasswordRequirements(MOCK_PASSWORD_REQUIREMENTS);
   }, []);
+
+  // Clear API error when user starts typing
+  useEffect(() => {
+    if (apiError) {
+      setApiError('');
+    }
+  }, [email, password, fullName, phone, dateOfBirth, gender, specialty, qualifications, location]);
 
   const validatePassword = (pwd) => {
     const errors = [];
@@ -76,6 +87,31 @@ export function Register({ navigate, onRegister }) {
     return errors;
   };
 
+  const getPasswordRequirements = (pwd) => {
+    return [
+      {
+        text: `At least ${passwordRequirements.minLength} characters`,
+        met: pwd.length >= passwordRequirements.minLength
+      },
+      {
+        text: 'One uppercase letter',
+        met: /[A-Z]/.test(pwd)
+      },
+      {
+        text: 'One lowercase letter',
+        met: /[a-z]/.test(pwd)
+      },
+      {
+        text: 'One number',
+        met: /\d/.test(pwd)
+      },
+      {
+        text: 'One special character',
+        met: /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
+      }
+    ];
+  };
+
   const passwordErrors = validatePassword(password);
 
   const validateForm = () => {
@@ -92,6 +128,14 @@ export function Register({ navigate, onRegister }) {
 
     if (role === 'patient') {
       if (!dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
+      else {
+        const selectedDate = new Date(dateOfBirth);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (selectedDate > today) {
+          newErrors.dateOfBirth = 'Date of birth cannot be in the future';
+        }
+      }
       if (!gender) newErrors.gender = 'Gender is required';
     }
 
@@ -107,6 +151,7 @@ export function Register({ navigate, onRegister }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setApiError('');
 
     if (!validateForm()) {
       toast.error('Please fix the errors in the form');
@@ -127,20 +172,38 @@ export function Register({ navigate, onRegister }) {
         ...(role === 'doctor' ? { specialty, qualifications, location } : {}),
       };
 
-      const response = await authService.register(userData);
+      const result = await registerUser(userData);
 
-      if (response.success) {
-        toast.success('Registration successful!');
-        if (response.data.token) {
-          localStorage.setItem('authToken', response.data.token);
-        }
-        onRegister(response.data.user);
+      if (result.success) {
+        toast.success('Registration successful! Redirecting to login...');
+        // Redirect to login page after short delay
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
       } else {
-        toast.error(response.message || 'Registration failed');
+        let errorMsg = result.error || 'Registration failed';
+        // Map common errors to user-friendly messages
+        if (errorMsg.toLowerCase().includes('email') && errorMsg.toLowerCase().includes('exist')) {
+          errorMsg = 'User already exists';
+        } else if (errorMsg.toLowerCase().includes('invalid') && errorMsg.toLowerCase().includes('email')) {
+          errorMsg = 'Invalid email format';
+        }
+        setApiError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (err) {
       console.error('Registration error:', err);
-      toast.error(err.response?.data?.message || 'Registration failed. Please try again.');
+      let msg = err.message || err.response?.data?.message || 'Registration failed. Please try again.';
+      // Map common errors to user-friendly messages
+      if (msg.toLowerCase().includes('email') && msg.toLowerCase().includes('exist')) {
+        msg = 'User already exists';
+      } else if (msg.toLowerCase().includes('invalid') && msg.toLowerCase().includes('email')) {
+        msg = 'Invalid email format';
+      } else if (msg.toLowerCase().includes('already exists')) {
+        msg = 'User already exists';
+      }
+      setApiError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -162,7 +225,18 @@ export function Register({ navigate, onRegister }) {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Role Selection */}
               <div>
-                <Label>I am a</Label>
+                <Label htmlFor="role-selection">Register as</Label>
+                {/* Hidden select for accessibility and testing */}
+                <select
+                  id="role-selection"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="sr-only"
+                  aria-label="Register as"
+                >
+                  <option value="patient">Patient</option>
+                  <option value="doctor">Doctor</option>
+                </select>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   <button
                     type="button"
@@ -256,23 +330,26 @@ export function Register({ navigate, onRegister }) {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                {password && (
-                  <div className="mt-2 space-y-1">
-                    {passwordErrors.length === 0 ? (
-                      <div className="flex items-center gap-2 text-sm text-green-600">
-                        <CheckCircle2 className="w-4 h-4" />
-                        Password meets all requirements
-                      </div>
-                    ) : (
-                      passwordErrors.map((error, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm text-red-600">
-                          <AlertCircle className="w-4 h-4" />
-                          {error}
-                        </div>
-                      ))
-                    )}
-                  </div>
+                {errors.password && (
+                  <p className="text-sm text-red-600 mt-1">{errors.password}</p>
                 )}
+                <ul className="mt-2 space-y-1">
+                  {getPasswordRequirements(password).map((req, i) => (
+                    <li
+                      key={i}
+                      className={`flex items-center gap-2 text-sm ${
+                        req.met ? 'text-green-600' : 'text-gray-600'
+                      }`}
+                    >
+                      {req.met ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4" />
+                      )}
+                      {req.text}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               {/* Patient-specific Fields */}
@@ -295,13 +372,12 @@ export function Register({ navigate, onRegister }) {
                   <div>
                     <Label htmlFor="gender">Gender</Label>
                     <Select value={gender} onValueChange={setGender}>
-                      <SelectTrigger className={`mt-2 ${errors.gender ? 'border-red-500' : ''}`}>
+                      <SelectTrigger id="gender" className={`mt-2 ${errors.gender ? 'border-red-500' : ''}`}>
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="male">Male</SelectItem>
                         <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                     {errors.gender && (
@@ -317,7 +393,7 @@ export function Register({ navigate, onRegister }) {
                   <div>
                     <Label htmlFor="specialty">Specialty</Label>
                     <Select value={specialty} onValueChange={setSpecialty}>
-                      <SelectTrigger className={`mt-2 ${errors.specialty ? 'border-red-500' : ''}`}>
+                      <SelectTrigger id="specialty" className={`mt-2 ${errors.specialty ? 'border-red-500' : ''}`}>
                         <SelectValue placeholder="Select specialty" />
                       </SelectTrigger>
                       <SelectContent>
@@ -362,7 +438,14 @@ export function Register({ navigate, onRegister }) {
                       <p className="text-sm text-red-600 mt-1">{errors.location}</p>
                     )}
                   </div>
-                </>
+                </>  
+              )}
+
+              {apiError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{apiError}</AlertDescription>
+                </Alert>
               )}
 
               <Button
@@ -370,19 +453,19 @@ export function Register({ navigate, onRegister }) {
                 className="w-full bg-[#667eea] hover:bg-[#5568d3]"
                 disabled={loading}
               >
-                {loading ? 'Creating Account...' : 'Create Account'}
+                {loading ? 'Registering...' : 'Create Account'}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Already have an account?{' '}
-                <button
-                  onClick={() => navigate('login')}
+                <Link
+                  to="/login"
                   className="text-[#667eea] hover:text-[#5568d3]"
                 >
                   Login
-                </button>
+                </Link>
               </p>
             </div>
           </CardContent>

@@ -14,7 +14,25 @@ const findAll = async (filters = {}) => {
     .from("appointments")
     .select(
       `
-      *
+      *,
+      doctor:doctor_id (
+        doctor_id,
+        user_id,
+        name,
+        specialty,
+        phone,
+        location
+      ),
+      patient:patient_id (
+        patient_id,
+        user_id,
+        phone,
+        date_of_birth,
+        gender,
+        profiles!patient_id (
+          full_name
+        )
+      )
     `
     )
     .is("deleted_at", null); // Exclude soft-deleted
@@ -53,7 +71,32 @@ const findAll = async (filters = {}) => {
     throw error;
   }
 
-  return data;
+  // Format the data to include flattened doctor and patient info
+  const formatted = data.map(apt => ({
+    ...apt,
+    doctor_name: apt.doctor?.name ? `Dr. ${apt.doctor.name}` : null,
+    doctor_specialty: apt.doctor?.specialty,
+    doctor_phone: apt.doctor?.phone,
+    doctor_location: apt.doctor?.location,
+    patient_name: apt.patient?.profiles?.full_name || `Patient ${apt.patient_id}`,
+    patient_user_id: apt.patient?.user_id,
+    patient_phone: apt.patient?.phone,
+    patient_gender: apt.patient?.gender,
+    patient_dob: apt.patient?.date_of_birth
+  }));
+  
+  // Log first appointment to debug
+  if (formatted.length > 0) {
+    logger.info('Sample appointment data', { 
+      sample: {
+        patient_id: formatted[0].patient_id,
+        patient_user_id: formatted[0].patient_user_id,
+        patient_object: formatted[0].patient
+      }
+    });
+  }
+  
+  return formatted;
 };
 
 /**
@@ -67,11 +110,26 @@ const findById = async (appointmentId) => {
     .is("deleted_at", null)
     .single();
 
-  if (error && error.code !== "PGRST116") {
+  if (error) {
+    // PGRST116 means no rows returned - this is expected for not found
+    if (error.code === "PGRST116") {
+      return null;
+    }
+
+    // Other errors (like invalid UUID format) should be logged and thrown
     logger.error("Error finding appointment by ID", {
       appointmentId,
       error: error.message,
+      errorCode: error.code
     });
+
+    // If it's a validation error (invalid UUID), return 400
+    if (error.message && error.message.includes('invalid input syntax')) {
+      const validationError = new Error('Invalid appointment ID format');
+      validationError.statusCode = 400;
+      throw validationError;
+    }
+
     throw error;
   }
 
@@ -97,20 +155,24 @@ const findByDoctorId = async (doctorId) => {
  */
 const findUpcoming = async (userId, role) => {
   const now = new Date().toISOString();
-  const filters = {
-    startDate: now,
-    status: "scheduled",
-  };
+
+  let query = supabase.from("appointments").select("*").is("deleted_at", null)
+                     .gte("date", now)
+                     .in("status", ['scheduled', 'booked', 'confirmed']); // explicitly list the statuses
 
   if (role === "patient") {
-    filters.patientId = userId;
+    query = query.eq("patient_id", userId);
   } else if (role === "doctor") {
-    filters.doctorId = userId;
+    query = query.eq("doctor_id", userId);
   }
 
-  return await findAll(filters);
-};
+  query = query.order("date", { ascending: true }).order("time_slot", { ascending: true });
 
+  const { data, error } = await query;
+  if (error) throw error;
+
+  return data;
+};
 /**
  * Get past appointments
  */
@@ -182,7 +244,16 @@ const update = async (appointmentId, updates) => {
       appointmentId,
       updates,
       error: error.message,
+      errorCode: error.code
     });
+
+    // If no rows were updated, the appointment doesn't exist
+    if (error.code === 'PGRST116') {
+      const notFoundError = new Error('Appointment not found');
+      notFoundError.statusCode = 404;
+      throw notFoundError;
+    }
+
     throw error;
   }
 

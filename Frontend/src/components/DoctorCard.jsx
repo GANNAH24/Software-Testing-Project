@@ -1,8 +1,5 @@
 import { MapPin, Star, Phone } from 'lucide-react';
-import { Doctor } from '../lib/mockData';
 import { Card } from './ui/card';
-
-
 
 export function DoctorCard({ doctor, onClick }) {
   return (
@@ -13,7 +10,7 @@ export function DoctorCard({ doctor, onClick }) {
       <div className="flex items-start gap-4">
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center flex-shrink-0">
           <span className="text-white text-xl">
-            {doctor.name.split(' ').map(n => n[0]).join('')}
+            {doctor.name?.split(' ').map(n => n[0]).join('') || 'Dr'}
           </span>
         </div>
         
@@ -23,7 +20,7 @@ export function DoctorCard({ doctor, onClick }) {
           
           <div className="flex items-center gap-1 text-sm text-gray-500 mb-2">
             <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-            <span>{doctor.reviewsCount} reviews</span>
+            <span>{doctor.reviews_count || doctor.reviewsCount || 0} reviews</span>
           </div>
           
           <div className="flex items-start gap-2 text-sm text-gray-600 mb-1">
