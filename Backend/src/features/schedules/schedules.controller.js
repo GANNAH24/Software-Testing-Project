@@ -34,20 +34,30 @@ const ensureDoctorForUser = async (user) => {
 };
 
 const createSchedule = asyncHandler(async (req, res) => {
-    // Resolve or create doctor record for the authenticated user
     const doctor = await ensureDoctorForUser(req.user);
 
     const scheduleData = {
         doctorId: doctor.doctor_id || doctor.id || doctor.doctorId,
         date: req.body.date,
         timeSlot: req.body.timeSlot || req.body.time_slot,
-        isAvailable: req.body.isAvailable !== undefined ? req.body.isAvailable : req.body.is_available,
-        repeatWeekly: req.body.repeatWeekly || req.body.repeat_weekly || false
+        // Normalize isAvailable with proper default
+        isAvailable: req.body.isAvailable !== undefined 
+                     ? req.body.isAvailable 
+                     : (req.body.is_available !== undefined ? req.body.is_available : true),
+        repeatWeekly: req.body.repeatWeekly 
+                     || req.body.repeat_weekly 
+                     || false
     };
 
-    const schedule = await schedulesService.createSchedule(scheduleData);
-    res.status(201).json(successResponse(schedule, 'Schedule created successfully', 201));
+    try {
+        const schedule = await schedulesService.createSchedule(scheduleData);
+        res.status(201).json(successResponse(schedule, 'Schedule created successfully', 201));
+    } catch (err) {
+        const statusCode = err.statusCode || 400;
+        res.status(statusCode).json(errorResponse(err.message, statusCode));
+    }
 });
+
 
 /**
  * Get weekly schedule

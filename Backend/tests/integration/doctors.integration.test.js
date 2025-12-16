@@ -158,16 +158,16 @@ describe('Doctors API Integration Tests', () => {
       expect(doctorIds).toContain(doctor2Id);
     });
 
-    it.skip('should retrieve doctors with pagination', async () => {
-      // Act
-      const response = await request(app)
-        .get('/api/v1/doctors?limit=1&offset=0')
-        .expect(200);
+    // it.skip('should retrieve doctors with pagination', async () => {
+    //   // Act
+    //   const response = await request(app)
+    //     .get('/api/v1/doctors?limit=1&offset=0')
+    //     .expect(200);
 
-      // Assert
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.length).toBeLessThanOrEqual(1);
-    });
+    //   // Assert
+    //   expect(response.body.success).toBe(true);
+    //   expect(response.body.data.length).toBeLessThanOrEqual(1);
+    // });
   });
 
   /**

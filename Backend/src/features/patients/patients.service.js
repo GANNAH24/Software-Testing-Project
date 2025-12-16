@@ -6,6 +6,9 @@
 
 const PatientsRepository = require('./patients.repository');
 const { supabase } = require('../../config/database');
+const { mapPatientUpdatesToDb } = require('./patients.mapper');
+
+
 
 const PatientsService = {
   // List all patients
@@ -14,18 +17,35 @@ const PatientsService = {
   },
 
   // Get a patient by ID
-  async getById(patientId) {
-    return await PatientsRepository.getPatientById(patientId);
-  },
+async getById(patientId) {
+  const patient = await PatientsRepository.getPatientById(patientId);
+
+  if (!patient) {
+    return null; // ✅ DO NOT throw
+  }
+
+  return {
+    ...patient,
+    full_name: patient.profiles?.full_name || null
+  };
+}
+
+,
 
   // Get a patient by user ID
-  async getByUserId(userId) {
-    const patient = await PatientsRepository.getPatientByUserId(userId);
-    if (!patient) {
-      throw new Error('Patient not found');
-    }
-    return patient;
-  },
+async getByUserId(userId) {
+  const patient = await PatientsRepository.getPatientByUserId(userId);
+
+  if (!patient) {
+    throw new Error('Patient not found');
+  }
+
+  // ✅ ADD SAME NORMALIZATION
+  return {
+    ...patient,
+    full_name: patient.profiles?.full_name || null
+  };
+},
 
   // Create a new patient
   async create(patientData) {
@@ -34,7 +54,13 @@ const PatientsService = {
 
   // Update a patient
   async update(patientId, updates) {
-    return await PatientsRepository.updatePatient(patientId, updates);
+    const dbUpdates = mapPatientUpdatesToDb(updates);
+
+    if (Object.keys(dbUpdates).length === 0) {
+      throw new Error('No valid fields to update');
+    }
+
+    return await PatientsRepository.updatePatient(patientId, dbUpdates);
   },
 
   // Fetch all appointments for a patient
@@ -100,3 +126,4 @@ const PatientsService = {
 };
 
 module.exports = PatientsService;
+

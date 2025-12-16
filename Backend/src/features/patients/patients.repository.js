@@ -28,9 +28,15 @@ const PatientsRepository = {
     try {
       const { data, error } = await supabase
         .from('patients')
-        .select('*')
+        .select(`
+          *,
+          profiles:profiles (
+            full_name
+          )
+        `)
         .eq('patient_id', patientId)
-        .single();
+        .maybeSingle();
+
 
       if (error) {
         console.error('[DEBUG] Supabase error in getPatientById:', error);

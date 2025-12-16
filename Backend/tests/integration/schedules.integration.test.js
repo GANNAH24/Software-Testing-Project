@@ -110,7 +110,7 @@ describe('Schedules API Integration Tests', () => {
 
       const scheduleData = {
         date: dateString,
-        time_slot: '09:00-10:00',
+        timeSlot: '09:00-10:00',
         is_available: true,
         repeat_weekly: false
       };
@@ -425,7 +425,7 @@ describe('Schedules API Integration Tests', () => {
         .set('Authorization', `Bearer ${doctorToken}`)
         .send({
           date: farDateString,
-          time_slot: '10:00-11:00',
+          timeSlot: '10:00-11:00',
           is_available: true,
           repeat_weekly: false
         });
@@ -447,7 +447,7 @@ describe('Schedules API Integration Tests', () => {
         .set('Authorization', `Bearer ${doctorToken}`)
         .send({
           date: nearDateString,
-          time_slot: '11:00-12:00',
+          timeSlot: '11:00-12:00',
           is_available: true,
           repeat_weekly: false
         });
