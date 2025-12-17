@@ -203,4 +203,3 @@ async create(patientData) {
 };
 
 module.exports = PatientsService;
-
