@@ -65,37 +65,40 @@ describe("Patients Service - Unit Tests (Mocked)", () => {
     });
   });
 
-  describe("getByUserId()", () => {
-    it("should retrieve patient by user ID", async () => {
-      const mockPatient = {
-        patient_id: "p1",
-        user_id: "u1",
-        first_name: "Alice",
-        full_name: null, // repository returns null
-      };
+describe("getByUserId()", () => {
+  it("should retrieve patient by user ID", async () => {
+    const mockPatient = {
+      patient_id: "p1",
+      user_id: "u1",
+      first_name: "Alice",
+      profiles: null,
+    };
 
-      PatientsRepository.getPatientById.mockResolvedValue(mockPatient);
+    // ✅ FIX: mock the CORRECT method
+    PatientsRepository.getPatientByUserId.mockResolvedValue(mockPatient);
 
-      const result = await PatientsService.getByUserId("u1");
+    const result = await PatientsService.getByUserId("u1");
 
-      expect(result.full_name).toBe("Alice"); // service fills full_name
-      expect(result).toMatchObject({
-        patient_id: "p1",
-        user_id: "u1",
-        first_name: "Alice",
-      });
-
-      expect(PatientsRepository.getPatientById).toHaveBeenCalledWith("u1");
+    expect(result.full_name).toBe("Alice");
+    expect(result).toMatchObject({
+      patient_id: "p1",
+      user_id: "u1",
+      first_name: "Alice",
     });
 
-    it("should throw error when patient not found", async () => {
-      PatientsRepository.getPatientById.mockResolvedValue(null);
-
-      await expect(PatientsService.getByUserId("u1")).rejects.toThrow(
-        "Patient not found"
-      );
-    });
+    // ✅ FIX: correct expectation
+    expect(PatientsRepository.getPatientByUserId).toHaveBeenCalledWith("u1");
   });
+
+  it("should throw error when patient not found", async () => {
+    // ✅ FIX: mock correct method
+    PatientsRepository.getPatientByUserId.mockResolvedValue(null);
+
+    await expect(
+      PatientsService.getByUserId("u1")
+    ).rejects.toThrow("Patient not found");
+  });
+});
 
 describe("update()", () => {
   it("should update patient information", async () => {
