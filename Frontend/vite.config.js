@@ -57,4 +57,9 @@ module.exports = defineConfig({
     port: 5173,
     open: true,
   },
+  test: {
+  environment: 'jsdom',
+  globals: true, // optional: allows using "describe" & "it" without imports if you want
+},
+
 });

@@ -9,7 +9,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { DoctorCard } from '../components/DoctorCard';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
-import { useAuth } from '../App';
+import { useAuth } from '../shared/hooks/useAuth';
 import { specialties, locations, timeSlots } from '../lib/mockData';
 import { toast } from 'sonner';
 import doctorService from '../shared/services/doctor.service';

@@ -54,8 +54,9 @@ describe('Patients API Integration Tests', () => {
 
     patientToken = patientLogin.body.data.token;
 
-    // Get patient ID - patient_id equals user_id from registration
-    patientId = patientUserId;
+    // Get patient ID
+const patient = await PatientsService.getByUserId(patientUserId);
+patientId = patient.patient_id;
 
     // Create test doctor
     const doctorEmail = `doctor-${Date.now()}@test.com`;
@@ -316,11 +317,6 @@ expect(patientFromDb.phone).toBe(updates.phone);
           repeatWeekly: false
         });
 
-      if (!scheduleRes.body.success || !scheduleRes.body.data) {
-        console.warn('Schedule creation failed in beforeEach:', scheduleRes.body);
-        return;
-      }
-
       const newScheduleId = scheduleRes.body.data.schedule_id;
 
       // Book appointment
@@ -335,7 +331,7 @@ expect(patientFromDb.phone).toBe(updates.phone);
           reason: 'Test cancellation'
         });
 
-      if (appointmentRes.body.success && appointmentRes.body.data) {
+      if (appointmentRes.body.success) {
         cancelTestAppointmentId = appointmentRes.body.data.appointment_id;
       }
     });

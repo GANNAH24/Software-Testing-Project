@@ -1,6 +1,4 @@
-// src/features/patients/patients.controller.js
-const PatientsService = require('./patients.service');
-const { successResponse, errorResponse } = require('../../shared/utils/response.util');
+const PatientsService = require("./patients.service");
 
 const PatientsController = {
   async getAll(req, res) {
@@ -96,8 +94,7 @@ const PatientsController = {
     try {
       const patientId = req.params.id;
 
-      // Authorization: patient_id equals user_id (from registration)
-      // So we can directly compare req.user.id with patientId
+      // Authorization: Ensure the authenticated user matches the requested patient
       if (req.user.id !== patientId) {
         return res.status(403).json({
           success: false,
@@ -126,8 +123,7 @@ const PatientsController = {
       const patientId = req.params.id;
       const { appointmentId } = req.body;
 
-      // ✅ Authorization: patient_id equals user_id (from registration)
-      // So we can directly compare req.user.id with patientId
+      // ✅ Authorization using patient_id ONLY
       if (req.user.id !== patientId) {
         return res.status(403).json({
           success: false,
@@ -143,12 +139,6 @@ const PatientsController = {
         data,
       });
     } catch (error) {
-      if (error.message === 'Appointment not found') {
-        return res.status(404).json({
-          success: false,
-          message: "Appointment not found",
-        });
-      }
       return res.status(500).json({
         success: false,
         message: "Failed to cancel appointment",

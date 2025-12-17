@@ -18,7 +18,7 @@ if (!process.env.FRONTEND_URL) process.env.FRONTEND_URL = 'http://localhost:5173
 // For unit tests, we'll mock Supabase. For integration tests, use real credentials from .env
 
 // Global test timeout
-jest.setTimeout(30000);
+jest.setTimeout(60000); // Increased timeout for appointment queries
 
 // Mock console methods to reduce noise in tests
 // Mock console methods to reduce noise in tests
