@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const config = require('./config/environment');
 const logger = require('./shared/utils/logger.util');
@@ -21,6 +22,9 @@ const reviewsRoutes = require('./features/reviews/reviews.routes');
 
 // Create Express app
 const app = express();
+
+// Middleware
+app.use(cors());
 
 console.log('[STARTUP] Loading app.js with manual CORS middleware');
 

@@ -1,20 +1,31 @@
+/**
+ * @file BookAppointment.test.jsx
+ * @description Integration tests for the Appointment Booking flow.
+ * * Verified User Stories:
+ * - US-007: Search Doctors by Name - Validates that the doctor list filters based on name input.
+ * - US-008: Filter Doctors by Specialty - Validates that the specialty dropdown correctly filters results.
+ * - US-011: Book Appointment - Validates the 3-step wizard flow, including date/time selection
+ * and successful API submission.
+ * * Technical Coverage:
+ * - Component State Transitions (Step 1 -> Step 2 -> Step 3).
+ * - Integration with DoctorService and AppointmentService.
+ * - Error Handling: Validates UI feedback (Toasts) on API failure.
+ * - Deep Linking: Validates automatic state hydration via URL search parameters.
+ * * Tools: Vitest, React Testing Library, JSDOM.
+ */
+
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { BookAppointment } from '../../../src/pages/BookAppointment';
-
 import doctorService from '../../../src/shared/services/doctor.service';
 import appointmentService from '../../../src/shared/services/appointment.service';
-import scheduleService from '../../../src/shared/services/schedule.service';
+import { toast } from 'sonner';
 
-/* =======================
-   MOCKS
-======================= */
-
-vi.mock('../../../src/shared/services/doctor.service');
-vi.mock('../../../src/shared/services/appointment.service');
-vi.mock('../../../src/shared/services/schedule.service');
-
+/**
+ * 1. Define Explicit Spies
+ */
+const mockNavigate = vi.fn();
 vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
@@ -22,142 +33,140 @@ vi.mock('sonner', () => ({
   },
 }));
 
-const mockUser = { id: 'patient-123', role: 'patient' };
+/**
+ * 2. Mock Services and Data
+ */
+vi.mock('../../../src/shared/services/doctor.service');
+vi.mock('../../../src/shared/services/appointment.service');
 
-vi.mock('../../../src/App', () => ({
-  useAuth: () => ({ user: mockUser }),
+vi.mock('../../../src/lib/mockData', () => ({
+  specialties: ['Cardiology', 'Pediatrics', 'Neurology'],
+  locations: ['New York', 'Los Angeles', 'Chicago'],
+  timeSlots: ['09:00 AM', '10:00 AM', '11:00 AM']
 }));
 
-const mockNavigate = vi.fn();
-
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  };
-});
-
-/* =======================
-   MOCK DATA
-======================= */
+vi.mock('../../../src/App', () => ({
+  useAuth: () => ({ 
+    user: { id: 'patient-123', name: 'Test Patient', role: 'patient' } 
+  }),
+}));
 
 const mockDoctors = [
-  {
-    doctor_id: 'doctor-1',
-    id: 'doctor-1',
-    name: 'Dr. John Smith',
-    specialty: 'Cardiology',
-    location: 'New York',
-    years_experience: 10,
-  },
-  {
-    doctor_id: 'doctor-2',
-    id: 'doctor-2',
-    name: 'Dr. Jane Doe',
-    specialty: 'Pediatrics',
-    location: 'Los Angeles',
-    years_experience: 8,
-  },
+  { id: 'doctor-1', doctor_id: 'doctor-1', name: 'Dr. John Smith', specialty: 'Cardiology', location: 'New York' },
+  { id: 'doctor-2', doctor_id: 'doctor-2', name: 'Dr. Jane Doe', specialty: 'Pediatrics', location: 'Los Angeles' }
 ];
 
-/* =======================
-   TEST SUITE
-======================= */
-
-describe('BookAppointment Component - Booking Flow Only (US-011)', () => {
+describe('BookAppointment Page Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    doctorService.list.mockResolvedValue({ data: mockDoctors });
+  });
 
-    // Doctors list
-    doctorService.list.mockResolvedValue({
-      data: mockDoctors,
+  const renderPage = () => render(
+    <BrowserRouter>
+      <BookAppointment navigate={mockNavigate} />
+    </BrowserRouter>
+  );
+
+  describe('Step 1: Doctor Selection & Filtering', () => {
+    it('should display the search interface and results', async () => {
+      renderPage();
+      expect(screen.getByText(/Book Appointment/i)).toBeInTheDocument();
+      await waitFor(() => expect(screen.getByText('Dr. John Smith')).toBeInTheDocument());
     });
 
-    // Available time slots
-    scheduleService.availableSlots.mockResolvedValue({
-      availableSlots: ['09:00 - 10:00', '10:00 - 11:00'],
+    it('should filter doctors by name search (US-007)', async () => {
+      renderPage();
+      await waitFor(() => expect(screen.getByText('Dr. John Smith')).toBeInTheDocument());
+
+      const searchInput = screen.getByPlaceholderText(/name or specialty/i);
+      fireEvent.change(searchInput, { target: { value: 'Jane' } });
+
+      await waitFor(() => {
+        expect(screen.getByText('Dr. Jane Doe')).toBeInTheDocument();
+        expect(screen.queryByText('Dr. John Smith')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should filter doctors by specialty dropdown (US-008)', async () => {
+      renderPage();
+      await waitFor(() => expect(screen.getByText('Dr. John Smith')).toBeInTheDocument());
+
+      const specialtySelect = document.getElementById('specialty');
+      fireEvent.change(specialtySelect, { target: { value: 'Pediatrics' } });
+
+      await waitFor(() => {
+        expect(screen.getByText('Dr. Jane Doe')).toBeInTheDocument();
+        expect(screen.queryByText('Dr. John Smith')).not.toBeInTheDocument();
+      });
     });
   });
 
-  it('should allow a patient to book an appointment for a specific doctor, date, and time (US-011)', async () => {
-    // Appointment creation success
-    appointmentService.create.mockResolvedValue({
-      data: {
-        appointment_id: 'apt-999',
-        status: 'booked',
-      },
+  describe('Step 2 & 3: Appointment Booking Flow (US-011)', () => {
+    it('should complete the full booking wizard successfully', async () => {
+      appointmentService.create.mockResolvedValue({ success: true });
+      renderPage();
+
+      // Step 1: Select Doctor
+      await waitFor(() => expect(screen.getByText('Dr. John Smith')).toBeInTheDocument());
+      fireEvent.click(screen.getByText('Dr. John Smith'));
+
+      // Step 2: Select Date
+      await waitFor(() => expect(screen.getByText(/Choose Date/i)).toBeInTheDocument());
+      // Select the first button that isn't a navigation button
+      const buttons = screen.getAllByRole('button');
+      const dateBtn = buttons.find(b => !b.textContent.includes('Change') && !b.textContent.includes('Back'));
+      fireEvent.click(dateBtn);
+
+      // Step 3: Select Time & Confirm
+      await waitFor(() => expect(screen.getByText(/Select Time Slot/i)).toBeInTheDocument());
+      fireEvent.click(screen.getByText('09:00 AM'));
+      
+      const confirmBtn = screen.getByRole('button', { name: /Confirm Appointment/i });
+      fireEvent.click(confirmBtn);
+
+      await waitFor(() => {
+        expect(appointmentService.create).toHaveBeenCalled();
+        expect(toast.success).toHaveBeenCalledWith(expect.stringMatching(/successfully/i));
+        expect(mockNavigate).toHaveBeenCalledWith('/patient/appointments');
+      });
     });
 
-    render(
-      <BrowserRouter>
-        <BookAppointment navigate={mockNavigate} />
-      </BrowserRouter>
-    );
+    it('should handle booking errors gracefully', async () => {
+      const errorMessage = 'This slot is no longer available';
+      appointmentService.create.mockRejectedValue({ 
+        response: { data: { message: errorMessage } } 
+      });
+      
+      renderPage();
+      
+      // Fast forward to step 3
+      await waitFor(() => fireEvent.click(screen.getByText('Dr. John Smith')));
+      await waitFor(() => {
+        const dateBtn = screen.getAllByRole('button').find(b => !b.textContent.includes('Change'));
+        fireEvent.click(dateBtn);
+      });
+      await waitFor(() => fireEvent.click(screen.getByText('09:00 AM')));
+      
+      fireEvent.click(screen.getByRole('button', { name: /Confirm Appointment/i }));
 
-    /* =======================
-       STEP 1: Doctors Load
-    ======================= */
-    await waitFor(() => {
-      expect(screen.getByText('Dr. John Smith')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(errorMessage);
+      });
     });
+  });
 
-    /* =======================
-       STEP 2: Select Doctor
-    ======================= */
-    const selectDoctorButtons = screen.getAllByRole('button', {
-      name: /select/i,
-    });
-    fireEvent.click(selectDoctorButtons[0]);
+  describe('Direct Deep Linking', () => {
+    it('should skip to Step 2 if doctor ID is in URL', async () => {
+      delete window.location;
+      window.location = new URL('http://localhost:3000/book?doctor=doctor-2');
 
-    /* =======================
-       STEP 3: Select Date
-    ======================= */
-    const selectDateButtons = await screen.findAllByRole('button', {
-      name: /select date/i,
-    });
-    fireEvent.click(selectDateButtons[0]);
+      renderPage();
 
-    /* =======================
-       STEP 4: Time Slot Section Appears
-    ======================= */
-    await waitFor(() => {
-      expect(
-        screen.getByText(/select time slot/i)
-      ).toBeInTheDocument();
-    });
-
-     /* =======================
-       STEP 5: Select Time Slot (Select Dropdown)
-     ======================= */
-     // Open the Select dropdown by clicking the placeholder text
-     const selectTrigger = screen.getByText('Choose a time slot');
-     fireEvent.click(selectTrigger);
-     // Select the time slot option by text
-     const slotOption = await screen.findByText('10:00 - 11:00');
-     fireEvent.click(slotOption);
-
-    /* =======================
-       STEP 6: Confirm Appointment
-    ======================= */
-    const confirmButton = screen.getByRole('button', {
-      name: /confirm appointment/i,
-    });
-    fireEvent.click(confirmButton);
-
-    /* =======================
-       ASSERTIONS
-    ======================= */
-    await waitFor(() => {
-      expect(appointmentService.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          doctor_id: 'doctor-1',
-        })
-      );
-
-      expect(mockNavigate).toHaveBeenCalledWith(
-        '/patient/appointments'
-      );
+      await waitFor(() => {
+        expect(screen.getByText(/Choose Date/i)).toBeInTheDocument();
+        expect(screen.getByText('Dr. Jane Doe')).toBeInTheDocument();
+      });
     });
   });
 });

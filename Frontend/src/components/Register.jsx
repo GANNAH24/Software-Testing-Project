@@ -162,12 +162,12 @@ export function Register() {
 
     try {
       const userData = {
-        email,
-        password,
-        fullName,
+        email: email.trim(),
+        password: password,
+        fullName: fullName.trim(),
         role,
-        phone, // Ensure backend expects 'phone' or 'phoneNumber'
-        phoneNumber: phone, // Sending both just in case
+        phone: phone.trim(), // Ensure backend expects 'phone' or 'phoneNumber'
+        phoneNumber: phone.trim(), // Sending both just in case
         ...(role === 'patient' ? { dateOfBirth, gender } : {}),
         ...(role === 'doctor' ? { specialty, qualifications, location } : {}),
       };

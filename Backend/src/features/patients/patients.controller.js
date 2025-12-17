@@ -1,4 +1,6 @@
-const PatientsService = require("./patients.service");
+// src/features/patients/patients.controller.js
+const PatientsService = require('./patients.service');
+const { successResponse, errorResponse } = require('../../shared/utils/response.util');
 
 const PatientsController = {
   async getAll(req, res) {
