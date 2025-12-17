@@ -139,6 +139,12 @@ const PatientsController = {
         data,
       });
     } catch (error) {
+      if (error.message === "Appointment not found") {
+        return res.status(404).json({
+          success: false,
+          message: "Appointment not found",
+        });
+      }
       return res.status(500).json({
         success: false,
         message: "Failed to cancel appointment",

@@ -31,8 +31,8 @@ async getById(patientId) {
 },
 
 // Get a patient by user ID
-async getByUserId(patientId) {
-  const patient = await PatientsRepository.getPatientById(patientId);
+async getByUserId(userId) {
+  const patient = await PatientsRepository.getPatientByUserId(userId);
 
   if (!patient) {
     throw new Error('Patient not found');
