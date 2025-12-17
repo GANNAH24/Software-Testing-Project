@@ -10,7 +10,8 @@ test.describe('Registration Validation Errors (E2E-003)', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/register');
-    await page.click('text=Patient');
+    // Click the Patient role button
+    await page.click('button:has-text("Patient")');
   });
 
   test('should show detailed password validation errors', async ({ page }) => {
@@ -30,10 +31,19 @@ test.describe('Registration Validation Errors (E2E-003)', () => {
   });
 
   test('should show invalid email error', async ({ page }) => {
+    // Fill all required fields except valid email
+    await page.fill('input#fullName', 'Test User');
     await page.fill('input[type="email"]', 'invalid-email');
+    await page.fill('input#password', 'ValidPass123!');
+    await page.fill('input#confirmPassword', 'ValidPass123!');
+    await page.fill('input#phone', '+1 555-1234');
+    await page.fill('input#dateOfBirth', '1990-01-01');
+    await page.selectOption('select#gender', 'Male');
+
     await page.click('button[type="submit"]');
 
-    const error = page.locator('text=/.*invalid email.*/i');
+    // Look for the specific validation error message  
+    const error = page.locator('text=/invalid email format/i');
     await expect(error).toBeVisible();
   });
 

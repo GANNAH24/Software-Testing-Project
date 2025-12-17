@@ -32,20 +32,20 @@ test.describe('Patient Registration and Login Journey (E2E-001)', () => {
     // Step 1: Navigate to registration page
     await page.click('text=Register');
     await expect(page).toHaveURL(/.*register/);
-    
+
     // Step 2: Verify registration form is displayed
     await expect(page.locator('h1, h2').filter({ hasText: /register/i })).toBeVisible();
-    
+
     // Step 3: Select patient role
-    await page.click('[value="patient"], text=Patient');
-    
+    await page.click('button:has-text("Patient")');
+
     // Step 4: Fill registration form
     await page.fill('input[name="email"], input[type="email"]', testPatient.email);
     await page.fill('input[name="password"], input[type="password"]', testPatient.password);
     await page.fill('input[name="fullName"]', testPatient.fullName);
     await page.fill('input[name="phoneNumber"], input[name="phone"]', testPatient.phone);
     await page.fill('input[name="dateOfBirth"], input[type="date"]', testPatient.dateOfBirth);
-    
+
     // Select gender
     const genderSelect = page.locator('select[name="gender"]');
     if (await genderSelect.isVisible()) {
@@ -53,14 +53,14 @@ test.describe('Patient Registration and Login Journey (E2E-001)', () => {
     } else {
       await page.click(`text=${testPatient.gender}`);
     }
-    
+
     // Step 5: Submit registration
     await page.click('button[type="submit"], button:has-text("Register")');
-    
+
     // Step 6: Verify successful registration
     // Either redirected to dashboard or see success message
     await page.waitForURL(/.*(?:dashboard|login)/, { timeout: 10000 });
-    
+
     // If redirected to login, proceed with login
     const currentUrl = page.url();
     if (currentUrl.includes('login')) {
@@ -69,7 +69,7 @@ test.describe('Patient Registration and Login Journey (E2E-001)', () => {
       await page.click('button[type="submit"]');
       await page.waitForURL(/.*dashboard/);
     }
-    
+
     // Step 7: Verify patient is logged in and on dashboard
     await expect(page).toHaveURL(/.*patient.*dashboard/);
     await expect(page.locator(`text=${testPatient.fullName}`)).toBeVisible({ timeout: 5000 });
@@ -78,13 +78,13 @@ test.describe('Patient Registration and Login Journey (E2E-001)', () => {
   test('should show validation errors for incomplete registration', async ({ page }) => {
     // Navigate to registration
     await page.click('text=Register');
-    
+
     // Select patient role
-    await page.click('[value="patient"], text=Patient');
-    
+    await page.click('button:has-text("Patient")');
+
     // Try to submit without filling required fields
     await page.click('button[type="submit"]');
-    
+
     // Verify validation errors are shown
     const errorMessages = page.locator('[class*="error"], [class*="invalid"], .text-red-500');
     await expect(errorMessages.first()).toBeVisible({ timeout: 3000 });
@@ -92,12 +92,12 @@ test.describe('Patient Registration and Login Journey (E2E-001)', () => {
 
   test('should show error for weak password', async ({ page }) => {
     await page.click('text=Register');
-    await page.click('[value="patient"], text=Patient');
-    
+    await page.click('button:has-text("Patient")');
+
     // Fill form with weak password
     await page.fill('input[type="email"]', testPatient.email);
     await page.fill('input[type="password"]', 'weak');
-    
+
     // Check if password strength indicator shows error
     const passwordError = page.locator('text=/.*(?:weak|strong|requirement).*/', { hasText: true });
     await expect(passwordError).toBeVisible({ timeout: 3000 });
@@ -106,14 +106,14 @@ test.describe('Patient Registration and Login Journey (E2E-001)', () => {
   test('should successfully login after registration', async ({ page }) => {
     // Assume user is already registered (from previous test or setup)
     await page.click('text=Login');
-    
+
     // Fill login form
     await page.fill('input[type="email"]', testPatient.email);
     await page.fill('input[type="password"]', testPatient.password);
-    
+
     // Submit login
     await page.click('button[type="submit"]:has-text("Login"), button[type="submit"]:has-text("Sign In")');
-    
+
     // Verify redirect to patient dashboard
     await page.waitForURL(/.*patient.*dashboard/, { timeout: 10000 });
     await expect(page).toHaveURL(/.*patient.*dashboard/);
@@ -121,14 +121,14 @@ test.describe('Patient Registration and Login Journey (E2E-001)', () => {
 
   test('should show error for invalid login credentials', async ({ page }) => {
     await page.click('text=Login');
-    
+
     // Fill with invalid credentials
     await page.fill('input[type="email"]', 'invalid@test.com');
     await page.fill('input[type="password"]', 'WrongPassword123!');
-    
+
     // Submit login
     await page.click('button[type="submit"]');
-    
+
     // Verify error message is shown
     const errorMessage = page.locator('text=/.*(?:invalid|incorrect|error).*/i');
     await expect(errorMessage.first()).toBeVisible({ timeout: 5000 });

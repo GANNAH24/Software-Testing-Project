@@ -1,7 +1,7 @@
 {
   "config": {
-    "configFile": "F:\\projects\\Se7ety\\Software-Testing-Project\\tests\\e2e\\playwright.config.js",
-    "rootDir": "F:/projects/Se7ety/Software-Testing-Project/tests/e2e/specs",
+    "configFile": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/playwright.config.js",
+    "rootDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs",
     "forbidOnly": false,
     "fullyParallel": true,
     "globalSetup": null,
@@ -10,7 +10,9 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {},
+    "metadata": {
+      "actualWorkers": 3
+    },
     "preserveOutput": "always",
     "reporter": [
       [
@@ -37,13 +39,15 @@
     "quiet": false,
     "projects": [
       {
-        "outputDir": "F:/projects/Se7ety/Software-Testing-Project/tests/e2e/test-results",
+        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 3
+        },
         "id": "chromium",
         "name": "chromium",
-        "testDir": "F:/projects/Se7ety/Software-Testing-Project/tests/e2e/specs",
+        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -51,13 +55,15 @@
         "timeout": 30000
       },
       {
-        "outputDir": "F:/projects/Se7ety/Software-Testing-Project/tests/e2e/test-results",
+        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 3
+        },
         "id": "firefox",
         "name": "firefox",
-        "testDir": "F:/projects/Se7ety/Software-Testing-Project/tests/e2e/specs",
+        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -65,13 +71,15 @@
         "timeout": 30000
       },
       {
-        "outputDir": "F:/projects/Se7ety/Software-Testing-Project/tests/e2e/test-results",
+        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 3
+        },
         "id": "webkit",
         "name": "webkit",
-        "testDir": "F:/projects/Se7ety/Software-Testing-Project/tests/e2e/specs",
+        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -79,13 +87,15 @@
         "timeout": 30000
       },
       {
-        "outputDir": "F:/projects/Se7ety/Software-Testing-Project/tests/e2e/test-results",
+        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 3
+        },
         "id": "Mobile Chrome",
         "name": "Mobile Chrome",
-        "testDir": "F:/projects/Se7ety/Software-Testing-Project/tests/e2e/specs",
+        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -93,13 +103,15 @@
         "timeout": 30000
       },
       {
-        "outputDir": "F:/projects/Se7ety/Software-Testing-Project/tests/e2e/test-results",
+        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 3
+        },
         "id": "Mobile Safari",
         "name": "Mobile Safari",
-        "testDir": "F:/projects/Se7ety/Software-Testing-Project/tests/e2e/specs",
+        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -112,22 +124,177 @@
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.57.0",
-    "workers": 4,
+    "workers": 5,
     "webServer": null
   },
-  "suites": [],
-  "errors": [
+  "suites": [
     {
-      "message": "Error: Timed out waiting 120000ms from config.webServer.",
-      "stack": "Error: Timed out waiting 120000ms from config.webServer."
+      "title": "registration-validation.spec.js",
+      "file": "registration-validation.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Registration Validation Errors (E2E-003)",
+          "file": "registration-validation.spec.js",
+          "line": 9,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should show detailed password validation errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 776,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T21:26:51.840Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "df40d5463c44b7988ef8-e5ed05e7c5443f448bc1",
+              "file": "registration-validation.spec.js",
+              "line": 17,
+              "column": 3
+            },
+            {
+              "title": "should show invalid email error",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 10735,
+                      "error": {
+                        "message": "TimeoutError: page.fill: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input#confirmPassword')\u001b[22m\n",
+                        "stack": "TimeoutError: page.fill: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input#confirmPassword')\u001b[22m\n\n    at /Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs/registration-validation.spec.js:38:16",
+                        "location": {
+                          "file": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs/registration-validation.spec.js",
+                          "column": 16,
+                          "line": 38
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 36 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[type=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'invalid-email'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 37 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#password'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'ValidPass123!'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 38 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#confirmPassword'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'ValidPass123!'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 39 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#phone'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'+1 555-1234'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 40 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#dateOfBirth'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'1990-01-01'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 41 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mselectOption(\u001b[32m'select#gender'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'Male'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs/registration-validation.spec.js",
+                            "column": 16,
+                            "line": 38
+                          },
+                          "message": "TimeoutError: page.fill: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input#confirmPassword')\u001b[22m\n\n\n\u001b[0m \u001b[90m 36 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[type=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'invalid-email'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 37 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#password'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'ValidPass123!'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 38 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#confirmPassword'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'ValidPass123!'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 39 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#phone'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'+1 555-1234'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 40 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#dateOfBirth'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'1990-01-01'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 41 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mselectOption(\u001b[32m'select#gender'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'Male'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs/registration-validation.spec.js:38:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T21:26:51.838Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results/registration-validation-Re-684f4-ld-show-invalid-email-error-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results/registration-validation-Re-684f4-ld-show-invalid-email-error-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results/registration-validation-Re-684f4-ld-show-invalid-email-error-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs/registration-validation.spec.js",
+                        "column": 16,
+                        "line": 38
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "df40d5463c44b7988ef8-0b52c1e85856d6c70c5e",
+              "file": "registration-validation.spec.js",
+              "line": 33,
+              "column": 3
+            },
+            {
+              "title": "should require full name",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 794,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T21:26:51.841Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "df40d5463c44b7988ef8-17176f893483afd472e5",
+              "file": "registration-validation.spec.js",
+              "line": 50,
+              "column": 3
+            }
+          ]
+        }
+      ]
     }
   ],
+  "errors": [],
   "stats": {
-    "startTime": "2025-12-17T20:07:24.148Z",
-    "duration": 120269.84300000001,
-    "expected": 0,
+    "startTime": "2025-12-17T21:26:51.365Z",
+    "duration": 11539.934000000001,
+    "expected": 2,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 1,
     "flaky": 0
   }
 }
