@@ -131,6 +131,8 @@ export function FindDoctors() {
       {/* Doctor Cards */}
       {loading ? (
         <p className="text-center text-gray-600">Loading doctors...</p>
+      ) : filteredDoctors.length === 0 ? (
+        <p className="text-center text-gray-600">No doctors found</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDoctors.map((doctor) => (

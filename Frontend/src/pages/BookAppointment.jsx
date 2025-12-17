@@ -28,18 +28,23 @@ export function BookAppointment({ navigate }) {
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState({});
 
+  // Defensive: ensure these are always arrays
+  const safeSpecialties = Array.isArray(specialties) ? specialties : [];
+  const safeLocations = Array.isArray(locations) ? locations : [];
+  const safeTimeSlots = Array.isArray(timeSlots) ? timeSlots : [];
+
+  const [doctorLoadError, setDoctorLoadError] = useState("");
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const doctorId = params.get('doctor');
-    
     const loadDoctors = async () => {
       setLoading(true);
+      setDoctorLoadError("");
       try {
         const result = await doctorService.list();
         const list = result?.data || result || [];
         const doctorList = Array.isArray(list) ? list : [];
         setDoctors(doctorList);
-        
         if (doctorId) {
           const doctor = doctorList.find(d => d.doctor_id === doctorId || d.id === doctorId);
           if (doctor) {
@@ -50,6 +55,7 @@ export function BookAppointment({ navigate }) {
       } catch (err) {
         console.error('Error loading doctors:', err);
         setDoctors([]);
+        setDoctorLoadError("Error loading doctors");
       } finally {
         setLoading(false);
       }
@@ -57,7 +63,7 @@ export function BookAppointment({ navigate }) {
     loadDoctors();
   }, []);
 
-  const filteredDoctors = doctors.filter(doc => {
+  const filteredDoctors = (Array.isArray(doctors) ? doctors : []).filter(doc => {
     const matchesSearch = !searchQuery ||
       doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.specialty.toLowerCase().includes(searchQuery.toLowerCase());
@@ -66,11 +72,12 @@ export function BookAppointment({ navigate }) {
     return matchesSearch && matchesSpecialty && matchesLocation;
   });
 
-  const availableDates = Array.from({ length: 30 }, (_, i) => {
+  const availableDatesRaw = Array.from({ length: 30 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() + i);
     return date;
-  }).filter(date => date.getDay() !== 0);
+  });
+  const availableDates = Array.isArray(availableDatesRaw) ? availableDatesRaw.filter(date => date.getDay() !== 0) : [];
 
   const handleSelectDoctor = (doctor) => {
     setSelectedDoctor(doctor);
@@ -157,7 +164,7 @@ export function BookAppointment({ navigate }) {
                 <Label htmlFor="specialty">Specialty</Label>
                 <select id="specialty" value={selectedSpecialty} onChange={(e) => setSelectedSpecialty(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#667eea]">
                   <option value="">All Specialties</option>
-                  {specialties.map(spec => (
+                  {safeSpecialties.map(spec => (
                     <option key={spec} value={spec}>{spec}</option>
                   ))}
                 </select>
@@ -166,7 +173,7 @@ export function BookAppointment({ navigate }) {
                 <Label htmlFor="location">Location</Label>
                 <select id="location" value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#667eea]">
                   <option value="">All Locations</option>
-                  {locations.map(loc => (
+                  {safeLocations.map(loc => (
                     <option key={loc} value={loc}>{loc}</option>
                   ))}
                 </select>
@@ -176,13 +183,19 @@ export function BookAppointment({ navigate }) {
           {errors.doctor && (
             <Alert variant="destructive" className="mb-6"><AlertDescription>{errors.doctor}</AlertDescription></Alert>
           )}
+          {doctorLoadError && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertDescription>{doctorLoadError}</AlertDescription>
+            </Alert>
+          )}
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">{[...Array(6)].map((_, i) => (<LoadingSkeleton key={i} variant="card" />))}</div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredDoctors.map(doctor => (
-                <div key={doctor.id} onClick={() => handleSelectDoctor(doctor)}>
-                  <DoctorCard doctor={doctor} onClick={() => handleSelectDoctor(doctor)} />
+                <div key={doctor.id}>
+                  <DoctorCard doctor={doctor} />
+                  <Button onClick={() => handleSelectDoctor(doctor)} className="mt-2 w-full" aria-label={`Select ${doctor.name || 'Doctor'}`}>Select</Button>
                 </div>
               ))}
             </div>
@@ -201,11 +214,16 @@ export function BookAppointment({ navigate }) {
             <h2 className="text-xl text-gray-900 mb-4">Select Date</h2>
             {errors.date && (<Alert variant="destructive" className="mb-6"><AlertDescription>{errors.date}</AlertDescription></Alert>)}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {availableDates.map((date) => {
+              {(Array.isArray(availableDates) ? availableDates : []).map((date) => {
                 const dateStr = date.toISOString().split('T')[0];
                 const isSelected = selectedDate === dateStr;
                 return (
-                  <button key={dateStr} onClick={() => handleSelectDate(dateStr)} className={`p-4 rounded-lg border-2 transition-all text-center ${isSelected ? 'border-[#667eea] bg-[#667eea]/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                  <button
+                    key={dateStr}
+                    onClick={() => handleSelectDate(dateStr)}
+                    className={`p-4 rounded-lg border-2 transition-all text-center ${isSelected ? 'border-[#667eea] bg-[#667eea]/5' : 'border-gray-200 hover:border-gray-300'}`}
+                    aria-label="Select Date"
+                  >
                     <p className={`text-sm ${isSelected ? 'text-[#667eea]' : 'text-gray-600'}`}>{date.toLocaleDateString('en-US', { weekday: 'short' })}</p>
                     <p className={`text-xl ${isSelected ? 'text-[#667eea]' : 'text-gray-900'}`}>{date.getDate()}</p>
                     <p className={`text-sm ${isSelected ? 'text-[#667eea]' : 'text-gray-600'}`}>{date.toLocaleDateString('en-US', { month: 'short' })}</p>
@@ -228,12 +246,17 @@ export function BookAppointment({ navigate }) {
             <h2 className="text-xl text-gray-900 mb-4">Select Time Slot</h2>
             {errors.time && (<Alert variant="destructive" className="mb-6"><AlertDescription>{errors.time}</AlertDescription></Alert>)}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
-              {timeSlots.map((slot) => {
+              {safeTimeSlots.map((slot) => {
                 const isSelected = selectedTime === slot;
                 return (
-                  <button key={slot} onClick={() => { setSelectedTime(slot); setErrors({}); }} className={`p-4 rounded-lg border-2 transition-all ${isSelected ? 'border-[#667eea] bg-[#667eea]/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                  <button
+                    key={slot}
+                    onClick={() => { setSelectedTime(slot); setErrors({}); }}
+                    className={`p-4 rounded-lg border-2 transition-all ${isSelected ? 'border-[#667eea] bg-[#667eea]/5' : 'border-gray-200 hover:border-gray-300'}`}
+                    aria-label={`Select time ${slot}`}
+                  >
                     <Clock className={`w-5 h-5 mx-auto mb-2 ${isSelected ? 'text-[#667eea]' : 'text-gray-400'}`} />
-                    <p className={`${isSelected ? 'text-[#667eea]' : 'text-gray-900'}`}>{slot}</p>
+                    <span className={`${isSelected ? 'text-[#667eea]' : 'text-gray-900'}`}>{slot}</span>
                   </button>
                 );
               })}
