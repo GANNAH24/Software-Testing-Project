@@ -46,7 +46,7 @@ export function Login() {
 
     try {
       console.log('Attempting login...');
-      const result = await login(email, password);
+      const result = await login(email.trim(), password);
       console.log('Login result:', result);
       
       if (result.success && result.user) {
