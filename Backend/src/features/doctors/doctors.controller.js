@@ -53,7 +53,9 @@ const getDetailedDoctorProfile = asyncHandler(async (req, res) => {
 
 const createDoctor = asyncHandler(async (req, res) => {
   const doctorData = {
-    userId: req.body.user_id,
+    email: req.body.email,
+    password: req.body.password,
+    role: "doctor",
     name: req.body.name,
     specialty: req.body.specialty,
     qualifications: req.body.qualifications,
@@ -63,9 +65,11 @@ const createDoctor = asyncHandler(async (req, res) => {
     workingHoursEnd: req.body.working_hours_end || '17:00:00',
     phone: req.body.phone
   };
+
   const doctor = await doctorsService.createDoctor(doctorData);
   res.status(201).json(successResponse(doctor, 'Doctor created successfully', 201));
 });
+
 
 const updateDoctor = asyncHandler(async (req, res) => {
   const updates = {};

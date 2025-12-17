@@ -10,6 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import adminService from '../../shared/services/admin.service';
 
+<<<<<<< HEAD
+import { get, post, put, del } from '../../shared/services/api.service';
+
+import { API_ENDPOINTS } from '../../config/api.config';
+
+
+// Converted from TSX: removed interfaces and type annotations
+=======
+>>>>>>> 36fdceb2e59021c5c1ebeb721738ac7567dd882d
 export function ManageDoctors({ navigate, user }) {
   const SPECIALTIES = [
     'Cardiology',
@@ -20,16 +29,25 @@ export function ManageDoctors({ navigate, user }) {
     'Internal Medicine'
   ];
 
+<<<<<<< HEAD
+  // real data from backend
+  const [doctors, setDoctors] = useState([]);
+
+  // UI state
+=======
   // State Management
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
 
+>>>>>>> 36fdceb2e59021c5c1ebeb721738ac7567dd882d
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+<<<<<<< HEAD
+=======
 
   const [formData, setFormData] = useState({
     name: '',
@@ -38,9 +56,165 @@ export function ManageDoctors({ navigate, user }) {
     location: '',
     phone: ''
   });
+>>>>>>> 36fdceb2e59021c5c1ebeb721738ac7567dd882d
 
-  const resetForm = () => setFormData({ name: '', specialty: '', qualifications: '', location: '', phone: '' });
+  // formData includes email & password for creation
+  const [formData, setFormData] = useState({
+    name: '',
+    specialty: '',
+    qualifications: '',
+    location: '',
+    phone: '',
+    email: '',
+    password: ''
+  });
 
+<<<<<<< HEAD
+  const resetForm = () => setFormData({
+    name: '',
+    specialty: '',
+    qualifications: '',
+    location: '',
+    phone: '',
+    email: '',
+    password: ''
+  });
+
+  // normalize server doctors -> UI shape
+  const normalizeDoctors = (serverDoctors = []) => {
+    return serverDoctors.map(d => ({
+      id: d.doctor_id || d.id || d.user_id || '',
+      name: d.name || '',
+      specialty: d.specialty || '',
+      qualifications: d.qualifications || '',
+      location: d.location || '',
+      phone: d.phoneNumber || d.phone || '',
+      reviewsCount: d.reviews ?? d.reviewsCount ?? 0,
+      email: d.email || (d.auth_user && d.auth_user.email) || ''
+    }));
+  };
+
+  useEffect(() => {
+    loadDoctors();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const loadDoctors = async () => {
+    try {
+      const res = await get(API_ENDPOINTS.DOCTORS.BASE);
+      console.log('Backend response:', res);
+      // res is expected like: { success, data, message }
+      const serverData = res?.data ?? [];
+      setDoctors(normalizeDoctors(serverData));
+    } catch (err) {
+      console.error('Failed to load doctors', err);
+      toast.error('Failed to load doctors');
+    }
+  };
+
+ // CREATE
+const handleCreate = async () => {
+  const { name, specialty, qualifications, location, phone, email, password } = formData;
+  if (!name || !specialty || !qualifications || !location || !phone || !email || !password) {
+    toast.error('❌ Please fill in all fields (including email & password)');
+    return;
+  }
+
+  try {
+    const body = {
+      email,
+      password,
+      role: 'doctor',
+      name,
+      specialty,
+      qualifications,
+      location,
+      phone: phone,
+      reviews: 0
+    };
+
+    const res = await post(API_ENDPOINTS.DOCTORS.BASE, body);
+    toast.success('✅ Doctor created successfully!');
+
+    // Add new doctor directly to state
+    const newDoctor = {
+      id: res.data.user.id,
+      name: res.data.user.fullName,
+      specialty: formData.specialty,
+      qualifications: formData.qualifications,
+      location: formData.location,
+      phone: formData.phone,
+      reviewsCount: 0,
+      email: formData.email
+    };
+    setDoctors(prev => [...prev, newDoctor]);
+
+    setCreateDialogOpen(false);
+    resetForm();
+  } catch (error) {
+    console.error('Create doctor failed', error);
+    const msg = error?.response?.data?.message || 'Failed to create doctor';
+    toast.error(msg);
+  }
+};
+
+// UPDATE
+const handleUpdate = async () => {
+  const { name, specialty, qualifications, location, phone } = formData;
+  if (!name || !specialty || !qualifications || !location || !phone) {
+    toast.error('❌ Please fill in all fields');
+    return;
+  }
+
+  try {
+    const body = {
+      name,
+      specialty,
+      qualifications,
+      location,
+      phoneNumber: phone
+    };
+
+    await put(API_ENDPOINTS.DOCTORS.BY_ID(selectedDoctor.id), body);
+    toast.success('✅ Doctor updated successfully!');
+
+    // Update doctor directly in state
+    setDoctors(prev =>
+      prev.map(doc =>
+        doc.id === selectedDoctor.id
+          ? { ...doc, name, specialty, qualifications, location, phone }
+          : doc
+      )
+    );
+
+    setUpdateDialogOpen(false);
+    setSelectedDoctor(null);
+    resetForm();
+  } catch (error) {
+    console.error('Update doctor failed', error);
+    const msg = error?.response?.data?.message || 'Failed to update doctor';
+    toast.error(msg);
+  }
+};
+
+// DELETE
+const handleDelete = async () => {
+  try {
+    await del(API_ENDPOINTS.DOCTORS.BY_ID(selectedDoctor.id));
+    toast.success('🗑️ Doctor deleted successfully');
+
+    // Remove doctor directly from state
+    setDoctors(prev => prev.filter(doc => doc.id !== selectedDoctor.id));
+  } catch (error) {
+    console.error('Delete doctor failed', error);
+    const msg = error?.response?.data?.message || 'Failed to delete doctor';
+    toast.error(msg);
+  } finally {
+    setDeleteDialogOpen(false);
+    setSelectedDoctor(null);
+  }
+};
+=======
   // Load Doctors (API Fetch)
   const loadDoctors = async () => {
     try {
@@ -142,6 +316,7 @@ export function ManageDoctors({ navigate, user }) {
       toast.error(error.response?.data?.message || 'Failed to delete doctor');
     }
   };
+>>>>>>> 36fdceb2e59021c5c1ebeb721738ac7567dd882d
 
   const openUpdateDialog = (doctor) => {
     setSelectedDoctor(doctor);
@@ -150,7 +325,13 @@ export function ManageDoctors({ navigate, user }) {
       specialty: doctor.specialty,
       qualifications: doctor.qualifications,
       location: doctor.location,
+<<<<<<< HEAD
+      phone: doctor.phone,
+      email: doctor.email || '',
+      password: '' // not used for update
+=======
       phone: doctor.phone
+>>>>>>> 36fdceb2e59021c5c1ebeb721738ac7567dd882d
     });
     setUpdateDialogOpen(true);
   };
@@ -282,6 +463,10 @@ export function ManageDoctors({ navigate, user }) {
               <div><Label htmlFor="qualifications">Qualifications</Label><Input id="qualifications" value={formData.qualifications} onChange={(e) => setFormData({ ...formData, qualifications: e.target.value })} placeholder="MD, FACC" className="mt-2" /></div>
               <div><Label htmlFor="location">Location</Label><Input id="location" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} placeholder="New York, NY" className="mt-2" /></div>
               <div><Label htmlFor="phone">Phone</Label><Input id="phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+1 (555) 123-4567" className="mt-2" /></div>
+
+              {/* NEW: email & password fields */}
+              <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="doctor@example.com" className="mt-2" /></div>
+              <div><Label htmlFor="password">Password</Label><Input id="password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Choose a strong password" className="mt-2" /></div>
             </div>
             <DialogFooter><Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button><Button onClick={handleCreate} className="bg-[#667eea] hover:bg-[#5568d3]">Create Doctor</Button></DialogFooter>
           </DialogContent>

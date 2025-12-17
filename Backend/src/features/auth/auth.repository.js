@@ -80,6 +80,7 @@ const createDoctor = async (userId, doctorData) => {
       qualifications: doctorData.qualifications || 'Not specified',
       reviews: doctorData.reviews || 0,
       location: doctorData.location || 'Not specified',
+      phone: doctorData.phone || null,
       created_at: new Date().toISOString()
     }])
     .select()
