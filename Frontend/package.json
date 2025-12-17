@@ -1,6 +1,7 @@
 {
   "name": "se7ety-frontend",
   "version": "1.0.0",
+  "type": "module",
   "description": "Se7ety Healthcare Frontend - Layered Monolithic Architecture",
   "private": true,
   "scripts": {
