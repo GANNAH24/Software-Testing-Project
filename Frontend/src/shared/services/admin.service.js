@@ -1,67 +1,30 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, vi, afterEach, beforeAll } from 'vitest';
-import { ManageDoctors } from '../../../src/components/admin/ManageDoctors';
+import apiClient from './api.service';
 
-const doctors = [];
+const adminService = {
+  // System stats
+  getStats: async () => apiClient.get('/admin/stats'),
 
-beforeAll(() => {
-  vi.stubModule('../../../src/shared/services/admin.service', {
-    default: {
-      getAllDoctors: vi.fn(() => Promise.resolve({ data: doctors })),
-      createDoctor: vi.fn((data) => {
-        const newDoctor = { ...data, doctor_id: 'doc-9' };
-        doctors.push(newDoctor);
-        return Promise.resolve(newDoctor);
-      }),
-      updateDoctor: vi.fn(() => Promise.resolve()),
-      deleteDoctor: vi.fn((id) => {
-        const index = doctors.findIndex((d) => d.doctor_id === id);
-        if (index > -1) doctors.splice(index, 1);
-        return Promise.resolve();
-      }),
-    },
-  });
-});
+  // Doctors
+  getAllDoctors: async (params = {}) => apiClient.get('/admin/doctors', { params }),
+  createDoctor: async (data) => apiClient.post('/admin/doctors', data),
+  updateDoctor: async (id, data) => apiClient.put(`/admin/doctors/${id}`, data),
+  deleteDoctor: async (id) => apiClient.delete(`/admin/doctors/${id}`),
 
-describe('Integration: Admin Doctor Management', () => {
-  afterEach(() => {
-    vi.resetAllMocks();
-    doctors.length = 0;
-  });
+  // Patients
+  getAllPatients: async (params) => apiClient.get('/admin/patients', { params }),
+  createPatient: async (patientData) => apiClient.post('/admin/patients', patientData),
+  updatePatient: async (patientId, patientData) => apiClient.put(`/admin/patients/${patientId}`, patientData),
+  deletePatient: async (id) => apiClient.delete(`/admin/patients/${id}`),
 
-  it('allows admin to add and delete doctor profiles', async () => {
-    render(<ManageDoctors />);
+  // Appointments
+  getAllAppointments: async (params = {}) => apiClient.get('/admin/appointments', { params }),
+  updateAppointment: async (id, data) => apiClient.put(`/admin/appointments/${id}`, data),
+  deleteAppointment: async (id) => apiClient.delete(`/admin/appointments/${id}`),
 
-    // Open Create Doctor dialog
-    fireEvent.click(screen.getByText(/add doctor/i));
+  // Analytics
+  getSpecialtyAnalytics: async () => apiClient.get('/admin/analytics/specialties'),
+  getTopDoctors: async (limit = 10) => apiClient.get('/admin/analytics/top-doctors', { params: { limit } }),
+  getAnalyticsOverview: async () => apiClient.get('/admin/analytics/overview')
+};
 
-    // Fill form
-    fireEvent.change(screen.getByPlaceholderText(/Dr\. John Doe/i), { target: { value: 'Dr. New' } });
-    fireEvent.change(screen.getByPlaceholderText(/MD, FACC/i), { target: { value: 'MD' } });
-    fireEvent.change(screen.getByPlaceholderText(/New York, NY/i), { target: { value: 'New York' } });
-    fireEvent.change(screen.getByPlaceholderText(/\+1 \(555\) 123-4567/i), { target: { value: '+1 111 222 3333' } });
-
-    // Select specialty
-    fireEvent.click(screen.getByText('Select specialty'));
-    fireEvent.click(screen.getByText('Cardiology'));
-
-    // Submit form
-    fireEvent.click(screen.getByText(/create doctor/i));
-
-    // Wait for doctor to appear
-    const addedDoctor = await screen.findByText('Dr. New');
-    expect(addedDoctor).toBeInTheDocument();
-
-    // Delete doctor
-    const row = addedDoctor.closest('tr');
-    const actionsCell = row.querySelector('td:last-child');
-    const deleteButton = actionsCell.querySelector('button:last-child'); // Delete button
-    fireEvent.click(deleteButton);
-
-    // Confirm deletion
-    fireEvent.click(screen.getByText(/^delete$/i));
-
-    // Verify deletion
-    await screen.findByText(/No doctors found matching/i);
-  });
-});
+export default adminService;
