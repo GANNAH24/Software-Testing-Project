@@ -5,33 +5,19 @@
  * - As a patient, I want to view past and upcoming appointments
  */
 
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { PatientAppointments } from "../../../src/components/patient/PatientAppointments";
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { PatientAppointments } from '../../../src/components/patient/PatientAppointments';
 
 vi.mock("../../../src/shared/services/appointment.service", () => ({
   default: {
-    byPatient: vi.fn(() =>
-      Promise.resolve({
-        data: [
-          {
-            id: "1",
-            date: "2024-12-01",
-            doctor: { fullName: "Dr. Smith", specialty: "Cardiology" },
-            status: "completed",
-            time_slot: "09:00-10:00",
-          },
-          {
-            id: "2",
-            date: "2024-12-20",
-            doctor: { fullName: "Dr. Sarah", specialty: "Dermatology" },
-            status: "pending",
-            time_slot: "10:00-11:00",
-          },
-        ],
-      })
-    ),
+    byPatient: vi.fn(() => Promise.resolve({
+      data: [
+        { id: '1', date: '2024-12-01', doctor: { fullName: 'Dr. Smith', specialty: 'Cardiology' }, status: 'completed', time_slot: '09:00-10:00' },
+        { id: '2', date: '2024-12-20', doctor: { fullName: 'Dr. Sarah', specialty: 'Dermatology' }, status: 'pending', time_slot: '10:00-11:00' },
+      ]
+    })),
     cancel: vi.fn(() => Promise.resolve({})),
     remove: vi.fn(() => Promise.resolve({})),
   },
@@ -59,7 +45,7 @@ describe("Appointment History", () => {
         expect(title).toBeInTheDocument();
 
         // Check that we have the tabs
-        const allTab = screen.queryByRole("tab", { name: /all/i });
+        const allTab = screen.queryByRole('tab', { name: /all/i });
         expect(allTab).toBeInTheDocument();
       },
       { timeout: 5000 }

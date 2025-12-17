@@ -10,7 +10,7 @@ router.post('/', PatientsController.create);
 router.put('/:id', PatientsController.update);
 
 // ✅ New routes with authentication
-router.get('/:id/appointments', requireAuth, PatientsController.getAppointments);
-router.patch('/:id/appointments/cancel', requireAuth, PatientsController.cancelAppointment);
+router.get('/:id/appointments', requireAuth(), PatientsController.getAppointments);
+router.patch('/:id/appointments/cancel', requireAuth(), PatientsController.cancelAppointment);
 
 module.exports = router;

@@ -72,6 +72,19 @@ const createDoctor = asyncHandler(async (req, res) => {
 
 
 const updateDoctor = asyncHandler(async (req, res) => {
+  // Authorization: Only the doctor themselves or admin can update
+  const doctorToUpdate = await doctorsService.getDoctorById(req.params.id);
+
+  // Check if the authenticated user is this doctor or an admin
+  const isOwnProfile = doctorToUpdate.user_id === req.user.id;
+  const isAdmin = req.user.role === 'admin';
+
+  if (!isOwnProfile && !isAdmin) {
+    const error = new Error('Access denied: You can only update your own profile');
+    error.statusCode = 403;
+    throw error;
+  }
+
   const updates = {};
   if (req.body.name) updates.name = req.body.name;
   if (req.body.specialty) updates.specialty = req.body.specialty;
