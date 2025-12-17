@@ -94,7 +94,8 @@ const PatientsController = {
     try {
       const patientId = req.params.id;
 
-      // Authorization: Ensure the authenticated user matches the requested patient
+      // Authorization: patient_id equals user_id (from registration)
+      // So we can directly compare req.user.id with patientId
       if (req.user.id !== patientId) {
         return res.status(403).json({
           success: false,
@@ -123,7 +124,8 @@ const PatientsController = {
       const patientId = req.params.id;
       const { appointmentId } = req.body;
 
-      // ✅ Authorization using patient_id ONLY
+      // ✅ Authorization: patient_id equals user_id (from registration)
+      // So we can directly compare req.user.id with patientId
       if (req.user.id !== patientId) {
         return res.status(403).json({
           success: false,
@@ -139,6 +141,12 @@ const PatientsController = {
         data,
       });
     } catch (error) {
+      if (error.message === 'Appointment not found') {
+        return res.status(404).json({
+          success: false,
+          message: "Appointment not found",
+        });
+      }
       return res.status(500).json({
         success: false,
         message: "Failed to cancel appointment",

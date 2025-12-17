@@ -1,11 +1,13 @@
 /**
  * Unit Tests for Analytics Service (Mocked)
  */
+jest.mock('../../src/features/reviews/reviews.repository');
 
 jest.mock('../../src/features/admin/analytics.repository');
 
 const analyticsService = require('../../src/features/admin/analytics.service');
 const analyticsRepository = require('../../src/features/admin/analytics.repository');
+const reviewsRepository = require('../../src/features/reviews/reviews.repository');
 
 describe('Analytics Service - Unit Tests (Mocked)', () => {
   beforeEach(() => {
@@ -33,13 +35,22 @@ describe('Analytics Service - Unit Tests (Mocked)', () => {
         { doctor_id: 'd1', name: 'Dr. Smith', appointmentCount: 50 },
         { doctor_id: 'd2', name: 'Dr. Jones', appointmentCount: 40 }
       ];
+
       analyticsRepository.getTopDoctors.mockResolvedValue(mockDoctors);
+
+      reviewsRepository.getDoctorAverageRating
+        .mockResolvedValueOnce({ averageRating: 4.5 })
+        .mockResolvedValueOnce({ averageRating: 4.2 });
 
       const result = await analyticsService.getTopPerformingDoctors(10);
 
-      expect(result).toEqual(mockDoctors);
+      expect(result).toEqual([
+        { ...mockDoctors[0], rating: 4.5 },
+        { ...mockDoctors[1], rating: 4.2 }
+      ]);
     });
   });
+
 
   // Note: getAnalyticsOverview() uses direct Supabase queries for counts,
   // so it's better tested in integration tests

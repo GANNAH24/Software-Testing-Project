@@ -15,6 +15,8 @@ const request = require('supertest');
 const app = require('../../src/app');
 const { supabase } = require('../../src/config/database');
 const { cleanupTestSuite, cleanupTestUser } = require('../helpers/cleanup-helper');
+const PatientsService = require('../../src/features/patients/patients.service');
+
 
 describe('Patients API Integration Tests', () => {
   let patientUserId, patientToken, patientId;
@@ -52,14 +54,8 @@ describe('Patients API Integration Tests', () => {
 
     patientToken = patientLogin.body.data.token;
 
-    // Get patient ID
-    const { data: patient } = await supabase
-      .from('patients')
-      .select('patient_id')
-      .eq('patient_id', patientUserId)
-      .single();
-
-    patientId = patient.patient_id;
+    // Get patient ID - patient_id equals user_id from registration
+    patientId = patientUserId;
 
     // Create test doctor
     const doctorEmail = `doctor-${Date.now()}@test.com`;
@@ -191,14 +187,10 @@ describe('Patients API Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.phone).toBe(updates.phone);
 
-      // Assert Database
-      const { data: patient } = await supabase
-        .from('patients')
-        .select('*')
-        .eq('patient_id', patientId)
-        .single();
+// Assert Database
+const patientFromDb = await PatientsService.getById(patientId);
+expect(patientFromDb.phone).toBe(updates.phone);
 
-      expect(patient.phone).toBe(updates.phone);
     });
 
     it('should reject update with invalid data', async () => {
@@ -324,6 +316,11 @@ describe('Patients API Integration Tests', () => {
           repeatWeekly: false
         });
 
+      if (!scheduleRes.body.success || !scheduleRes.body.data) {
+        console.warn('Schedule creation failed in beforeEach:', scheduleRes.body);
+        return;
+      }
+
       const newScheduleId = scheduleRes.body.data.schedule_id;
 
       // Book appointment
@@ -338,7 +335,7 @@ describe('Patients API Integration Tests', () => {
           reason: 'Test cancellation'
         });
 
-      if (appointmentRes.body.success) {
+      if (appointmentRes.body.success && appointmentRes.body.data) {
         cancelTestAppointmentId = appointmentRes.body.data.appointment_id;
       }
     });

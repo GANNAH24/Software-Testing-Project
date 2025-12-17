@@ -54,11 +54,24 @@ const PatientsRepository = {
   async getPatientByUserId(userId) {
     console.log('[DEBUG] getPatientByUserId called with userId:', userId);
     try {
-      const { data, error } = await supabase
+      // First try to find by user_id
+      let { data, error } = await supabase
         .from('patients')
         .select('*')
-        .eq('patient_id', userId)
-        .maybeSingle(); // Use maybeSingle() instead of single() to handle not found gracefully
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      // If not found by user_id, try patient_id (for patients where patient_id = user_id)
+      if (!data && !error) {
+        const { data: dataByPatientId, error: errorByPatientId } = await supabase
+          .from('patients')
+          .select('*')
+          .eq('patient_id', userId)
+          .maybeSingle();
+        
+        data = dataByPatientId;
+        error = errorByPatientId;
+      }
 
       if (error) {
         console.error('[DEBUG] Supabase error in getPatientByUserId:', error);
