@@ -164,9 +164,15 @@ export function QuickBookDialog({
 
     setBooking(true);
     try {
+      // Format date as local date string (YYYY-MM-DD) to avoid timezone issues
+      const y = selectedDate.getFullYear();
+      const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const d = String(selectedDate.getDate()).padStart(2, '0');
+      const dateStr = `${y}-${m}-${d}`;
+
       await appointmentService.create({
         doctor_id: doctorId,
-        date: selectedDate.toISOString().split('T')[0],
+        date: dateStr,
         time_slot: selectedSlot,
         reason: notes || 'General consultation',
         status: 'scheduled',

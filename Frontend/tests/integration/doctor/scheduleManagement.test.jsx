@@ -126,14 +126,20 @@ describe('Schedule Management Integration', () => {
   });
 
   test('displays weekly slots correctly', async () => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    // Get a weekday date (Monday) within the current week to ensure it shows in weekly view
+    const today = new Date();
+    const currentDay = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - currentDay + 1); // Go to Monday of current week
+    const mondayStr = monday.toISOString().split('T')[0];
+    
     scheduleService.list.mockResolvedValue({ 
-      data: [{ id: '1', date: todayStr, time_slot: '09:00-10:00', is_available: true }] 
+      data: [{ id: '1', date: mondayStr, time_slot: '09:00-10:00', is_available: true }] 
     });
 
     renderWithContext(<ManageSchedule />);
 
-    // Switch to Weekly View (if it's not the default)
+    // Wait for loading to complete and switch to Weekly View (if it's not the default)
     const weeklyBtn = await screen.findByRole('button', { name: /Weekly View/i });
     fireEvent.click(weeklyBtn);
 

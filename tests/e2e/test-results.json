@@ -1,9 +1,9 @@
 {
   "config": {
-    "configFile": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/playwright.config.js",
-    "rootDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs",
+    "configFile": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/playwright.config.js",
+    "rootDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/specs",
     "forbidOnly": false,
-    "fullyParallel": true,
+    "fullyParallel": false,
     "globalSetup": null,
     "globalTeardown": null,
     "globalTimeout": 0,
@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 3
+      "actualWorkers": 1
     },
     "preserveOutput": "always",
     "reporter": [
@@ -39,15 +39,15 @@
     "quiet": false,
     "projects": [
       {
-        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results",
+        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 1
         },
         "id": "chromium",
         "name": "chromium",
-        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs",
+        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/specs",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -55,15 +55,15 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results",
+        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 1
         },
         "id": "firefox",
         "name": "firefox",
-        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs",
+        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/specs",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -71,15 +71,15 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results",
+        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 1
         },
         "id": "webkit",
         "name": "webkit",
-        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs",
+        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/specs",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -87,15 +87,15 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results",
+        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 1
         },
         "id": "Mobile Chrome",
         "name": "Mobile Chrome",
-        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs",
+        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/specs",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -103,15 +103,15 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results",
+        "outputDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 1
         },
         "id": "Mobile Safari",
         "name": "Mobile Safari",
-        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs",
+        "testDir": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/specs",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -124,25 +124,25 @@
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.57.0",
-    "workers": 5,
+    "workers": 1,
     "webServer": null
   },
   "suites": [
     {
-      "title": "registration-validation.spec.js",
-      "file": "registration-validation.spec.js",
+      "title": "booking-happy-path.spec.js",
+      "file": "booking-happy-path.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Registration Validation Errors (E2E-003)",
-          "file": "registration-validation.spec.js",
-          "line": 9,
+          "title": "E2E-005: Booking Happy Path",
+          "file": "booking-happy-path.spec.js",
+          "line": 4,
           "column": 6,
           "specs": [
             {
-              "title": "should show detailed password validation errors",
+              "title": "patient can open booking flow",
               "ok": true,
               "tags": [],
               "tests": [
@@ -157,12 +157,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 776,
+                      "duration": 2586,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-17T21:26:51.840Z",
+                      "startTime": "2025-12-20T01:30:40.720Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -170,87 +170,166 @@
                   "status": "expected"
                 }
               ],
-              "id": "df40d5463c44b7988ef8-e5ed05e7c5443f448bc1",
-              "file": "registration-validation.spec.js",
-              "line": 17,
-              "column": 3
+              "id": "befcb21ac6a88146d873-d4e927ba798cae2cb000",
+              "file": "booking-happy-path.spec.js",
+              "line": 5,
+              "column": 9
             },
             {
-              "title": "should show invalid email error",
-              "ok": false,
+              "title": "patient can open booking flow",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
                   "results": [
                     {
                       "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "failed",
-                      "duration": 10735,
-                      "error": {
-                        "message": "TimeoutError: page.fill: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input#confirmPassword')\u001b[22m\n",
-                        "stack": "TimeoutError: page.fill: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input#confirmPassword')\u001b[22m\n\n    at /Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs/registration-validation.spec.js:38:16",
-                        "location": {
-                          "file": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs/registration-validation.spec.js",
-                          "column": 16,
-                          "line": 38
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 36 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[type=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'invalid-email'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 37 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#password'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'ValidPass123!'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 38 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#confirmPassword'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'ValidPass123!'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 39 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#phone'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'+1 555-1234'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 40 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#dateOfBirth'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'1990-01-01'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 41 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mselectOption(\u001b[32m'select#gender'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'Male'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs/registration-validation.spec.js",
-                            "column": 16,
-                            "line": 38
-                          },
-                          "message": "TimeoutError: page.fill: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input#confirmPassword')\u001b[22m\n\n\n\u001b[0m \u001b[90m 36 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[type=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'invalid-email'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 37 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#password'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'ValidPass123!'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 38 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#confirmPassword'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'ValidPass123!'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 39 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#phone'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'+1 555-1234'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 40 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input#dateOfBirth'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'1990-01-01'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 41 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mselectOption(\u001b[32m'select#gender'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'Male'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs/registration-validation.spec.js:38:16\u001b[22m"
-                        }
-                      ],
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5108,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-17T21:26:51.838Z",
+                      "startTime": "2025-12-20T01:31:02.862Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results/registration-validation-Re-684f4-ld-show-invalid-email-error-chromium/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results/registration-validation-Re-684f4-ld-show-invalid-email-error-chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/test-results/registration-validation-Re-684f4-ld-show-invalid-email-error-chromium/error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Software-Testing-Project/tests/e2e/specs/registration-validation.spec.js",
-                        "column": 16,
-                        "line": 38
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
-              "id": "df40d5463c44b7988ef8-0b52c1e85856d6c70c5e",
-              "file": "registration-validation.spec.js",
-              "line": 33,
-              "column": 3
+              "id": "befcb21ac6a88146d873-8ec262039eaa6782cb4e",
+              "file": "booking-happy-path.spec.js",
+              "line": 5,
+              "column": 9
             },
             {
-              "title": "should require full name",
+              "title": "patient can open booking flow",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3669,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:31:28.911Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "befcb21ac6a88146d873-17ff4df3086d49f73f9b",
+              "file": "booking-happy-path.spec.js",
+              "line": 5,
+              "column": 9
+            },
+            {
+              "title": "patient can open booking flow",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2473,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:31:51.756Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "befcb21ac6a88146d873-6ce7f649ca95afd99b40",
+              "file": "booking-happy-path.spec.js",
+              "line": 5,
+              "column": 9
+            },
+            {
+              "title": "patient can open booking flow",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2636,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:32:16.189Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "befcb21ac6a88146d873-d7537b73593537bbe9ff",
+              "file": "booking-happy-path.spec.js",
+              "line": 5,
+              "column": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "doctor-add-schedule.spec.js",
+      "file": "doctor-add-schedule.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "E2E-010: Doctor Add Schedule Slots",
+          "file": "doctor-add-schedule.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "doctor can create schedule slots successfully",
               "ok": true,
               "tags": [],
               "tests": [
@@ -262,15 +341,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 794,
+                      "duration": 5126,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-17T21:26:51.841Z",
+                      "startTime": "2025-12-20T01:30:43.635Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -278,10 +357,520 @@
                   "status": "expected"
                 }
               ],
-              "id": "df40d5463c44b7988ef8-17176f893483afd472e5",
-              "file": "registration-validation.spec.js",
-              "line": 50,
-              "column": 3
+              "id": "bedf82d6d03d4e3e4cd7-327b323d4f2b4ecbc36a",
+              "file": "doctor-add-schedule.spec.js",
+              "line": 5,
+              "column": 7
+            },
+            {
+              "title": "doctor can create schedule slots successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3934,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:31:08.489Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "bedf82d6d03d4e3e4cd7-62329dfe669e5b2df79f",
+              "file": "doctor-add-schedule.spec.js",
+              "line": 5,
+              "column": 7
+            },
+            {
+              "title": "doctor can create schedule slots successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5188,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:31:32.754Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "bedf82d6d03d4e3e4cd7-48724e5528bb21029acf",
+              "file": "doctor-add-schedule.spec.js",
+              "line": 5,
+              "column": 7
+            },
+            {
+              "title": "doctor can create schedule slots successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6459,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:31:54.555Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "bedf82d6d03d4e3e4cd7-febcd6156d2d8cdfb02f",
+              "file": "doctor-add-schedule.spec.js",
+              "line": 5,
+              "column": 7
+            },
+            {
+              "title": "doctor can create schedule slots successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3574,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:32:18.985Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "bedf82d6d03d4e3e4cd7-1576235cf1e9eb32e2d0",
+              "file": "doctor-add-schedule.spec.js",
+              "line": 5,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "doctor-schedule.spec.js",
+      "file": "doctor-schedule.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "E2E-009: Doctor Schedule",
+          "file": "doctor-schedule.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "doctor can view schedule page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1512,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:30:48.768Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7250d3c8f28eaba6da84-cc3cdaab8c365cd5f20f",
+              "file": "doctor-schedule.spec.js",
+              "line": 5,
+              "column": 9
+            },
+            {
+              "title": "doctor can view schedule page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2427,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:31:12.430Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7250d3c8f28eaba6da84-09bac9b382d145056551",
+              "file": "doctor-schedule.spec.js",
+              "line": 5,
+              "column": 9
+            },
+            {
+              "title": "doctor can view schedule page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1358,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:31:37.949Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7250d3c8f28eaba6da84-8e1d0a8b1f5e76f56ab3",
+              "file": "doctor-schedule.spec.js",
+              "line": 5,
+              "column": 9
+            },
+            {
+              "title": "doctor can view schedule page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1538,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:32:01.020Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7250d3c8f28eaba6da84-8da719141af8a94189dc",
+              "file": "doctor-schedule.spec.js",
+              "line": 5,
+              "column": 9
+            },
+            {
+              "title": "doctor can view schedule page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1351,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:32:22.566Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7250d3c8f28eaba6da84-826d8b373ce7efb65091",
+              "file": "doctor-schedule.spec.js",
+              "line": 5,
+              "column": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "patient-journey.spec.js",
+      "file": "patient-journey.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "E2E-001: Patient Journey",
+          "file": "patient-journey.spec.js",
+          "line": 11,
+          "column": 6,
+          "specs": [
+            {
+              "title": "patient can book an appointment successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12196,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:30:50.286Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5931ccd3ebed77c17aa-9a3805518ab2cd9dfbee",
+              "file": "patient-journey.spec.js",
+              "line": 12,
+              "column": 9
+            },
+            {
+              "title": "patient can book an appointment successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13373,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:31:14.864Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5931ccd3ebed77c17aa-d775102510b3c419f5a6",
+              "file": "patient-journey.spec.js",
+              "line": 12,
+              "column": 9
+            },
+            {
+              "title": "patient can book an appointment successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12092,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:31:39.313Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5931ccd3ebed77c17aa-c909bc7c0e41df00ddf9",
+              "file": "patient-journey.spec.js",
+              "line": 12,
+              "column": 9
+            },
+            {
+              "title": "patient can book an appointment successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13237,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:32:02.564Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5931ccd3ebed77c17aa-a6c7ece54c6d28f8b080",
+              "file": "patient-journey.spec.js",
+              "line": 12,
+              "column": 9
+            },
+            {
+              "title": "patient can book an appointment successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12018,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-20T01:32:23.923Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5931ccd3ebed77c17aa-1fc2f6f217d5a54e72e2",
+              "file": "patient-journey.spec.js",
+              "line": 12,
+              "column": 9
             }
           ]
         }
@@ -290,11 +879,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-17T21:26:51.365Z",
-    "duration": 11539.934000000001,
-    "expected": 2,
+    "startTime": "2025-12-20T01:30:40.423Z",
+    "duration": 115549.97,
+    "expected": 20,
     "skipped": 0,
-    "unexpected": 1,
+    "unexpected": 0,
     "flaky": 0
   }
 }

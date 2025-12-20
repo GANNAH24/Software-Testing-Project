@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { 
-  X, 
-  Clock 
+import {
+  X,
+  Clock
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -51,7 +51,7 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
   };
 
   const timeSlots = generateTimeSlots();
-  
+
   const splitSlotsByPeriod = () => {
     const am = timeSlots.filter(slot => parseInt(slot.split(':')[0]) < 12);
     const pm = timeSlots.filter(slot => parseInt(slot.split(':')[0]) >= 12);
@@ -74,10 +74,10 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
 
   const handleDateSelect = (date) => {
     if (!date) return;
-    
+
     const dateStr = date.toISOString().split('T')[0];
     const index = selectedDates.findIndex(d => d.toISOString().split('T')[0] === dateStr);
-    
+
     if (index > -1) {
       // Remove if already selected
       setSelectedDates(selectedDates.filter((_, i) => i !== index));
@@ -121,28 +121,81 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
 
     try {
       setLoading(true);
+
+      // Helper function to format date in local timezone (avoid UTC conversion)
+      const formatLocalDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      // Fetch existing schedules for all selected dates to check for duplicates
+      const existingSchedulesMap = new Map();
+      for (const date of selectedDates) {
+        const dateStr = formatLocalDate(date);
+        try {
+          const response = await scheduleService.list({ date: dateStr });
+          const existing = response?.data || response?.schedules || response || [];
+          existingSchedulesMap.set(dateStr, existing);
+        } catch (err) {
+          // If we can't fetch existing, continue anyway
+          existingSchedulesMap.set(dateStr, []);
+        }
+      }
+
+      // Create only schedules that don't already exist
       const schedulePromises = [];
+      const duplicates = [];
+
       selectedDates.forEach(date => {
-        const dateStr = date.toISOString().split('T')[0];
+        const dateStr = formatLocalDate(date);
+        const existingForDate = existingSchedulesMap.get(dateStr) || [];
+
         selectedTimeSlots.forEach(timeSlot => {
-          const dayOfWeek = DAYS_OF_WEEK[date.getDay()];
-          schedulePromises.push(
-            scheduleService.create({
-              date: dateStr,
-              time_slot: timeSlot,
-              is_available: true,
-              day_of_week: dayOfWeek
-            })
-          );
+          // Check if this exact time slot already exists
+          const isDuplicate = existingForDate.some(existing => {
+            const existingSlot = existing.time_slot || existing.timeSlot;
+            return existingSlot === timeSlot;
+          });
+
+          if (isDuplicate) {
+            duplicates.push({ date: dateStr, slot: timeSlot });
+          } else {
+            const dayOfWeek = DAYS_OF_WEEK[date.getDay()];
+            schedulePromises.push(
+              scheduleService.create({
+                date: dateStr,
+                time_slot: timeSlot,
+                is_available: true,
+                day_of_week: dayOfWeek
+              })
+            );
+          }
         });
       });
-      await Promise.all(schedulePromises);
-      toast.success(`Created ${selectedDates.length * selectedTimeSlots.length} schedule slot(s) successfully!`);
-      onSuccess();
-      onOpenChange(false);
+
+      // Execute all creation promises
+      if (schedulePromises.length > 0) {
+        await Promise.all(schedulePromises);
+        const successCount = schedulePromises.length;
+        const skippedCount = duplicates.length;
+
+        if (skippedCount > 0) {
+          toast.success(`Created ${successCount} new slot(s). Skipped ${skippedCount} duplicate(s).`);
+        } else {
+          toast.success(`Created ${successCount} schedule slot(s) successfully!`);
+        }
+
+        onSuccess();
+        onOpenChange(false);
+      } else {
+        toast.warning('All selected time slots already exist. No new schedules created.');
+      }
     } catch (error) {
       console.error('Failed to create schedules:', error);
-      toast.error('Failed to create schedules. Please try again.');
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create schedules. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -156,7 +209,7 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
             {step === 1 ? 'Select Dates' : 'Select Time Slots'}
           </DialogTitle>
           <DialogDescription>
-            {step === 1 
+            {step === 1
               ? 'Click multiple dates to apply the same schedule to all of them'
               : `Choose time slots within your working hours (${workingHours?.start || '08:00'} - ${workingHours?.end || '17:00'})`
             }
@@ -171,7 +224,7 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
                 mode="multiple"
                 selected={selectedDates}
                 onSelect={(dates) => setSelectedDates(dates || [])}
-                disabled={(date) => 
+                disabled={(date) =>
                   date < new Date() || date < new Date(new Date().setHours(0, 0, 0, 0))
                 }
                 className="rounded-md border"
@@ -266,7 +319,7 @@ export function ScheduleModal({ open, onOpenChange, onSuccess, workingHours }) {
                 {selectedTimeSlots.length > 0 && (
                   <div className="mt-6 p-3 bg-blue-50 rounded-lg">
                     <p className="text-sm font-medium text-blue-900">
-                      {selectedTimeSlots.length} time slot(s) selected for {selectedDates.length} date(s) = 
+                      {selectedTimeSlots.length} time slot(s) selected for {selectedDates.length} date(s) =
                       <span className="ml-1 font-bold">
                         {selectedTimeSlots.length * selectedDates.length} total schedule(s)
                       </span>

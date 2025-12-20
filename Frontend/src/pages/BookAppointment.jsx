@@ -67,11 +67,20 @@ export function BookAppointment({ navigate }) {
     return matchesSearch && matchesSpecialty && matchesLocation;
   });
 
-  const availableDates = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    return date;
-  }).filter(date => date.getDay() !== 0);
+  // Generate available dates using local date formatting to avoid timezone issues
+  const availableDates = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() + i);
+    return date;
+  }).filter(date => date.getDay() !== 0);
+
+  // Helper function to format date as YYYY-MM-DD using local timezone
+  const formatLocalDate = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
 
   const handleSelectDoctor = (doctor) => {
     setSelectedDoctor(doctor);
@@ -201,10 +210,10 @@ export function BookAppointment({ navigate }) {
           <Card className="p-6 border border-gray-200">
             <h2 className="text-xl text-gray-900 mb-4">Select Date</h2>
             {errors.date && (<Alert variant="destructive" className="mb-6"><AlertDescription>{errors.date}</AlertDescription></Alert>)}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {availableDates.map((date) => {
-                const dateStr = date.toISOString().split('T')[0];
-                const isSelected = selectedDate === dateStr;
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {availableDates.map((date) => {
+                const dateStr = formatLocalDate(date);
+                const isSelected = selectedDate === dateStr;
                 return (
                   <button key={dateStr} onClick={() => handleSelectDate(dateStr)} className={`p-4 rounded-lg border-2 transition-all text-center ${isSelected ? 'border-[#667eea] bg-[#667eea]/5' : 'border-gray-200 hover:border-gray-300'}`}>
                     <p className={`text-sm ${isSelected ? 'text-[#667eea]' : 'text-gray-600'}`}>{date.toLocaleDateString('en-US', { weekday: 'short' })}</p>
