@@ -1,0 +1,112 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - navigation [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - link "Se7ety" [ref=e8]:
+            - /url: /
+            - img [ref=e10]
+            - generic [ref=e13]: Se7ety
+          - generic [ref=e14]:
+            - link "About Us" [ref=e15]:
+              - /url: /about
+            - link "Contact" [ref=e16]:
+              - /url: /contact
+        - generic [ref=e17]:
+          - button "Login" [ref=e18]
+          - button "Sign Up" [ref=e19]
+    - main [ref=e20]:
+      - generic [ref=e22]:
+        - generic [ref=e23]:
+          - heading "Welcome Back" [level=1] [ref=e24]
+          - paragraph [ref=e25]: Login to your Se7ety Healthcare account
+        - generic [ref=e26]:
+          - heading "Login" [level=4] [ref=e28]
+          - generic [ref=e29]:
+            - generic [ref=e30]:
+              - generic [ref=e31]:
+                - generic [ref=e32]: Email
+                - textbox "Email" [ref=e33]:
+                  - /placeholder: your@email.com
+                  - text: dr.roro@gmail.com
+              - generic [ref=e34]:
+                - generic [ref=e35]: Password
+                - generic [ref=e36]:
+                  - textbox "Password" [ref=e37]: Rahma@123
+                  - button [ref=e38]:
+                    - img [ref=e39]
+              - link "Forgot password?" [ref=e43]:
+                - /url: /forgot-password
+              - button "Logging in..." [disabled]
+            - paragraph [ref=e45]:
+              - text: Don't have an account?
+              - link "Sign up" [ref=e46]:
+                - /url: /register
+    - contentinfo [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - img [ref=e53]
+              - generic [ref=e56]: Se7ety
+            - paragraph [ref=e57]: Your trusted healthcare platform connecting patients with quality medical professionals.
+            - generic [ref=e58]:
+              - button [ref=e59]:
+                - img [ref=e60]
+              - button [ref=e62]:
+                - img [ref=e63]
+              - button [ref=e65]:
+                - img [ref=e66]
+              - button [ref=e69]:
+                - img [ref=e70]
+          - generic [ref=e74]:
+            - heading "Quick Links" [level=3] [ref=e75]
+            - list [ref=e76]:
+              - listitem [ref=e77]:
+                - link "Home" [ref=e78]:
+                  - /url: /
+              - listitem [ref=e79]:
+                - link "About Us" [ref=e80]:
+                  - /url: /about
+              - listitem [ref=e81]:
+                - link "Find Doctors" [ref=e82]:
+                  - /url: /search
+              - listitem [ref=e83]:
+                - link "Contact" [ref=e84]:
+                  - /url: /contact
+          - generic [ref=e85]:
+            - heading "For Patients" [level=3] [ref=e86]
+            - list [ref=e87]:
+              - listitem [ref=e88]:
+                - link "Register" [ref=e89]:
+                  - /url: /register
+              - listitem [ref=e90]:
+                - link "Login" [ref=e91]:
+                  - /url: /login
+              - listitem [ref=e92]: Book Appointments
+              - listitem [ref=e93]: View Medical History
+          - generic [ref=e94]:
+            - heading "Contact Us" [level=3] [ref=e95]
+            - list [ref=e96]:
+              - listitem [ref=e97]:
+                - img [ref=e98]
+                - generic [ref=e101]: support@se7ety.com
+              - listitem [ref=e102]:
+                - img [ref=e103]
+                - generic [ref=e105]: +1 (555) 123-4567
+              - listitem [ref=e106]:
+                - img [ref=e107]
+                - generic [ref=e110]:
+                  - text: German International University
+                  - text: Cairo, Egypt
+        - generic [ref=e111]:
+          - paragraph [ref=e112]: © 2025 Se7ety. All rights reserved.
+          - generic [ref=e113]:
+            - button "Privacy Policy" [ref=e114]
+            - button "Terms of Service" [ref=e115]
+            - button "Cookie Policy" [ref=e116]
+  - region "Notifications alt+T"
+```

@@ -157,12 +157,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2586,
+                      "duration": 4520,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:30:40.720Z",
+                      "startTime": "2025-12-20T11:12:02.567Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -191,12 +191,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5108,
+                      "duration": 4929,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:31:02.862Z",
+                      "startTime": "2025-12-20T11:12:18.044Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -225,12 +225,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3669,
+                      "duration": 4713,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:31:28.911Z",
+                      "startTime": "2025-12-20T11:12:32.643Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -259,12 +259,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2473,
+                      "duration": 4495,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:31:51.756Z",
+                      "startTime": "2025-12-20T11:12:49.092Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -293,12 +293,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2636,
+                      "duration": 4506,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:32:16.189Z",
+                      "startTime": "2025-12-20T11:13:05.094Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -344,12 +344,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5126,
+                      "duration": 7636,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:30:43.635Z",
+                      "startTime": "2025-12-20T11:12:07.581Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -378,12 +378,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3934,
+                      "duration": 6165,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:31:08.489Z",
+                      "startTime": "2025-12-20T11:12:23.511Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -412,12 +412,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5188,
+                      "duration": 5861,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:31:32.754Z",
+                      "startTime": "2025-12-20T11:12:37.580Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -446,12 +446,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6459,
+                      "duration": 8399,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:31:54.555Z",
+                      "startTime": "2025-12-20T11:12:53.868Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -480,12 +480,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3574,
+                      "duration": 5711,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:32:18.985Z",
+                      "startTime": "2025-12-20T11:13:09.720Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -531,12 +531,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1512,
+                      "duration": 2508,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:30:48.768Z",
+                      "startTime": "2025-12-20T11:12:15.224Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -565,12 +565,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2427,
+                      "duration": 2409,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:31:12.430Z",
+                      "startTime": "2025-12-20T11:12:29.684Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -585,7 +585,7 @@
             },
             {
               "title": "doctor can view schedule page",
-              "ok": true,
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -598,18 +598,58 @@
                     {
                       "workerIndex": 2,
                       "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1358,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 5365,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/\\/doctor\\/dashboard/\u001b[39m\nReceived string:  \u001b[31m\"http://localhost:5173/login\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n\u001b[2m    9 × unexpected value \"http://localhost:5173/login\"\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/\\/doctor\\/dashboard/\u001b[39m\nReceived string:  \u001b[31m\"http://localhost:5173/login\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n\u001b[2m    9 × unexpected value \"http://localhost:5173/login\"\u001b[22m\n\n    at loginAsDoctor (/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/helpers/auth.js:26:24)\n    at /Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/specs/doctor-schedule.spec.js:8:9",
+                        "location": {
+                          "file": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/helpers/auth.js",
+                          "column": 24,
+                          "line": 26
+                        },
+                        "snippet": "\u001b[90m   at \u001b[39m../helpers/auth.js:26\n\n\u001b[0m \u001b[90m 24 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 25 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 26 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[35m/\\/doctor\\/dashboard/\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 27 |\u001b[39m }\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/helpers/auth.js",
+                            "column": 24,
+                            "line": 26
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/\\/doctor\\/dashboard/\u001b[39m\nReceived string:  \u001b[31m\"http://localhost:5173/login\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n\u001b[2m    9 × unexpected value \"http://localhost:5173/login\"\u001b[22m\n\n\n\u001b[90m   at \u001b[39m../helpers/auth.js:26\n\n\u001b[0m \u001b[90m 24 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 25 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 26 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[35m/\\/doctor\\/dashboard/\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 27 |\u001b[39m }\u001b[0m\n\u001b[2m    at loginAsDoctor (/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/helpers/auth.js:26:24)\u001b[22m\n\u001b[2m    at /Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/specs/doctor-schedule.spec.js:8:9\u001b[22m"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:31:37.949Z",
+                      "startTime": "2025-12-20T11:12:43.448Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/test-results/doctor-schedule-E2E-009-Do-f2603-ctor-can-view-schedule-page-webkit/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/test-results/doctor-schedule-E2E-009-Do-f2603-ctor-can-view-schedule-page-webkit/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/test-results/doctor-schedule-E2E-009-Do-f2603-ctor-can-view-schedule-page-webkit/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/fatmaosama/Public/Uni/Semester 5/Software Construction & Testing/Project/Se7ety/tests/e2e/helpers/auth.js",
+                        "column": 24,
+                        "line": 26
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
               "id": "7250d3c8f28eaba6da84-8e1d0a8b1f5e76f56ab3",
@@ -633,12 +673,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1538,
+                      "duration": 2504,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:32:01.020Z",
+                      "startTime": "2025-12-20T11:13:02.273Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -667,12 +707,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1351,
+                      "duration": 2325,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-20T01:32:22.566Z",
+                      "startTime": "2025-12-20T11:13:15.438Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -688,202 +728,15 @@
           ]
         }
       ]
-    },
-    {
-      "title": "patient-journey.spec.js",
-      "file": "patient-journey.spec.js",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "E2E-001: Patient Journey",
-          "file": "patient-journey.spec.js",
-          "line": 11,
-          "column": 6,
-          "specs": [
-            {
-              "title": "patient can book an appointment successfully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 12196,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-20T01:30:50.286Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b5931ccd3ebed77c17aa-9a3805518ab2cd9dfbee",
-              "file": "patient-journey.spec.js",
-              "line": 12,
-              "column": 9
-            },
-            {
-              "title": "patient can book an appointment successfully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 13373,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-20T01:31:14.864Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b5931ccd3ebed77c17aa-d775102510b3c419f5a6",
-              "file": "patient-journey.spec.js",
-              "line": 12,
-              "column": 9
-            },
-            {
-              "title": "patient can book an appointment successfully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 12092,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-20T01:31:39.313Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b5931ccd3ebed77c17aa-c909bc7c0e41df00ddf9",
-              "file": "patient-journey.spec.js",
-              "line": 12,
-              "column": 9
-            },
-            {
-              "title": "patient can book an appointment successfully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 13237,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-20T01:32:02.564Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b5931ccd3ebed77c17aa-a6c7ece54c6d28f8b080",
-              "file": "patient-journey.spec.js",
-              "line": 12,
-              "column": 9
-            },
-            {
-              "title": "patient can book an appointment successfully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [
-                    {
-                      "workerIndex": 4,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 12018,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-20T01:32:23.923Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b5931ccd3ebed77c17aa-1fc2f6f217d5a54e72e2",
-              "file": "patient-journey.spec.js",
-              "line": 12,
-              "column": 9
-            }
-          ]
-        }
-      ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-20T01:30:40.423Z",
-    "duration": 115549.97,
-    "expected": 20,
+    "startTime": "2025-12-20T11:11:56.597Z",
+    "duration": 81203.68299999999,
+    "expected": 14,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 1,
     "flaky": 0
   }
 }
